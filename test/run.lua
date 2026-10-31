@@ -9,7 +9,7 @@ local function outHas(pat) for i = #S.out, 1, -1 do if S.out[i]:find(pat, 1, tru
 local function noErrors(label) check(#S.errors == 0, label .. " (no handler errors)") if #S.errors > 0 then for _, e in ipairs(S.errors) do print("   " .. e) end S.errors = {} end end
 
 local FO, order = S.loadAddon("ForeverOptimizer")
-check(#order == 33, "loaded " .. #order .. " files from TOC")
+check(#order == 35, "loaded " .. #order .. " files from TOC")
 check(#FO.modules >= 26, #FO.modules .. " modules registered")
 check(ForeverOptimizerDB == nil or true, "pre-login")
 
@@ -196,7 +196,29 @@ local VM = FO:GetModule("Core.Verify")
 check(VM.db.last and #VM.db.last.checks > 20 and VM.db.last.toc == "16001", "verify ran and saved " .. tostring(VM.db.last and #VM.db.last.checks) .. " checks")
 check(outHas("TOC interface matches"), "verify printed interface check")
 check(FO.root.account.modules.disabled["Classes.Priest"] == nil and FO.root.account.modules.disabled["Core.Verify"] == nil, "module toggles respect core protection and re-enable")
-check(FO.root.version == 2, "db migrated to v2")
+check(FO.root.version == 3 and type(FO.root.account.errors.log) == "table", "db migrated to v3 (errors namespace)")
+
+-- Error capture: a throwing command is printed, deduped, and persisted with a stack
+FO:RegisterCommand("boom", function() error("kaboom test") end, "test only")
+for _ = 1, 5 do SlashCmdList.FOREVEROPTIMIZER("boom") end
+local elog = FO.root.account.errors.log
+check(#FO.errors >= 1 and FO.errorIndex["/fo boom|" .. FO.errors[#FO.errors].msg].count == 5, "error deduped to one entry with count 5")
+check(#elog >= 1 and elog[#elog].count == 5 and elog[#elog].where == "/fo boom" and elog[#elog].stack ~= "" and elog[#elog].char == FO.charKey, "error persisted to account.errors.log with stack")
+check(outHas("further repeats of this error are silent"), "error printing capped")
+SlashCmdList.FOREVEROPTIMIZER("errors") check(outHas("distinct errors saved"), "/fo errors lists")
+SlashCmdList.FOREVEROPTIMIZER("errors 1") check(outHas("kaboom test"), "/fo errors <n> shows detail")
+local badHandler = function() error("handler boom") end
+FO:On("FO_TEST_MSG", badHandler) FO:Fire("FO_TEST_MSG")
+check(FO.errorIndex["FO_TEST_MSG handler|" .. FO.errors[#FO.errors].msg] ~= nil, "message handler error captured")
+S.errors = {} -- the errors above were intentional
+
+-- Client item seed: unknown-to-client items resolve by name/price/class, live data wins
+check(FO.Seed.itemCount > 19000 and FO.Seed.build:match("^1%.60%."), "item seed loaded (" .. FO.Seed.itemCount .. " items, build " .. FO.Seed.build .. ")")
+check(FO.Util.ItemName(4306) == "Silk Cloth" and FO.Util.VendorSell(4306) == 150, "seed supplies name and sell price for an uncached item")
+check(select(1, FO.Util.ItemInstant(4306)) == 7 and FO.Util.VendorBuy(929) == 300, "seed supplies class and vendor buy price")
+check(FO.Util.VendorSell(2770) == 15, "client item cache overrides seed sell price")
+SlashCmdList.FOREVEROPTIMIZER("seed Silk Cloth") check(outHas("4306 Silk Cloth"), "/fo seed name lookup")
+SlashCmdList.FOREVEROPTIMIZER("seed 6948") check(outHas("Hearthstone"), "/fo seed id lookup")
 noErrors("all " .. #cmds .. " slash commands")
 
 -- Dashboard tabs render

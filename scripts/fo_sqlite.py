@@ -7,7 +7,7 @@ Usage:
 Re-running upserts into the same database, so you can ingest after every
 logout and keep history beyond the in-game caps. Tables:
   sessions, dungeons, zone_segments, mobs, drops, encounters, loot,
-  prices, price_daily, vendor_prices, quests, nodes, respawns, verify
+  prices, price_daily, vendor_prices, quests, nodes, respawns, verify, errors
 """
 import argparse, json, os, sqlite3, subprocess, sys
 
@@ -44,6 +44,7 @@ create table if not exists nodes (name text, kind text, map_id int, x real, y re
 create table if not exists respawns (npc text, name text, map_id int, x real, y real, confirmed_json text, bounds_json text, last_kill int,
   primary key (npc, map_id, x, y));
 create table if not exists verify (t int primary key, version text, build text, toc text, checks_json text);
+create table if not exists errors (key text primary key, where_ text, msg text, stack text, first int, last int, count int, version text, char text);
 """
 
 def arr(x):
@@ -135,6 +136,9 @@ def main():
                 m, x, y = p.get("1"), p.get("2"), p.get("3")
                 cur.execute("insert or replace into respawns values (?,?,?,?,?,?,?,?)", (str(npc), g(sp,"name"), m, x, y, json.dumps(arr(g(p,"confirmed",[]))), json.dumps(arr(g(p,"bounds",[]))), g(p,"lastKillT")))
                 count("respawns")
+    for e in arr(g(acc.get("errors", {}), "log", [])):
+        cur.execute("insert or replace into errors values (?,?,?,?,?,?,?,?,?)", (g(e,"key"), g(e,"where"), g(e,"msg"), g(e,"stack"), g(e,"first"), g(e,"last"), g(e,"count"), g(e,"version"), g(e,"char")))
+        count("errors")
     v = g(acc.get("verify", {}), "last", None)
     if v:
         cur.execute("insert or replace into verify values (?,?,?,?,?)", (g(v,"t"), g(v,"version"), g(v,"build"), g(v,"toc"), json.dumps(g(v,"checks",[])))); count("verify")

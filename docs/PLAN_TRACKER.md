@@ -99,13 +99,13 @@ All of these are probed by `/fo verify` and the result is saved to `account.veri
 
 | Item | Status |
 |---|---|
-| Client build / interface version | blocked: `/fo verify` prints it |
+| Client build / interface version | partial: wago.tools shows Forever as product `wowf`, build 1.60.1.70707 (Interface 16001); `/fo verify` confirms in game |
 | Addon directory, TOC format | blocked: `scripts/install.sh` tries `_forever_` then `_camelot_` |
 | Lua version, event payloads | blocked: verify prints `_VERSION`; payload shapes assumed from 12.x |
 | Combat log | designed around; verify confirms it's refused |
 | Quest API, AH API, trade skill API | blocked: verify reports retail vs classic shape |
 | SavedVariables behavior | versioned root with migrations; `/fo dbstats` for growth |
-| Memory, event rates, disconnect/reload behavior | blocked: watch `/fo dbstats` and BugSack over the first sessions |
+| Memory, event rates, disconnect/reload behavior | blocked: watch `/fo dbstats` and `/fo errors` (persistent error log, `account.errors.log`) over the first sessions |
 
 ## Phased roadmap
 
@@ -117,6 +117,14 @@ All of these are probed by `/fo verify` and the result is saved to `account.veri
 | 4 Recommendations | done at first-draft quality (`recommend`, `estimate`, `objective`) |
 | 5 Class modules | partial (see class table); Priest ships but only activates on a Priest |
 | 6 Dashboard and export | done: five tabs, `scripts/fo_sqlite.py`, `scripts/package.sh` |
+
+## Added after the plan (2026-10-31)
+
+| Item | Where | Status |
+|---|---|---|
+| Persistent Lua error log with stacks, dedupe, `/fo errors [n\|clear]`, SQLite export | `FO.Try` / `FO:Error` in `Core/Init.lua`, persistence in `Core/DataStorage.lua` | done |
+| Client item seed (19,267 items from the `wowf` 1.60.1.70707 ItemSparse/Item tables) with Util fallbacks and `/fo seed` | `Data/Items.lua`, `Core/SeedData.lua`, `scripts/build_seed.py` | done; creature and quest POI tables in the client are near-empty, so mobs and quests stay learned, not seeded |
+| Git repository with tagged releases | repo root | done (v0.4.0, v0.5.0) |
 
 ## Immediate next steps (from the plan)
 

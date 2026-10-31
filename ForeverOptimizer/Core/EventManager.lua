@@ -30,8 +30,7 @@ function FO:Fire(msg, ...)
     local list = messageHandlers[msg]
     if not list then return end
     for _, fn in ipairs(list) do
-        local ok, err = pcall(fn, ...)
-        if not ok then FO:Print("Core", "|cffff6060error in %s handler:|r %s", msg, tostring(err)) end
+        FO.Try(msg .. " handler", fn, ...)
     end
 end
 
@@ -39,8 +38,7 @@ frame:SetScript("OnEvent", function(_, event, ...)
     local list = eventHandlers[event]
     if not list then return end
     for _, fn in ipairs(list) do
-        local ok, err = pcall(fn, ...)
-        if not ok then FO:Print("Core", "|cffff6060error in %s:|r %s", event, tostring(err)) end
+        FO.Try(event, fn, ...)
     end
 end)
 
@@ -80,8 +78,7 @@ local function WireModule(m)
     if m.account then m.db = FO:Account(m.account, m.defaults) end
     if m.char then m.cdb = FO:Char(m.char, m.cdefaults) end
     if m.OnInit then
-        local ok, err = pcall(m.OnInit, m)
-        if not ok then FO:Print("Core", "|cffff6060%s OnInit failed:|r %s", m.name, tostring(err)) end
+        FO.Try(m.name .. " OnInit", m.OnInit, m)
     end
     for ev, fn in pairs(m.events or {}) do
         FO:RegisterEvent(ev, function(...) return fn(m, ...) end)
@@ -115,8 +112,7 @@ FO:RegisterEvent("PLAYER_LOGIN", function()
         if m.disabled then disabled = disabled + 1
         else
             if m.OnEnable then
-                local ok, err = pcall(m.OnEnable, m)
-                if not ok then FO:Print("Core", "|cffff6060%s OnEnable failed:|r %s", m.name, tostring(err)) end
+                FO.Try(m.name .. " OnEnable", m.OnEnable, m)
             end
             if m.OnTick then tickers[#tickers + 1] = m end
         end
@@ -125,11 +121,7 @@ FO:RegisterEvent("PLAYER_LOGIN", function()
     C_Timer.NewTicker(1, function()
         local now = GetTime()
         for _, m in ipairs(tickers) do
-            local ok, err = pcall(m.OnTick, m, now)
-            if not ok and not m._tickErr then
-                m._tickErr = true
-                FO:Print("Core", "|cffff6060%s OnTick error (suppressed after first):|r %s", m.name, tostring(err))
-            end
+            FO.Try(m.name .. " OnTick", m.OnTick, m, now)
         end
     end)
     FO:Fire("FO_ENABLE")
@@ -138,7 +130,7 @@ end)
 
 FO:RegisterEvent("PLAYER_LOGOUT", function()
     for _, m in ipairs(FO.modules) do
-        if m.OnLogout then pcall(m.OnLogout, m) end
+        if m.OnLogout then FO.Try(m.name .. " OnLogout", m.OnLogout, m) end
     end
 end)
 
@@ -155,8 +147,7 @@ SlashCmdList.FOREVEROPTIMIZER = function(msg)
         FO:Print("Core", "unknown command '%s'. /fo help", sub)
         return
     end
-    local ok, err = pcall(c.fn, arg)
-    if not ok then FO:Print("Core", "|cffff6060/fo %s failed:|r %s", sub, tostring(err)) end
+    FO.Try("/fo " .. sub, c.fn, arg)
 end
 
 FO:RegisterCommand("module", function(arg)

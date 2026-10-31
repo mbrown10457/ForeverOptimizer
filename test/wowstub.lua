@@ -2,6 +2,7 @@
 -- Not a faithful emulator: enough API surface to load every file, run the
 -- lifecycle, and drive the main event paths. Lua 5.1 compat shims included.
 unpack = unpack or table.unpack
+function debugstack(level, top, bottom) return debug.traceback("", (level or 1)) end
 local S = { clock = 1000, timers = {}, tickers = {}, out = {}, errors = {} }
 _G.STUB = S
 

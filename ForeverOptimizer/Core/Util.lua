@@ -213,19 +213,30 @@ end
 function U.ItemInstant(itemID)
     if not itemID then return nil end
     local GII = (C_Item and C_Item.GetItemInfoInstant) or _G.GetItemInfoInstant
-    if not GII then return nil end
-    local _, _, _, equipLoc, icon, classID, subclassID = GII(itemID)
-    return U.Num(classID), U.Num(subclassID), U.Str(equipLoc), icon
+    local classID, subclassID, equipLoc, icon
+    if GII then
+        local _, _, _, eq, ic, c, s = GII(itemID)
+        classID, subclassID, equipLoc, icon = U.Num(c), U.Num(s), U.Str(eq), ic
+    end
+    if classID then return classID, subclassID, equipLoc, icon end
+    local S = FO.Seed
+    if S and S.Info then
+        local _, _, _, c, s, _, _, _, eq = S.Info(itemID)
+        if c then return c, s, eq, icon end
+    end
+    return nil
 end
 
 -- name, quality, sellPrice, classID, subclassID, stackMax, bindType, link, equipLoc, iLevel, reqLevel
 function U.ItemInfo(itemID)
     if not itemID then return nil end
     local GI = (C_Item and C_Item.GetItemInfo) or _G.GetItemInfo
-    if not GI then return nil end
-    local name, link, quality, iLevel, reqLevel, _, _, stackMax, equipLoc, _, sellPrice, classID, subclassID, bindType = GI(itemID)
+    local name, link, quality, iLevel, reqLevel, _, _, stackMax, equipLoc, _, sellPrice, classID, subclassID, bindType
+    if GI then name, link, quality, iLevel, reqLevel, _, _, stackMax, equipLoc, _, sellPrice, classID, subclassID, bindType = GI(itemID) end
     if not name then
         if C_Item and C_Item.RequestLoadItemDataByID then pcall(C_Item.RequestLoadItemDataByID, itemID) end
+        local S = FO.Seed
+        if S and S.Info then return S.Info(itemID) end
         return nil
     end
     return U.Str(name), U.Num(quality), U.Num(sellPrice) or 0, U.Num(classID), U.Num(subclassID),
@@ -253,9 +264,13 @@ function U.AHPrice(itemID)
     return nil
 end
 
+-- Observed vendor price first; the client seed's list price as a fallback.
 function U.VendorBuy(itemID)
     local P = FO.Prices
-    if P and P.VendorBuy then return P.VendorBuy(itemID) end
+    local seen = P and P.VendorBuy and P.VendorBuy(itemID)
+    if seen then return seen end
+    local S = FO.Seed
+    if S and S.VendorBuy then return S.VendorBuy(itemID) end
     return nil
 end
 

@@ -9,7 +9,7 @@ local U = FO.Util
 -- }
 -- Modules never touch the root; they get a namespace table via FO:Account / FO:Char.
 -- ===========================================================================
-local DB_VERSION = 2
+local DB_VERSION = 3
 
 -- Versioned migrations: FO.migrations[n] upgrades a root at version n-1 to n.
 -- Add a new entry whenever a saved layout changes; never edit an old one.
@@ -18,7 +18,53 @@ FO.migrations = {
         -- v2: module enable flags live under account.modules
         root.account.modules = root.account.modules or { disabled = {} }
     end,
+    [3] = function(root)
+        -- v3: persistent Lua error log (see FO:Error in Init.lua)
+        root.account.errors = root.account.errors or { log = {} }
+    end,
 }
+
+-- ---------------------------------------------------------------------------
+-- Error persistence: account.errors.log keeps the last MAX_SAVED_ERRORS
+-- distinct errors across sessions, each with where/msg/stack/first/last/count/
+-- version/char. Errors raised before storage is ready are flushed on init.
+-- ---------------------------------------------------------------------------
+local MAX_SAVED_ERRORS = 60
+
+local function SavedLog()
+    if not FO.root then return nil end
+    FO.root.account.errors = FO.root.account.errors or { log = {} }
+    return FO.root.account.errors.log
+end
+
+function FO:PersistError(e)
+    local log = SavedLog()
+    if not log then return end
+    local rec
+    for i = #log, 1, -1 do
+        if log[i].key == e.key then rec = log[i] break end
+    end
+    if not rec then
+        rec = { key = e.key, where = e.where, msg = e.msg, stack = e.stack, first = e.first, count = 0 }
+        log[#log + 1] = rec
+        while #log > MAX_SAVED_ERRORS do table.remove(log, 1) end
+    end
+    rec.last = e.last
+    rec.count = (rec.count or 0) + 1
+    rec.version = self.VERSION
+    rec.char = self.charKey
+    if (rec.stack == nil or rec.stack == "") and e.stack and e.stack ~= "" then rec.stack = e.stack end
+end
+
+function FO:FlushErrors()
+    for _, e in ipairs(self.errors) do
+        if not e.persisted then
+            -- replay the session count so early errors land with the right total
+            for _ = 1, e.count do self:PersistError(e) end
+            e.persisted = true
+        end
+    end
+end
 
 function FO:InitStorage()
     if type(ForeverOptimizerDB) ~= "table" then ForeverOptimizerDB = {} end
@@ -39,6 +85,7 @@ function FO:InitStorage()
     self.charKey = U.CharKey()
     db.chars[self.charKey] = db.chars[self.charKey] or {}
     self.root = db
+    self:FlushErrors()
 end
 
 -- Rough size of a saved table: nodes and string bytes (what SavedVariables growth looks like)
@@ -54,6 +101,33 @@ local function Measure(t, acc)
     return acc
 end
 FO.MeasureTable = Measure
+
+FO:RegisterCommand("errors", function(arg)
+    local log = SavedLog() or {}
+    local sub = U.SplitCmd(arg or "")
+    if sub == "clear" then
+        for i = #log, 1, -1 do log[i] = nil end
+        FO.errors, FO.errorIndex = {}, {}
+        FO:Print("Core", "error log cleared.")
+        return
+    end
+    local idx = tonumber(sub)
+    if idx then
+        local e = log[#log - idx + 1]
+        if not e then FO:Print("Core", "no error #%d", idx) return end
+        FO:Print("Core", "#%d %s x%d (v%s, %s)", idx, e.where, e.count, tostring(e.version), tostring(e.char))
+        FO:Print("Core", "  %s", e.msg)
+        for line in tostring(e.stack or ""):gmatch("[^\n]+") do FO:Print("Core", "    %s", line) end
+        return
+    end
+    if #log == 0 then FO:Print("Core", "no Lua errors recorded. (/fo errors <n> for a stack, /fo errors clear)") return end
+    local now = time()
+    FO:Print("Core", "%d distinct errors saved (newest first; /fo errors <n> for the stack):", #log)
+    for i = #log, math.max(1, #log - 9), -1 do
+        local e = log[i]
+        FO:Print("Core", "  #%d %s x%d, last %s ago: %s", #log - i + 1, U.Trunc(e.where, 28), e.count, U.FormatDuration(now - (e.last or now)), U.Trunc(e.msg, 70))
+    end
+end, "Saved Lua errors: list, <n> for stack, clear")
 
 FO:RegisterCommand("dbstats", function()
     local rows = {}
