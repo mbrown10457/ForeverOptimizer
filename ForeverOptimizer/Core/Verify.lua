@@ -1,0 +1,105 @@
+local ADDON, FO = ...
+local U = FO.Util
+local print = FO:Printer("Core")
+
+-- ===========================================================================
+-- /fo verify: probes every client API this addon depends on and prints a
+-- PASS / FAIL / INFO table. Results are saved so they can be read from the
+-- SavedVariables file after logout. Run it once on first launch.
+-- ===========================================================================
+local V = FO:NewModule("Core.Verify", { account = "verify", defaults = { last = nil } })
+
+local function has(path)
+    local cur = _G
+    for part in path:gmatch("[^%.]+") do
+        if type(cur) ~= "table" then return false end
+        cur = cur[part]
+        if cur == nil then return false end
+    end
+    return true
+end
+
+function V:Run()
+    local checks = {}
+    local function add(name, ok, detail) checks[#checks + 1] = { name = name, ok = ok, detail = detail or "" } end
+
+    -- client
+    local version, build, bdate, toc = "?", "?", "?", "?"
+    if GetBuildInfo then version, build, bdate, toc = GetBuildInfo() end
+    add("client build", nil, string.format("%s (%s, %s) TOC %s; Lua %s", tostring(version), tostring(build), tostring(bdate), tostring(toc), tostring(_VERSION)))
+    add("TOC interface matches", tostring(toc) == "120105" or tostring(toc) == "16001", "we ship 120105, 16001; client says " .. tostring(toc))
+
+    -- restrictions
+    add("issecretvalue present", nil, issecretvalue and "12.x secret values active" or "no secret values on this client")
+    if issecretvalue then
+        local okH, secretHealth = pcall(function() return issecretvalue(UnitHealth("player")) end)
+        add("UnitHealth readable out of combat", okH and secretHealth == false, okH and ("secret=" .. tostring(secretHealth)) or "errored")
+        local okX, secretXP = pcall(function() return issecretvalue(UnitXP("player")) end)
+        add("UnitXP readable", okX and secretXP == false, okX and ("secret=" .. tostring(secretXP)) or "errored")
+    end
+    add("C_RestrictedActions", nil,
+        has("C_RestrictedActions.IsAddOnRestrictionActive") and ("active=" .. tostring(C_RestrictedActions.IsAddOnRestrictionActive())) or "absent")
+    local f = CreateFrame("Frame")
+    local clOk = pcall(f.RegisterEvent, f, "COMBAT_LOG_EVENT_UNFILTERED")
+    add("combat log refused (expected on 12.x)", not clOk, clOk and "combat log IS available; MobDatabase could use it" or "refused, as designed around")
+    local npOk = pcall(f.RegisterEvent, f, "NAME_PLATE_UNIT_ADDED")
+    add("NAME_PLATE_UNIT_ADDED registrable", npOk, "needed for respawn confirmation")
+
+    -- core APIs
+    add("C_Container item info", has("C_Container.GetContainerItemInfo"), "bags, auto-sell, consumables")
+    add("C_Item.GetItemInfo", has("C_Item.GetItemInfo"), "")
+    add("C_Item.GetItemStats", has("C_Item.GetItemStats") or _G.GetItemStats ~= nil, "gear evaluator")
+    add("C_UnitAuras.GetAuraDataByIndex", has("C_UnitAuras.GetAuraDataByIndex"), "rest + buff detection")
+    add("TooltipDataProcessor", has("TooltipDataProcessor.AddTooltipPostCall"), "tooltip upgrade line")
+    add("C_Map.GetMapWorldSize", has("C_Map.GetMapWorldSize"), "yard distances for respawn/routes")
+    local mapID, x, y = U.PlayerPosition()
+    add("player map position", mapID ~= nil and x ~= nil, mapID and string.format("map %s (%.3f, %.3f)", tostring(mapID), x or 0, y or 0) or "nil (instance or restricted?)")
+    add("C_Map.SetUserWaypoint", has("C_Map.SetUserWaypoint") and has("UiMapPoint.CreateFromCoordinates"), "waypoints")
+
+    -- quests
+    add("C_QuestLog.GetQuestObjectives", has("C_QuestLog.GetQuestObjectives"), "objective ticks")
+    add("C_QuestLog.GetNextWaypoint", has("C_QuestLog.GetNextWaypoint"), has("C_QuestLog.GetNextWaypoint") and "present; check it returns data for vanilla quests" or "absent; recorded points only")
+    add("C_QuestLog.GetInfo", has("C_QuestLog.GetInfo"), "")
+
+    -- economy
+    local retailAH = has("C_AuctionHouse.ReplicateItems")
+    local classicAH = _G.QueryAuctionItems ~= nil or _G.GetNumAuctionItems ~= nil
+    add("auction house API", retailAH or classicAH, retailAH and "retail C_AuctionHouse (scanner matches)" or classicAH and "CLASSIC list AH: AuctionHouseScanner needs the classic path" or "neither found")
+    add("merchant API", _G.GetMerchantItemInfo ~= nil, "vendor prices")
+    add("C_TradeSkillUI schematics", has("C_TradeSkillUI.GetRecipeSchematic"), has("C_TradeSkillUI.GetRecipeSchematic") and "profession profit ok" or "absent; ProfessionProfit needs the classic GetTradeSkillInfo path")
+
+    -- character
+    add("trainer API", _G.GetTrainerServiceInfo ~= nil and _G.GetTrainerServiceCost ~= nil, "training planner")
+    add("skill lines", nil, _G.GetNumSkillLines and "weapon skills readable" or "no skill line API")
+    add("talent/spec API", nil, _G.GetSpecialization and "retail spec" or _G.GetNumTalentTabs and "classic talent tabs" or "none; build not recorded")
+    add("reputation API", has("C_Reputation.GetFactionDataByIndex") or _G.GetFactionInfo ~= nil, "")
+    add("pet happiness", nil, _G.GetPetHappiness and "classic pet happiness present" or "absent (retail-style pets)")
+    add("hearthstone cooldown", has("C_Container.GetItemCooldown") or _G.GetItemCooldown ~= nil, "")
+
+    -- chat patterns we parse
+    add("COMBAT_XP_GAIN1", type(COMBAT_XP_GAIN1) == "string", tostring(COMBAT_XP_GAIN1))
+    add("FACTION_STANDING_INCREASED", type(FACTION_STANDING_INCREASED) == "string", tostring(FACTION_STANDING_INCREASED))
+    add("GOLD/SILVER/COPPER_AMOUNT", type(GOLD_AMOUNT) == "string", tostring(GOLD_AMOUNT) .. " / " .. tostring(SILVER_AMOUNT) .. " / " .. tostring(COPPER_AMOUNT))
+
+    -- enums we index
+    add("Enum.ItemClass", has("Enum.ItemClass.Tradegoods"), has("Enum.ItemClass.Tradegoods") and ("Tradegoods=" .. tostring(Enum.ItemClass.Tradegoods) .. " Questitem=" .. tostring(Enum.ItemClass.Questitem)) or "absent; using classic numbers")
+    add("Enum.LootSlotType", has("Enum.LootSlotType.Item"), "")
+    add("C_Spell.GetSpellName", has("C_Spell.GetSpellName") or _G.GetSpellInfo ~= nil, "gathering + class counters")
+
+    -- storage
+    add("SavedVariables root", FO.root ~= nil and FO.root.version ~= nil, "v" .. tostring(FO.root and FO.root.version))
+
+    self.db.last = { t = time(), version = tostring(version), build = tostring(build), toc = tostring(toc), checks = checks }
+    local pass, fail = 0, 0
+    print("Verify (%s build %s, TOC %s):", tostring(version), tostring(build), tostring(toc))
+    for _, c in ipairs(checks) do
+        local tag
+        if c.ok == nil then tag = "|cffaaaaaaINFO|r" elseif c.ok then tag = "|cff60ff60PASS|r" pass = pass + 1 else tag = "|cffff6060FAIL|r" fail = fail + 1 end
+        print("  %s %-36s %s", tag, c.name, c.detail)
+    end
+    print("%d pass, %d fail. Results saved; paste this or send the SavedVariables file.", pass, fail)
+end
+
+V.commands = {
+    verify = { help = "probe the client APIs this addon depends on", fn = function(self) self:Run() end },
+}

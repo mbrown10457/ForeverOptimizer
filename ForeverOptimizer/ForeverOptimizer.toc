@@ -1,0 +1,54 @@
+## Interface: 120105, 16001
+## Title: ForeverOptimizer
+## Notes: One core, many modules: leveling, gold, mobs, quests, auction house, inventory, gear, training and downtime analytics built from your own gameplay.
+## Author: Mike
+## Version: 0.4.0
+## SavedVariables: ForeverOptimizerDB
+## IconTexture: Interface\Icons\INV_Misc_Map_01
+
+# Core (order matters)
+Core\Init.lua
+Core\Util.lua
+Core\EventManager.lua
+Core\DataStorage.lua
+Core\CharacterProfile.lua
+Core\SessionManager.lua
+Core\AnalyticsEngine.lua
+Core\Verify.lua
+
+# Grinding
+Grinding\XPTracker.lua
+Grinding\LootTracker.lua
+Grinding\MobDatabase.lua
+Grinding\FarmingEfficiency.lua
+Grinding\DowntimeAnalyzer.lua
+
+# Quest
+Quest\QuestTracker.lua
+Quest\QuestEfficiency.lua
+Quest\QuestRoutePlanner.lua
+
+# Economy
+Economy\PriceHistory.lua
+Economy\AuctionHouseScanner.lua
+Economy\GoldPerHour.lua
+Economy\InventoryOptimizer.lua
+Economy\ProfessionProfit.lua
+
+# Character
+Character\GearEvaluator.lua
+Character\TrainingPlanner.lua
+Character\ConsumableTracker.lua
+Character\ProgressionPlanner.lua
+
+# Classes
+Classes\Hunter.lua
+Classes\Warlock.lua
+Classes\Priest.lua
+
+# Dashboard (last: tabs register against Overview)
+Dashboard\Overview.lua
+Dashboard\Leveling.lua
+Dashboard\Economy.lua
+Dashboard\Character.lua
+Dashboard\History.lua
