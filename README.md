@@ -10,7 +10,7 @@ ForeverOptimizer/
   Economy/     PriceHistory, AuctionHouseScanner, GoldPerHour, InventoryOptimizer, ProfessionProfit
   Character/   GearEvaluator, TrainingPlanner, ConsumableTracker, ProgressionPlanner
   Classes/     Hunter, Warlock, Priest
-  Dashboard/   Overview (HUD + tabs), Leveling, Economy, Character
+  Dashboard/   Overview (HUD + tabs; the class module gets its own tab), Leveling, Economy, Character
 ```
 
 ## Install
@@ -24,7 +24,8 @@ ForeverOptimizer/
 
 The addon is the same on both platforms; only the helper scripts differ.
 
-- **Just playing:** extract `dist/ForeverOptimizer-<version>.zip` (made by `scripts/package.sh`) into `C:\Program Files (x86)\World of Warcraft\_forever_\Interface\AddOns\`. The zip carries an `INSTALL.txt` with the same steps for both operating systems.
+- **Just playing (one command):** see [WINDOWS_README.md](WINDOWS_README.md). In PowerShell, `irm https://raw.githubusercontent.com/mbrown10457/ForeverOptimizer/main/scripts/install-windows.ps1 | iex` finds the game, downloads the latest release and QuestieDB, verifies the QuestieDB checksum and installs both. Re-run to update.
+- **By hand:** extract `dist/ForeverOptimizer-<version>.zip` (made by `scripts/package.sh`, attached to every GitHub release) into `C:\Program Files (x86)\World of Warcraft\_forever_\Interface\AddOns\`. The zip carries an `INSTALL.txt` with the same steps for both operating systems.
 - **Working from the repo:** `powershell -ExecutionPolicy Bypass -File scripts\install.ps1` copies the addon into AddOns (it finds the game via the registry and the usual folders, or takes `-AddOns <path>`). Add `-Link` for a directory junction so the game loads the repo copy directly, the Windows equivalent of the Mac symlink.
 - **Offline tools** (`savedvars_to_json.py`, `fo_sqlite.py`, `build_seed.py`) are plain Python 3 and run unchanged. The saved data is at `...\_forever_\WTF\Account\<ACCOUNT>\SavedVariables\ForeverOptimizerDB.lua`.
 
@@ -57,7 +58,7 @@ Everything is `/fo <command>`. `/fo help` lists them grouped by area. Highlights
 - **Quest database, optional.** Install [QuestieDB](https://www.curseforge.com/wow/addons/questiedb) (the database Questie itself reads; it has a Forever flavour) and ForeverOptimizer queries it live through its public API: quest names, levels, givers, finishers, objectives, prerequisites and chains, and NPC/object spawn coordinates. Nothing from it is copied into this addon, and its own notes say many Forever quest givers still lack coordinates, so your recorded accept, objective and turn-in positions always count too and win where they exist. With it installed: `/fo nearby` lists quests you can pick up on the current map, nearest first, after checking level window, race, class, prerequisites, chains and completion; `/fo questinfo` prints a quest's facts; `/fo route all` adds pickups to the objective route; the route planner falls back to database objective and turn-in locations; and the world map shows available-quest, objective and turn-in pins. Without it, the quest modules work from recorded data alone and `/fo qdb` says so.
 - **World map overlay**: the open map shows your coordinates and the cursor's in its bottom-left corner, and pins every herb and ore node you have gathered (green and yellow), every rare you have seen (red), quest givers, objectives and turn-ins when QuestieDB is installed, and optionally the spawn points of mobs you track with their respawn estimate (gray). Pins come from your own records, so a zone fills in as you play it; hover a pin for how often and how recently it was seen. `/fo map` toggles layers. The HUD Overview also carries a position line and `/fo coords` prints it to chat.
 - **First-hour checklist.** `/fo checklist` lists the ten one-time visits and commands that seed every data layer (verify, errors, combat log, quest database, map, vendor, trainer, AH scan, bank, profession window) and ticks them off per character as they happen.
-- **Alerts.** A sound plus one chat line for a rare's nameplate, a tracked respawn window opening while you're within 150 yards of the kill spot, bags running low, Hunter ammo or Warlock shards under a threshold. `/fo alerts` toggles each kind, the sound, and the thresholds; identical alerts are throttled.
+- **Alerts.** A sound, one chat line and a few seconds of centre-screen text (the client's error frame; `/fo alerts flash off` to keep it chat-only) for a rare's nameplate, a tracked respawn window opening while you're within 150 yards of the kill spot, bags running low, Hunter ammo or Warlock shards under a threshold. `/fo alerts` toggles each kind, the sound, and the thresholds; identical alerts are throttled.
 - **Session notes.** `/fo note <text>` stamps a note with time, level, zone and activity into the current session; it is archived with the session and exported to SQLite.
 - **Key bindings.** Toggle HUD, waypoint to the next quest target, and list nearby quests, under ForeverOptimizer in the game's key bindings panel.
 - **Errors** inside any handler, tick or command are caught by `FO.Try`, printed at most three times, and saved with a stack to `account.errors.log`. `/fo errors` lists them in game; `scripts/fo_sqlite.py` exports them.
