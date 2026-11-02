@@ -53,7 +53,7 @@ local function NewSession()
         char = FO.charKey, class = FO.Player.class, level = FO.Player.level,
         start = time(), startGT = GetTime(), stop = nil,
         zone = zone,
-        activity = "idle", activitySince = GetTime(), lastProductive = "grind",
+        activity = "idle", activitySince = GetTime(), lastProductive = "grind", notes = {},
         time = ZeroByActivity(),
         xpBy = ZeroByActivity(), killsBy = ZeroByActivity(), goldBy = ZeroByActivity(),
 
@@ -114,7 +114,7 @@ local function Archive()
         gold = S.gold, lootGold = S.lootGold, questGold = S.questGold, vendorSales = S.vendorSales, repairs = S.repairs,
         purchases = S.purchases, training = S.training, ahSpend = S.ahSpend, mailIn = S.mailIn, mailOut = S.mailOut,
         ahEst = S.ahEst, vendorEst = S.vendorEst, items = S.items, consumables = S.consumables, taxi = S.taxi,
-        deaths = S.deaths, deathTime = S.deathTime, zones = S.zones, questsDone = S.questsDone,
+        deaths = S.deaths, deathTime = S.deathTime, zones = S.zones, questsDone = S.questsDone, notes = S.notes,
     }
     U.Push(SM.db.list, rec, SM.db.settings.maxSessions)
     FO:Fire("FO_SESSION_END", rec)
@@ -501,6 +501,18 @@ function SM:Stats()
 end
 
 SM.commands = {
+    note = { help = "<text> — stamp a note into this session (no text: list notes)", fn = function(self, arg)
+        if not S then print("no session.") return end
+        local text = U.Str(arg)
+        if not text or text == "" then
+            if #S.notes == 0 then print("no notes this session. /fo note <text>") return end
+            for _, n in ipairs(S.notes) do print("  %s  L%d %s: %s", date("%H:%M", n.t), n.level, n.zone, n.text) end
+            return
+        end
+        local zone, sub = U.ZoneName()
+        S.notes[#S.notes + 1] = { t = time(), elapsed = math.floor(SM:Elapsed()), level = FO.Player.level or 0, zone = zone .. (sub ~= "" and (" / " .. sub) or ""), activity = S.activity, text = text }
+        print("noted (%d this session): %s", #S.notes, text)
+    end },
     session = { help = "report | reset | pause | force quest|grind|auto", fn = function(self, arg)
         local sub, rest = U.SplitCmd(arg)
         if sub == "reset" then self:Reset()

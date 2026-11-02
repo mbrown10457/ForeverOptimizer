@@ -9,7 +9,7 @@ local function outHas(pat) for i = #S.out, 1, -1 do if S.out[i]:find(pat, 1, tru
 local function noErrors(label) check(#S.errors == 0, label .. " (no handler errors)") if #S.errors > 0 then for _, e in ipairs(S.errors) do print("   " .. e) end S.errors = {} end end
 
 local FO, order = S.loadAddon("ForeverOptimizer")
-check(#order == 43, "loaded " .. #order .. " files from TOC")
+check(#order == 45, "loaded " .. #order .. " files from TOC")
 check(#FO.modules >= 26, #FO.modules .. " modules registered")
 check(ForeverOptimizerDB == nil or true, "pre-login")
 
@@ -346,6 +346,30 @@ check((kinds.quest or 0) == 1 and (kinds.objective or 0) >= 4, "map shows quest 
 WorldMapFrame:Hide()
 SlashCmdList.FOREVEROPTIMIZER("route all") check(outHas("pick up: Welcome to the Jungle"), "/fo route all includes pickups")
 noErrors("quest database")
+
+-- Checklist, notes, alerts, bindings
+local CLk = FO:GetModule("Core.Checklist")
+local doneN = CLk:Progress()
+check(CLk.cdb.done.vendor and CLk.cdb.done.trainer and CLk.cdb.done.bank and CLk.cdb.done.verify and CLk.cdb.done.map and CLk.cdb.done.qdb and CLk.cdb.done.combatlog and CLk.cdb.done.errors, "checklist ticked itself off from events and commands (" .. doneN .. "/10)")
+SlashCmdList.FOREVEROPTIMIZER("checklist") check(outHas("first-hour checklist, " .. doneN .. "/10"), "/fo checklist prints progress")
+SlashCmdList.FOREVEROPTIMIZER("note switched to the cave at the north end")
+SlashCmdList.FOREVEROPTIMIZER("note") check(outHas("switched to the cave"), "/fo note stamps and lists session notes")
+local soundsBefore = #S.sounds
+check(FO:Alert("custom", "ping %d", 1) == true and #S.sounds == soundsBefore + 1, "alert prints and plays a sound")
+check(FO:Alert("custom", "ping %d", 1) == false, "identical alert throttled")
+SlashCmdList.FOREVEROPTIMIZER("alerts sound off") check(FO:Alert("custom", "quiet") == true and #S.sounds == soundsBefore + 1, "alerts sound off mutes the sound")
+SlashCmdList.FOREVEROPTIMIZER("alerts rare off") check(FO:Alert("rare", "a rare") == false, "disabled kind is silent")
+SlashCmdList.FOREVEROPTIMIZER("alerts rare on") SlashCmdList.FOREVEROPTIMIZER("alerts sound on") SlashCmdList.FOREVEROPTIMIZER("alerts")
+check(outHas("alerts: sound on"), "/fo alerts prints settings")
+-- respawn window alert: a confirmed estimate elapses while we stand at the kill spot
+local FEa = FO:GetModule("Grinding.FarmingEfficiency")
+FEa.db.spawns[777] = { name = "Test Boar", points = { { S.pos.map, S.pos.x, S.pos.y, confirmed = { 30 }, bounds = {}, lastKill = S.clock - 31 } } }
+local fired = #FO.Alerts.fired
+S.clock = S.clock + (5 - S.clock % 5) S.advance(5)
+check(#FO.Alerts.fired > fired and FO.Alerts.fired[#FO.Alerts.fired].text:find("Test Boar should be back"), "respawn window alert fires once the estimate elapses nearby")
+check(type(ForeverOptimizer_ToggleHUD) == "function" and BINDING_NAME_FOREVEROPTIMIZER_TOGGLE ~= nil, "key binding globals defined")
+ForeverOptimizer_ToggleHUD() ForeverOptimizer_ToggleHUD()
+noErrors("checklist/notes/alerts")
 noErrors("all " .. #cmds .. " slash commands")
 
 -- Dashboard tabs render

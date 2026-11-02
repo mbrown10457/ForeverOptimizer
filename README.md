@@ -34,7 +34,7 @@ Everything is `/fo <command>`. `/fo help` lists them grouped by area. Highlights
 
 | Area | Commands |
 |---|---|
-| Session | `session`, `session reset`, `session pause`, `estimate`, `recommend`, `zones`, `objective`, `levels`, `history` |
+| Session | `session`, `session reset`, `session pause`, `note <text>`, `estimate`, `recommend`, `zones`, `objective`, `levels`, `history` |
 | Grinding | `mobs [xp\|gold\|kills\|safe] [here]`, `mob <id\|name>`, `respawn`, `nodes`, `route [herb\|ore]`, `rares`, `competition`, `downtime`, `deaths`, `legs` |
 | Quest | `quests`, `quest <id>`, `next`, `route`, `drops`, `questxp`, `autotrack` |
 | Economy | `gold`, `dungeons`, `scan`, `autoscan`, `ahstats`, `price <item>`, `movers`, `flips`, `watch`, `unwatch`, `bags [...]`, `find <item>`, `mats`, `bank`, `craft [...]` |
@@ -45,7 +45,7 @@ Everything is `/fo <command>`. `/fo help` lists them grouped by area. Highlights
 | Rotation | `rotation [check\|CLASS]`, `build [list\|<n>\|use <n>]`, `spell <name>` |
 | Quests | `nearby [all]`, `questinfo <id\|name>`, `qdb`, `route all` (quest database via QuestieDB, optional) |
 | Map | `map [nodes\|rares\|spawns\|coords on\|off]`, `map minseen <n>`, `map refresh`, `coords` |
-| Setup | `verify`, `errors [n\|clear]`, `seed [id\|name]`, `module [on\|off <name>]`, `dbstats`, `wipe <namespace\|all> confirm` |
+| Setup | `checklist [reset]`, `alerts [...]`, `verify`, `errors [n\|clear]`, `seed [id\|name]`, `module [on\|off <name>]`, `dbstats`, `wipe <namespace\|all> confirm` |
 
 ## How it works
 
@@ -56,6 +56,10 @@ Everything is `/fo <command>`. `/fo help` lists them grouped by area. Highlights
 - **Item seed**: `Data/Items.lua` carries every item in the Forever client (name, vendor sell and buy price, quality, class, levels, stack size, bind type), generated from the client's own data tables on wago.tools by `scripts/build_seed.py`. Item helpers fall back to it when the client cache is cold, so bag values and vendor costs are right from the first minute. Live data always overrides it. `/fo seed <id|name>` looks items up; rerun the script when the client build changes.
 - **Quest database, optional.** Install [QuestieDB](https://www.curseforge.com/wow/addons/questiedb) (the database Questie itself reads; it has a Forever flavour) and ForeverOptimizer queries it live through its public API: quest names, levels, givers, finishers, objectives, prerequisites and chains, and NPC/object spawn coordinates. Nothing from it is copied into this addon, and its own notes say many Forever quest givers still lack coordinates, so your recorded accept, objective and turn-in positions always count too and win where they exist. With it installed: `/fo nearby` lists quests you can pick up on the current map, nearest first, after checking level window, race, class, prerequisites, chains and completion; `/fo questinfo` prints a quest's facts; `/fo route all` adds pickups to the objective route; the route planner falls back to database objective and turn-in locations; and the world map shows available-quest, objective and turn-in pins. Without it, the quest modules work from recorded data alone and `/fo qdb` says so.
 - **World map overlay**: the open map shows your coordinates and the cursor's in its bottom-left corner, and pins every herb and ore node you have gathered (green and yellow), every rare you have seen (red), quest givers, objectives and turn-ins when QuestieDB is installed, and optionally the spawn points of mobs you track with their respawn estimate (gray). Pins come from your own records, so a zone fills in as you play it; hover a pin for how often and how recently it was seen. `/fo map` toggles layers. The HUD Overview also carries a position line and `/fo coords` prints it to chat.
+- **First-hour checklist.** `/fo checklist` lists the ten one-time visits and commands that seed every data layer (verify, errors, combat log, quest database, map, vendor, trainer, AH scan, bank, profession window) and ticks them off per character as they happen.
+- **Alerts.** A sound plus one chat line for a rare's nameplate, a tracked respawn window opening while you're within 150 yards of the kill spot, bags running low, Hunter ammo or Warlock shards under a threshold. `/fo alerts` toggles each kind, the sound, and the thresholds; identical alerts are throttled.
+- **Session notes.** `/fo note <text>` stamps a note with time, level, zone and activity into the current session; it is archived with the session and exported to SQLite.
+- **Key bindings.** Toggle HUD, waypoint to the next quest target, and list nearby quests, under ForeverOptimizer in the game's key bindings panel.
 - **Errors** inside any handler, tick or command are caught by `FO.Try`, printed at most three times, and saved with a stack to `account.errors.log`. `/fo errors` lists them in game; `scripts/fo_sqlite.py` exports them.
 - **Prices** come from full AH scans, passive browsing, and vendor windows. `Util.ItemValue` (what you could get) and `Util.ItemCost` (what it costs you) are the two numbers every module uses.
 - **Respawn timers** are only called "confirmed" when you stayed in range of the kill spot and saw the replacement appear. Otherwise they're reported as upper bounds.

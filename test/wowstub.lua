@@ -95,6 +95,9 @@ bit = bit or { band = load("return function(a, b) return a & b end")() }
 COMBATLOG_OBJECT_AFFILIATION_MINE, COMBATLOG_OBJECT_TYPE_PLAYER, COMBATLOG_OBJECT_TYPE_PET, COMBATLOG_OBJECT_TYPE_GUARDIAN = 0x1, 0x400, 0x1000, 0x2000
 function UnitRangedDamage() return 2.0, 50, 70 end
 S.spellCost = {}
+S.sounds = {}
+SOUNDKIT = { RAID_WARNING = 8959, READY_CHECK = 8960, IG_QUEST_LOG_OPEN = 844 }
+function PlaySound(id, channel) S.sounds[#S.sounds + 1] = id end
 -- Spellbook / talents (classic tab API)
 S.knownSpells = { [75] = true, [1978] = true, [3044] = true, [1130] = true, [2973] = true, [5116] = true, [2643] = true, [136] = true, [14260] = true }
 function IsSpellKnown(id) return S.knownSpells[id] == true end

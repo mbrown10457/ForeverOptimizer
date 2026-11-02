@@ -97,6 +97,21 @@ function FE:OnTick(now)
             end
         end
     end
+    -- respawn windows: a point you killed at, whose estimate has elapsed, while you're still nearby
+    if mapID and x and math.floor(now) % 5 == 0 then
+        for npcID, s in pairs(self.db.spawns) do
+            local est, kind = self:RespawnEstimate(npcID)
+            if est then
+                for _, p in ipairs(s.points) do
+                    if p.lastKill and p.alertedFor ~= p.lastKill and now - p.lastKill >= est and p[1] == mapID
+                       and Yards(mapID, p[2], p[3], x, y) <= 150 then
+                        p.alertedFor = p.lastKill
+                        FO:Alert("respawn", "%s should be back (%s %s, killed %s ago) at %.1f, %.1f", s.name or npcID, kind, U.FormatDuration(est), U.FormatDuration(now - p.lastKill), p[2] * 100, p[3] * 100)
+                    end
+                end
+            end
+        end
+    end
     -- competition sample every 60s
     if math.floor(now) % 60 == 0 then
         local n = 0
@@ -135,7 +150,7 @@ local function OnUnitAppeared(unit, viaNameplate)
         local last = r.sightings[#r.sightings]
         if not last or (time() - last[4]) > 300 then
             U.Push(r.sightings, { mapID, x, y, time() }, 30)
-            print("|cffff80ffRare:|r %s seen at %s (%.1f, %.1f)", r.name or "?", U.MapName(mapID), x * 100, y * 100)
+            FO:Alert("rare", "|cffff80ffRare:|r %s seen at %s (%.1f, %.1f)", r.name or "?", U.MapName(mapID), x * 100, y * 100)
             FO:Fire("FO_RARE", npcID, r.name, mapID, x, y)
         end
     end

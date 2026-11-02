@@ -7,7 +7,7 @@ Usage:
 Re-running upserts into the same database, so you can ingest after every
 logout and keep history beyond the in-game caps. Tables:
   sessions, dungeons, zone_segments, mobs, drops, encounters, loot,
-  prices, price_daily, vendor_prices, quests, nodes, respawns, verify, errors
+  prices, price_daily, vendor_prices, quests, nodes, respawns, verify, errors, notes
 """
 import argparse, json, os, sqlite3, subprocess, sys
 
@@ -44,6 +44,7 @@ create table if not exists nodes (name text, kind text, map_id int, x real, y re
 create table if not exists respawns (npc text, name text, map_id int, x real, y real, confirmed_json text, bounds_json text, last_kill int,
   primary key (npc, map_id, x, y));
 create table if not exists verify (t int primary key, version text, build text, toc text, checks_json text);
+create table if not exists notes (session text, t int, elapsed int, level int, zone text, activity text, text text, primary key (session, t, text));
 create table if not exists errors (key text primary key, where_ text, msg text, stack text, first int, last int, count int, version text, char text);
 """
 
@@ -77,6 +78,9 @@ def main():
             g(s,"deathTime"), g(s,"questsDone"), g(t,"quest"), g(t,"grind"), g(t,"dungeon"), g(t,"travel"), g(t,"rest"), g(t,"town"), g(t,"dead"), g(t,"idle"),
             g(xb,"quest"), g(xb,"grind"), g(xb,"dungeon")))
         count("sessions")
+        for note in arr(g(s, "notes", [])):
+            cur.execute("insert or replace into notes values (?,?,?,?,?,?,?)", (sid, g(note,"t"), g(note,"elapsed"), g(note,"level"), g(note,"zone"), g(note,"activity"), g(note,"text")))
+            count("notes")
         for zone, z in g(s, "zones", {}).items():
             zt = g(z, "time", {})
             cur.execute("insert or replace into zone_segments values (" + ",".join("?" * 17) + ")", (

@@ -148,6 +148,7 @@ SlashCmdList.FOREVEROPTIMIZER = function(msg)
         return
     end
     FO.Try("/fo " .. sub, c.fn, arg)
+    FO:Fire("FO_COMMAND", sub, arg)
 end
 
 FO:RegisterCommand("module", function(arg)

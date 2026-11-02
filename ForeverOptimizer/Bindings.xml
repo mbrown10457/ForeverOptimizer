@@ -1,0 +1,5 @@
+<Bindings>
+  <Binding name="FOREVEROPTIMIZER_TOGGLE" category="ForeverOptimizer" header="FOREVEROPTIMIZER">ForeverOptimizer_ToggleHUD()</Binding>
+  <Binding name="FOREVEROPTIMIZER_NEXT" category="ForeverOptimizer">ForeverOptimizer_NextWaypoint()</Binding>
+  <Binding name="FOREVEROPTIMIZER_NEARBY" category="ForeverOptimizer">ForeverOptimizer_Nearby()</Binding>
+</Bindings>

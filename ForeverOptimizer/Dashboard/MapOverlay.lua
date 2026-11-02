@@ -217,7 +217,7 @@ function M:OnEnable()
         self.updater = upd
     end
     if WorldMapFrame.HookScript then
-        pcall(WorldMapFrame.HookScript, WorldMapFrame, "OnShow", function() M.dirty = true M:UpdateCoords() end)
+        pcall(WorldMapFrame.HookScript, WorldMapFrame, "OnShow", function() M.dirty = true M:UpdateCoords() FO:Fire("FO_MAP_SHOWN") end)
         pcall(WorldMapFrame.HookScript, WorldMapFrame, "OnHide", function() if M.coordText then M.coordText:Hide() end end)
     end
 end

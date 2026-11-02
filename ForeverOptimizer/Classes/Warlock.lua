@@ -37,7 +37,8 @@ function W:OnEnable()
         local n = CountShards()
         if n ~= shards then
             shards = n
-            if n < 3 then print("|cffff6060%d soul shards.|r Drain Soul the next kill.", n)
+            local minShards = FO.Alerts and FO.Alerts.db and FO.Alerts.db.settings.shardsMin or 3
+            if n < minShards then FO:Alert("shards", "|cffff6060%d soul shards.|r Drain Soul the next kill.", n)
             elseif n >= 20 then print("%d soul shards are eating bag space; stop draining.", n) end
         end
     end))

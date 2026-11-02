@@ -126,7 +126,7 @@ function IO:CheckSpace()
         if not warned then
             warned = true
             local cats, totals = self:Scan()
-            print("|cffff6060%d slots left.|r %d trash stacks (%s) can go; %d auction-worthy stacks (%s).", free,
+            FO:Alert("bags", "|cffff6060%d slots left.|r %d trash stacks (%s) can go; %d auction-worthy stacks (%s).", free,
                   #(cats.trash or {}), U.FormatMoney(totals.trash or 0), #(cats.auction or {}), U.FormatMoney(totals.auction or 0))
         end
     else warned = false end

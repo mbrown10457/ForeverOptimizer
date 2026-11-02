@@ -122,6 +122,15 @@ function D:OnEnable()
     Render()
 end
 
+-- Key bindings (Bindings.xml)
+BINDING_HEADER_FOREVEROPTIMIZER = "ForeverOptimizer"
+BINDING_NAME_FOREVEROPTIMIZER_TOGGLE = "Toggle HUD"
+BINDING_NAME_FOREVEROPTIMIZER_NEXT = "Waypoint to next quest target"
+BINDING_NAME_FOREVEROPTIMIZER_NEARBY = "List quests to pick up nearby"
+function ForeverOptimizer_ToggleHUD() SlashCmdList.FOREVEROPTIMIZER("toggle") end
+function ForeverOptimizer_NextWaypoint() SlashCmdList.FOREVEROPTIMIZER("next") end
+function ForeverOptimizer_Nearby() SlashCmdList.FOREVEROPTIMIZER("nearby") end
+
 D.commands = {
     show = { help = "show HUD", fn = function(self) self.db.shown = true frame:Show() Render() end },
     hide = { help = "hide HUD", fn = function(self) self.db.shown = false frame:Hide() end },

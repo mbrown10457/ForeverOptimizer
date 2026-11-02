@@ -36,7 +36,8 @@ function H:OnEnable()
     ammo, ammoAt = CountAmmo(), GetTime()
     FO:RegisterEvent("BAG_UPDATE_DELAYED", U.Debounce(2, function()
         ammo = CountAmmo()
-        if ammo < 200 and not warned then warned = true print("|cffff6060ammo low:|r %d left.", ammo) elseif ammo >= 200 then warned = false end
+        local minAmmo = FO.Alerts and FO.Alerts.db and FO.Alerts.db.settings.ammoMin or 200
+        if ammo < minAmmo and not warned then warned = true FO:Alert("ammo", "|cffff6060ammo low:|r %d left.", ammo) elseif ammo >= minAmmo then warned = false end
     end))
 end
 
