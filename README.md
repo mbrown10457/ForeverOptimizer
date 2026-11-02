@@ -31,7 +31,7 @@ The addon is the same on both platforms; only the helper scripts differ.
 
 ## What it looks like
 
-[docs/mockup.html](docs/mockup.html) is an interactive mock of the addon in game: the HUD with every tab and its buttons, the world map pins, and the chat output of the day-one commands. Open it in a browser. The text is produced by the addon's own code run through the test harness (`scripts/mock/dump_ui.lua`), with sample session numbers; regenerate it after UI changes with:
+[mbrown10457.github.io/ForeverOptimizer/mockup.html](https://mbrown10457.github.io/ForeverOptimizer/mockup.html) (source: `docs/mockup.html`) is an interactive mock of the addon in game: the HUD with every tab and its buttons, the world map pins, and the chat output of the day-one commands. Open it in a browser. The text is produced by the addon's own code run through the test harness (`scripts/mock/dump_ui.lua`), with sample session numbers; regenerate it after UI changes with:
 
 ```
 lua scripts/mock/dump_ui.lua > /tmp/ui_dump.txt && python3 scripts/mock/build_mock.py /tmp/ui_dump.txt scripts/mock/template.html docs/mockup.html
