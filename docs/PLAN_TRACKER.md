@@ -99,11 +99,11 @@ All of these are probed by `/fo verify` and the result is saved to `account.veri
 
 | Item | Status |
 |---|---|
-| Client build / interface version | partial: wago.tools shows Forever as product `wowf`, build 1.60.1.70707 (Interface 16001); `/fo verify` confirms in game |
-| Addon directory, TOC format | blocked: `scripts/install.sh` tries `_forever_` then `_camelot_` |
+| Client build / interface version | done: installed client is `wowf` 1.60.1.70707 in `_forever_` (build info + gx.log); Interface 16001 |
+| Addon directory, TOC format | done: `_forever_/Interface/AddOns` created and populated; "Camelot" is the internal flavour name |
 | Lua version, event payloads | blocked: verify prints `_VERSION`; payload shapes assumed from 12.x |
-| Combat log | designed around; verify confirms it's refused |
-| Quest API, AH API, trade skill API | blocked: verify reports retail vs classic shape |
+| Combat log | events present with HasRestrictions (same as mainline 12.1.5); runtime state from `C_CombatLog.IsCombatLogRestricted`; adapter handles both |
+| Quest API, AH API, trade skill API | done from client docs: retail `C_AuctionHouse`, `C_QuestLog.GetNextWaypoint`, retail `C_TradeSkillUI` (`docs/Forever_API_Notes.md`) |
 | SavedVariables behavior | versioned root with migrations; `/fo dbstats` for growth |
 | Memory, event rates, disconnect/reload behavior | blocked: watch `/fo dbstats` and `/fo errors` (persistent error log, `account.errors.log`) over the first sessions |
 

@@ -141,8 +141,18 @@ function CL:OnEnable()
     if not self.available then print("combat log not available (%s); class analytics use chat/loot paths.", tostring(self.reason)) end
 end
 
+function CL:ClientRestricted()
+    if C_CombatLog and C_CombatLog.IsCombatLogRestricted then
+        local ok, r = pcall(C_CombatLog.IsCombatLogRestricted)
+        if ok then return r == true end
+    end
+    return nil
+end
+
 function CL:Status()
     if not self.available then return "unavailable" end
+    local r = self:ClientRestricted()
+    if r == true and self.count == 0 then return "registered but the client reports the log restricted here" end
     if self.count == 0 then return "registered, no events yet" end
     if self.amountsHidden then return "events flow but amounts are secret" end
     return "live"
@@ -153,6 +163,8 @@ CL.commands = {
         help = "Combat log availability and event counts",
         fn = function(self)
             print("combat log: %s%s", self:Status(), self.reason and (" (" .. self.reason .. ")") or "")
+            local r = self:ClientRestricted()
+            if r ~= nil then print("  C_CombatLog.IsCombatLogRestricted(): %s", tostring(r)) end
             if self.count > 0 then
                 local span = math.max(1, (self.lastAt or 0) - (self.firstAt or 0))
                 print("  %d events (%.1f/s while active), %d with secret amounts", self.count, self.count / span, self.secretEvents)

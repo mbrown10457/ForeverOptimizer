@@ -93,10 +93,12 @@ The seeds are regenerated from the client's tables, so numbers, ranks, levels an
 
 ## Verify on first real launch
 
-Run `/fo verify` first. It probes every API below and saves the result.
+Run `/fo verify` first. It probes every API below and saves the result. Most of the list was already answered from the installed client's own API documentation (see `docs/Forever_API_Notes.md`): retail auction house API, `GetNextWaypoint`, `C_Item.GetItemStats`, retail `C_TradeSkillUI`, unrestricted nameplate events, namespaced pet happiness and classic-style talents. What remains is behaviour, not presence.
 
-- TOC Interface number. wago.tools lists Forever as product `wowf`, version 1.60.1 (build 70707 on 2026-10-30), which maps to Interface `16001`; we ship `120105, 16001` so either client answers. The folder is `_forever_`.
-- Whether the Midnight-era restrictions (combat log refused, secret values in combat) apply to the 1.60 client at all. Everything is written to work either way; if they don't apply, the class modules can be upgraded to real combat-log data.
+- The installed client is product `wowf`, build `1.60.1.70707`, in `_forever_`, Interface `16001`; we ship `120105, 16001`.
+- Whether the combat log is restricted in the open world. The events exist with `HasRestrictions`, exactly as on mainline 12.1.5, and `C_CombatLog.IsCombatLogRestricted()` says which way it is at runtime. The combat log layer works either way.
+- Whether health and power read as secret values outside instances. The secret-value system is present; every number already passes through `U.Num`.
+- Which Forever experience preset is active (Classic or Enhanced), printed by verify.
 - Retail commodity/item AH API vs classic list AH. Only `Economy/AuctionHouseScanner.lua` depends on it.
 - `C_QuestLog.GetNextWaypoint` for vanilla quests. If it returns nothing, QuestPath falls back to recorded points.
 - `C_TradeSkillUI` recipe schematics and `GetItemStats` stat keys on this client.

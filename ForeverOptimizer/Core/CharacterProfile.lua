@@ -46,6 +46,17 @@ end
 -- Skill lines (weapon skills, defense, etc.) where the client still has them
 local function ReadSkills()
     local out = {}
+    local SK = C_SkillInfo
+    if SK and SK.GetNumSkillLines and SK.GetSkillLineInfo then
+        local okN, n = pcall(SK.GetNumSkillLines)
+        for i = 1, (okN and U.Num(n)) or 0 do
+            local ok, info = pcall(SK.GetSkillLineInfo, i)
+            if ok and type(info) == "table" and not info.isHeader and U.Str(info.name) then
+                out[#out + 1] = { name = U.Str(info.name), rank = U.Num(info.rank) or 0, max = U.Num(info.maxRank) or 0 }
+            end
+        end
+        return out
+    end
     if not GetNumSkillLines or not GetSkillLineInfo then return out end
     for i = 1, U.Num(GetNumSkillLines()) or 0 do
         local name, isHeader, _, rank, _, _, maxRank = GetSkillLineInfo(i)

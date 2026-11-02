@@ -41,7 +41,24 @@ function V:Run()
         has("C_RestrictedActions.IsAddOnRestrictionActive") and ("active=" .. tostring(C_RestrictedActions.IsAddOnRestrictionActive())) or "absent")
     local f = CreateFrame("Frame")
     local clOk = pcall(f.RegisterEvent, f, "COMBAT_LOG_EVENT_UNFILTERED")
-    add("combat log registrable", nil, clOk and "available: CombatStats, class analytics and FO_FIGHT timing are live" or "refused: chat/loot paths in use")
+    add("combat log registrable", nil, clOk and "registered: CombatStats, class analytics and FO_FIGHT timing can run" or "refused: chat/loot paths in use")
+    if C_CombatLog and C_CombatLog.IsCombatLogRestricted then
+        local okR, restricted = pcall(C_CombatLog.IsCombatLogRestricted)
+        add("C_CombatLog.IsCombatLogRestricted()", nil, okR and ("restricted=" .. tostring(restricted) .. " (checked out of combat; may differ in instances)") or "errored")
+    else
+        add("C_CombatLog.IsCombatLogRestricted", nil, "absent")
+    end
+    if C_GameRules and C_GameRules.GetForeverExperiencePreset then
+        local okP, preset = pcall(C_GameRules.GetForeverExperiencePreset)
+        local okH, hc = pcall(function() return C_GameRules.IsHardcoreActive and C_GameRules.IsHardcoreActive() end)
+        add("Forever experience preset", nil, (okP and ("preset=" .. tostring(preset) .. " (0 Classic, 1 Enhanced)") or "errored") .. (okH and (", hardcore=" .. tostring(hc)) or ""))
+    end
+    if C_Secrets and C_Secrets.HasSecretRestrictions then
+        local okS, hasS = pcall(C_Secrets.HasSecretRestrictions)
+        add("C_Secrets.HasSecretRestrictions()", nil, okS and ("secrets=" .. tostring(hasS)) or "errored")
+    else
+        add("C_Secrets", nil, "absent (no secret-value system)")
+    end
     local npOk = pcall(f.RegisterEvent, f, "NAME_PLATE_UNIT_ADDED")
     add("NAME_PLATE_UNIT_ADDED registrable", npOk, "needed for respawn confirmation")
 

@@ -47,13 +47,18 @@ function H:Lines()
     lines[#lines + 1] = string.format("Ammo %d%s", ammo, ammo < 200 and " |cffff6060LOW|r" or "")
     local hasPet = UnitExists("pet")
     local petLine = hasPet and ("Pet " .. (U.Str(UnitName("pet")) or "?")) or "|cffff6060No pet out|r"
-    if hasPet and GetPetHappiness then
-        local hap = U.Num(GetPetHappiness())
-        if hap then petLine = petLine .. ({ [1] = " |cffff6060unhappy|r", [2] = " content", [3] = " happy" })[hap] end
+    local PI = C_PetInfo
+    local GetHappiness = (PI and PI.GetPetHappiness) or GetPetHappiness
+    local GetFoodTypes = (PI and PI.GetPetFoodTypes) or GetPetFoodTypes
+    if hasPet and GetHappiness then
+        local ok, hap = pcall(GetHappiness)
+        hap = ok and U.Num(hap) or nil
+        if hap then petLine = petLine .. (({ [1] = " |cffff6060unhappy|r", [2] = " content", [3] = " happy" })[hap] or "") end
     end
-    if hasPet and GetPetFoodTypes then
-        local foods = { GetPetFoodTypes() }
-        if #foods > 0 then petLine = petLine .. " eats " .. table.concat(foods, "/") end
+    if hasPet and GetFoodTypes then
+        local ok, foods = pcall(function() return { GetFoodTypes() } end)
+        if ok and type(foods[1]) == "table" then foods = foods[1] end
+        if ok and #foods > 0 then petLine = petLine .. " eats " .. table.concat(foods, "/") end
     end
     lines[#lines + 1] = petLine
     local aspect

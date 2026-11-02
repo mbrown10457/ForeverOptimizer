@@ -230,6 +230,19 @@ end
 -- Live talent state (classic tab API), nil if the client has none
 -- ---------------------------------------------------------------------------
 function R:LiveTalents()
+    -- Forever documents C_SpecializationInfo.GetTalentInfo({ specializationIndex, talentIndex }) -> table
+    local SI = C_SpecializationInfo
+    if SI and SI.GetTalentInfo and not (GetTalentInfo and GetNumTalents) then
+        local out = {}
+        for tab = 1, 3 do
+            for i = 1, 60 do
+                local ok, r = pcall(SI.GetTalentInfo, { specializationIndex = tab, talentIndex = i })
+                if not ok or type(r) ~= "table" or not r.name then break end
+                out[#out + 1] = { name = U.Str(r.name), tier = (U.Num(r.tier) or 1) - 1, col = (U.Num(r.column) or 1) - 1, rank = U.Num(r.rank) or 0, max = U.Num(r.maxRank) or 0, tab = tab }
+            end
+        end
+        return #out > 0 and out or nil
+    end
     if not (GetNumTalentTabs and GetNumTalents and GetTalentInfo) then return nil end
     local ok, tabs = pcall(GetNumTalentTabs)
     if not ok or not tabs then return nil end
