@@ -55,12 +55,23 @@ FO.Dashboard:RegisterTab("History", 5, function()
         out[#out + 1] = "no comparable sessions yet"
     end
     local list = FO.Session.db.list
-    for i = #list, math.max(1, #list - 5), -1 do
+    H.page = H.page or 0
+    local top = #list - H.page * 6
+    if top < 1 then H.page = 0 top = #list end
+    for i = top, math.max(1, top - 5), -1 do
         local s = list[i]
         local x, g = Rates(s)
         out[#out + 1] = string.format("%s L%d %s %s xp/hr %s", date("%m/%d", s.start), s.level or 0, U.Trunc(s.zone or "?", 12), U.Rate(x), g and U.ShortMoney(g) or "--")
     end
+    if H.page > 0 then out[#out + 1] = string.format("|cffaaaaaapage %d of %d|r", H.page + 1, math.ceil(#list / 6)) end
     return out
+end, function()
+    local n = #FO.Session.db.list
+    return {
+        { label = "Newer", fn = function() H.page = math.max(0, (H.page or 0) - 1) end },
+        { label = "Older", fn = function() if n - ((H.page or 0) + 1) * 6 >= 1 then H.page = (H.page or 0) + 1 end end, active = (H.page or 0) > 0 },
+        { label = "Report", fn = FO.Dashboard.Cmd("history") },
+    }
 end)
 
 H.commands = {

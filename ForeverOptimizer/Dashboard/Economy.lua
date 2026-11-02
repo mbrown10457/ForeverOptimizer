@@ -26,4 +26,13 @@ FO.Dashboard:RegisterTab("Economy", 3, function()
     end
     if st.consumables > 0 then out[#out + 1] = string.format("Consumables %s (%s/hr)", U.ShortMoney(st.consumables), U.ShortMoney(st.consumables / math.max(st.elapsed, 60) * 3600)) end
     return out
+end, function()
+    local Cmd = FO.Dashboard.Cmd
+    local AS, IO = FO:GetModule("Economy.AuctionHouseScanner"), FO:GetModule("Economy.InventoryOptimizer")
+    return {
+        { label = "Scan AH", fn = Cmd("scan") },
+        { label = "Autoscan", fn = Cmd("autoscan"), active = AS and AS.db and AS.db.settings.autoScan },
+        { label = "Autosell", fn = Cmd("bags autosell"), active = IO and IO.db and IO.db.settings.autoSell },
+        { label = "Sell trash", fn = Cmd("bags sell") },
+    }
 end)

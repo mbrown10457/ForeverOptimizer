@@ -44,6 +44,7 @@ Everything is `/fo <command>`. `/fo help` lists them grouped by area. Highlights
 | HUD | `show`, `hide`, `toggle`, `tab <name>`, `scale <n>`, `lock` |
 | Combat log | `combat`, `dots`, `heals`, `autoshot`, `combatlog` (only when the client allows the log) |
 | Group meter | `dps [fight\|last\|session]`, `hps [...]`, `meter [reset\|rows <n>\|mode dps\|hps]` — damage and healing per player, pets credited to their owner, plus a Meter tab on the HUD (combat log only) |
+| HUD buttons | `hud list`, `hud click <button>` — every HUD tab has a row of buttons under the tabs (Meter: Fight / Last / Session, DPS / HPS, Mine; Overview: Pause, Reset, Lock, Sound, Flash; Leveling: objective and forced activity; Economy: Scan AH, Autoscan, Autosell, Sell trash; Character: builds; History: Newer / Older / Report). The command form exists for macros and key binds. |
 | Rotation | `rotation [check\|CLASS]`, `build [list\|<n>\|use <n>]`, `spell <name>` |
 | Quests | `nearby [all]`, `questinfo <id\|name>`, `qdb`, `route all` (quest database via QuestieDB, optional) |
 | Map | `map [nodes\|rares\|spawns\|coords on\|off]`, `map minseen <n>`, `map refresh`, `coords` |

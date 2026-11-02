@@ -319,6 +319,30 @@ check(MT.cur.dmg == 50 and MT.total.dmg == 490, "new fight starts; session total
 for _, cmd in ipairs({ "dps", "hps last", "dps session", "meter" }) do SlashCmdList.FOREVEROPTIMIZER(cmd) end
 check(outHas("Grok") and outHas("meter: combat log live"), "/fo dps, hps and meter print")
 S.units.party1, S.units.party1pet = nil, nil
+
+-- HUD buttons: per-tab control rows that drive the same code as the commands
+local DB = FO.Dashboard
+DB:SelectTab("Meter")
+local labels = {}
+for _, c in ipairs(DB:Controls()) do labels[#labels + 1] = c.label end
+check(table.concat(labels, ",") == "Fight,Last,Session,DPS,HPS,Mine", "Meter tab has scope, mode and Mine buttons (" .. table.concat(labels, ",") .. ")")
+DB:ClickControl("Session") DB:ClickControl("HPS")
+check(FO.Meter.view.scope == "session" and FO.Meter.db.mode == "hps" and table.concat(FO.Meter:Lines(), "\n"):find("HPS|r session"), "meter buttons switch scope and mode")
+DB:ClickControl("DPS") DB:ClickControl("Mine")
+check(FO.Meter.view.mine and table.concat(FO.Meter:Lines(), "\n"):find("Arcane Shot"), "Mine button shows my spell breakdown")
+DB:ClickControl("Mine") DB:ClickControl("Fight")
+DB:SelectTab("Leveling") DB:ClickControl("Gold")
+check(FO.Analytics.db.objective == "gold", "Leveling Gold button sets the objective") DB:ClickControl("Balanced")
+DB:SelectTab("Overview") DB:ClickControl("Pause")
+check(FO.Session:Stats().paused, "Overview Pause button pauses the session")
+DB:ClickControl("Resume") check(not FO.Session:Stats().paused, "Resume button resumes")
+DB:ClickControl("Flash") check(FO.Alerts.db.settings.flash == false, "Flash button toggles the alert flash") DB:ClickControl("Flash")
+check(DB:ClickControl("Nope") == false, "unknown button is refused")
+DB:SelectTab("Character") check(#DB:Controls() == 2 and DB:Controls()[1].label == "Beast", "Character tab lists the builds as buttons")
+DB:ClickControl("Marksmanship") check(FO.Rotation.db.build.HUNTER == 2, "build button activates a build") DB:ClickControl("Beast")
+SlashCmdList.FOREVEROPTIMIZER("hud list") check(outHas("Character tab buttons"), "/fo hud list prints the buttons")
+SlashCmdList.FOREVEROPTIMIZER("hud click beast") check(outHas("active build set to 1"), "/fo hud click presses a button by name")
+noErrors("HUD controls")
 noErrors("combat log")
 
 -- Rotation optimizer: hand-authored data validates against the client seed, priorities render, builds check

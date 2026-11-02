@@ -25,4 +25,16 @@ FO.Dashboard:RegisterTab("Leveling", 2, function()
     local best = FO.Analytics:BestZone(3)
     if best and best.zone ~= st.zone and best.xph then out[#out + 1] = string.format("Best zone: %s %s/hr", U.Trunc(best.zone, 14), U.Rate(best.xph)) end
     return out
+end, function()
+    local Cmd = FO.Dashboard.Cmd
+    local obj = FO.Analytics.db.objective
+    return {
+        { label = "XP", fn = Cmd("objective xp"), active = obj == "xp" },
+        { label = "Gold", fn = Cmd("objective gold"), active = obj == "gold" },
+        { label = "Safe", fn = Cmd("objective safe"), active = obj == "safe" },
+        { label = "Balanced", fn = Cmd("objective balanced"), active = obj == "balanced" },
+        { label = "Quest", fn = Cmd("session force quest") },
+        { label = "Grind", fn = Cmd("session force grind") },
+        { label = "Auto", fn = Cmd("session force auto") },
+    }
 end)

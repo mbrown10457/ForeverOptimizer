@@ -30,6 +30,7 @@ local function NewSeg() return { rows = {}, dmg = 0, heal = 0, time = 0 } end
 M.cur, M.last, M.total = NewSeg(), nil, NewSeg()
 M.hidden = 0           -- events whose amount was a secret value
 M.fights = 0
+M.view = { scope = "fight", mine = false }   -- HUD buttons: scope fight|last|session, mine = my spell breakdown
 
 local myGUID
 local owners = {}      -- pet GUID -> { guid, name } of the owning player
@@ -143,7 +144,9 @@ end
 function M:OnEnable()
     myGUID = U.Str(UnitGUID("player"))
     ScanPets()
-    if FO.Dashboard and FO.Dashboard.RegisterTab then FO.Dashboard:RegisterTab("Meter", 1.7, function() return self:Lines() end) end
+    if FO.Dashboard and FO.Dashboard.RegisterTab then
+        FO.Dashboard:RegisterTab("Meter", 1.7, function() return self:Lines() end, function() return self:Controls() end)
+    end
 end
 
 function M:Reset()
@@ -181,6 +184,7 @@ end
 
 local function Which(arg)
     arg = (arg or ""):lower()
+    if arg == "" then arg = M.view.scope or "fight" end
     if arg:find("session") or arg:find("total") then return M.total, "session" end
     if arg:find("last") then return M.last or M.cur, "last fight" end
     if M.cur.start then return M.cur, "fight" end
@@ -193,11 +197,40 @@ local function Short(n)
     return string.format("%.0f", n)
 end
 
+function M:Controls()
+    local v = self.view
+    local function scope(s) return function() v.scope = s end end
+    return {
+        { label = "Fight", fn = scope("fight"), active = v.scope == "fight" },
+        { label = "Last", fn = scope("last"), active = v.scope == "last" },
+        { label = "Session", fn = scope("session"), active = v.scope == "session" },
+        { label = "DPS", fn = function() self.db.mode = "dps" end, active = self.db.mode ~= "hps" },
+        { label = "HPS", fn = function() self.db.mode = "hps" end, active = self.db.mode == "hps" },
+        { label = "Mine", fn = function() v.mine = not v.mine end, active = v.mine },
+    }
+end
+
+-- My own spell breakdown for the chosen scope
+function M:MineLines(seg, mode, label, dur)
+    local r = seg.rows[myGUID]
+    local out = { string.format("|cffffd100Mine|r %s %s  %s", label, U.FormatDuration(dur), mode == "dmg" and "damage" or "healing") }
+    if not r or r[mode] == 0 then out[#out + 1] = "nothing recorded yet" return out end
+    local sp = {}
+    for name, v in pairs(r.spells) do sp[#sp + 1] = { name, v } end
+    table.sort(sp, function(a, b) return a[2] > b[2] end)
+    for i = 1, math.min(#sp, self.db.rows or 8) do
+        out[#out + 1] = string.format("%s %s  %s/s  %.0f%%", U.Trunc(sp[i][1], 16), Short(sp[i][2]), Short(sp[i][2] / dur), sp[i][2] / r[mode] * 100)
+    end
+    if r.pet > 0 and mode == "dmg" then out[#out + 1] = string.format("|cffaaaaaapet %s  %.0f%%|r", Short(r.pet), r.pet / r.dmg * 100) end
+    return out
+end
+
 function M:Lines()
     if not self:Available() then return { "|cffaaaaaacombat log unavailable|r" } end
     local mode = (self.db.mode == "hps") and "heal" or "dmg"
     local seg, label = Which("")
     local rows, dur, total = self:Table(seg, mode)
+    if self.view.mine then return self:MineLines(seg, mode, label, dur) end
     local out = { string.format("|cffffd100%s|r %s %s  total %s%s", mode == "dmg" and "DPS" or "HPS", label, U.FormatDuration(dur), Short(total),
                                 self.hidden > 0 and string.format("  |cffff6060%d hidden|r", self.hidden) or "") }
     if #rows == 0 then out[#out + 1] = "no group " .. (mode == "dmg" and "damage" or "healing") .. " yet" return out end

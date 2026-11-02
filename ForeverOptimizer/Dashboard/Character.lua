@@ -22,4 +22,14 @@ FO.Dashboard:RegisterTab("Character", 4, function()
     for name, pr in pairs(C.professions or {}) do out[#out + 1] = string.format("%s %d/%d", name, pr.rank, pr.max) end
     out[#out + 1] = "Hearth: " .. U.Trunc(C.bind or "?", 20)
     return out
+end, function()
+    local Cmd = FO.Dashboard.Cmd
+    local class = FO.Player.class
+    local R, data = FO.Rotation, FO.Rotations and FO.Rotations[FO.Player.class]
+    local out = {}
+    for i, b in ipairs(data and data.builds or {}) do
+        if i > 3 then break end
+        out[#out + 1] = { label = (b.name:match("^(%S+)") or ("Build " .. i)), fn = Cmd("build use " .. i), active = R and R.db and (R.db.build[class] or 1) == i }
+    end
+    return out
 end)
