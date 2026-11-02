@@ -1,0 +1,37 @@
+ForeverOptimizer - install notes
+================================
+
+This zip holds one addon folder, "ForeverOptimizer". Put that folder inside the
+game's AddOns directory so the path ends up as:
+
+    ...\World of Warcraft\_forever_\Interface\AddOns\ForeverOptimizer\ForeverOptimizer.toc
+
+Windows
+-------
+1. Launch World of Warcraft: Forever once so the game creates the _forever_ folder.
+2. Open the AddOns folder. The usual location is
+       C:\Program Files (x86)\World of Warcraft\_forever_\Interface\AddOns
+   (if Interface\AddOns does not exist yet, create the AddOns folder).
+3. Extract this zip there. You should see a ForeverOptimizer folder directly
+   inside AddOns, not ForeverOptimizer\ForeverOptimizer.
+4. If the game is running, type /reload. Then /fo help.
+
+macOS
+-----
+Same thing with
+       /Applications/World of Warcraft/_forever_/Interface/AddOns
+
+Updating
+--------
+Delete the old ForeverOptimizer folder and extract the new zip. Your recorded
+data is not in that folder; it lives in
+       ...\_forever_\WTF\Account\<ACCOUNT>\SavedVariables\ForeverOptimizerDB.lua
+and survives updates. That file is also what to send back if you want your
+sessions, drop rates and node sightings pooled with the group's.
+
+Checking it loaded
+------------------
+At the character select screen, click AddOns and make sure ForeverOptimizer is
+ticked. If it shows "out of date", tick "Load out of date AddOns".
+In game, /fo verify prints what the client supports and /fo errors shows any
+Lua errors the addon caught.

@@ -20,6 +20,14 @@ ForeverOptimizer/
 3. In game: `/reload`, then `/fo help`. If it shows as out of date, tick "Load out of date AddOns" and note the real Interface number.
 4. Lua errors inside the addon are caught and saved; `/fo errors` lists them and `/fo errors <n>` shows the stack. BugSack + BugGrabber are still useful for errors in other addons or Blizzard code.
 
+### Windows
+
+The addon is the same on both platforms; only the helper scripts differ.
+
+- **Just playing:** extract `dist/ForeverOptimizer-<version>.zip` (made by `scripts/package.sh`) into `C:\Program Files (x86)\World of Warcraft\_forever_\Interface\AddOns\`. The zip carries an `INSTALL.txt` with the same steps for both operating systems.
+- **Working from the repo:** `powershell -ExecutionPolicy Bypass -File scripts\install.ps1` copies the addon into AddOns (it finds the game via the registry and the usual folders, or takes `-AddOns <path>`). Add `-Link` for a directory junction so the game loads the repo copy directly, the Windows equivalent of the Mac symlink.
+- **Offline tools** (`savedvars_to_json.py`, `fo_sqlite.py`, `build_seed.py`) are plain Python 3 and run unchanged. The saved data is at `...\_forever_\WTF\Account\<ACCOUNT>\SavedVariables\ForeverOptimizerDB.lua`.
+
 ## Commands
 
 Everything is `/fo <command>`. `/fo help` lists them grouped by area. Highlights:
@@ -49,15 +57,17 @@ Everything is `/fo <command>`. `/fo help` lists them grouped by area. Highlights
 
 ## Out-of-game analysis
 
-SavedVariables are plain Lua, written on logout or `/reload`:
+The SavedVariables file is written on logout or `/reload`:
 
-```
-/Applications/World of Warcraft/_forever_/WTF/Account/<ACCOUNT>/SavedVariables/ForeverOptimizer.lua
-```
+| | Path |
+|---|---|
+| macOS | `/Applications/World of Warcraft/_forever_/WTF/Account/<ACCOUNT>/SavedVariables/ForeverOptimizerDB.lua` |
+| Windows | `C:\Program Files (x86)\World of Warcraft\_forever_\WTF\Account\<ACCOUNT>\SavedVariables\ForeverOptimizerDB.lua` |
+
 
 `scripts/savedvars_to_json.py <file> --var ForeverOptimizerDB -o fo.json` converts it with no Lua runtime. `scripts/fo_sqlite.py <file> -o fo.sqlite` goes further and upserts sessions, zone segments, dungeons, mobs, drops, encounters, loot, prices, quests, nodes, respawns, verify results and the saved error log into SQLite, so history outlives the in-game caps. Everything lives under `account.<namespace>` and `chars.<Name-Realm>.<namespace>`.
 
-`scripts/package.sh` zips the addon into `dist/` for friends.
+`scripts/package.sh` zips the addon plus `INSTALL.txt` into `dist/` for friends on either platform.
 
 ## Tests
 
