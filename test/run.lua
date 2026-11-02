@@ -9,7 +9,7 @@ local function outHas(pat) for i = #S.out, 1, -1 do if S.out[i]:find(pat, 1, tru
 local function noErrors(label) check(#S.errors == 0, label .. " (no handler errors)") if #S.errors > 0 then for _, e in ipairs(S.errors) do print("   " .. e) end S.errors = {} end end
 
 local FO, order = S.loadAddon("ForeverOptimizer")
-check(#order == 36, "loaded " .. #order .. " files from TOC")
+check(#order == 42, "loaded " .. #order .. " files from TOC")
 check(#FO.modules >= 26, #FO.modules .. " modules registered")
 check(ForeverOptimizerDB == nil or true, "pre-login")
 
@@ -20,7 +20,7 @@ check(FO.state.enabled, "enabled")
 check(ForeverOptimizerDB and ForeverOptimizerDB.account.sessions, "SavedVariables initialised")
 check(FO.Player.class == "HUNTER" and FO.Player.level == 23, "character profile read")
 check(FO.Session:Live() ~= nil, "session started")
-check(S.registered.COMBAT_LOG_EVENT_UNFILTERED == nil, "combat log never requested")
+check(S.registered.COMBAT_LOG_EVENT_UNFILTERED == true, "combat log requested (optimistic path)")
 
 -- Pricing: vendor scan + fake AH observation
 S.fire("MERCHANT_SHOW") S.advance(1)
@@ -241,6 +241,80 @@ WorldMapFrame:Hide()
 check(not MapM.coordText:IsShown(), "coordinate text hidden with map")
 SlashCmdList.FOREVEROPTIMIZER("coords") check(outHas("(map "), "/fo coords prints position")
 noErrors("map overlay")
+
+-- Combat log (optimistic path): damage split, auto-shot clipping, DoT efficiency, heals, fight timing
+local CLm, CSm = FO.CombatLog, FO.CombatStats
+check(CLm.registered and CLm.available, "combat log registered on this client")
+S.units.pet = { name = "Wolf", guid = "Pet-0-1-2-3-4-0000PET1" }
+S.fire("UNIT_PET", "player")
+local me  = { guid = "Player-1-ABC", name = "Mikeo", flags = 0x511 }
+local pet = { guid = "Pet-0-1-2-3-4-0000PET1", name = "Wolf", flags = 0x1111 }
+local mob = { guid = "Creature-0-1-2-3-595-0000CL01", name = "Bloodscalp Warrior", flags = 0xA48 }
+local mob2 = { guid = "Creature-0-1-2-3-595-0000CL02", name = "Bloodscalp Warrior", flags = 0xA48 }
+S.spellCost[2060], S.spellCost[1978] = 100, 30
+CSm:Reset()
+S.inCombat = true S.fire("PLAYER_REGEN_DISABLED")
+local function shot(crit) S.cl("SPELL_CAST_SUCCESS", me, mob, 75, "Auto Shot", 1) S.cl("RANGE_DAMAGE", me, mob, 75, "Auto Shot", 1, crit and 120 or 100, 0, 1, 0, 0, 0, crit or false) end
+shot() S.advance(2) shot(true) S.advance(2) shot() S.advance(3) shot()          -- gaps 2, 2, 3 at speed 2.0 -> 1.0s clipped
+S.cl("SWING_DAMAGE", pet, mob, 60, 0, 1, 0, 0, 0, false) S.cl("SWING_DAMAGE", pet, mob, 60, 0, 1, 0, 0, 0, false)
+S.cl("SWING_DAMAGE", mob, me, 40, 0, 1, 0, 0, 0, false)
+S.cl("SPELL_CAST_SUCCESS", me, mob, 1978, "Serpent Sting", 8) S.cl("SPELL_AURA_APPLIED", me, mob, 1978, "Serpent Sting", 8, "DEBUFF")
+for _ = 1, 3 do S.advance(3) S.cl("SPELL_PERIODIC_DAMAGE", me, mob, 1978, "Serpent Sting", 8, 20, 0, 8, 0, 0, 0, false) end
+S.cl("SPELL_AURA_REMOVED", me, mob, 1978, "Serpent Sting", 8, "DEBUFF")
+S.cl("SPELL_CAST_SUCCESS", me, me, 2060, "Lesser Heal", 2) S.cl("SPELL_HEAL", me, me, 2060, "Lesser Heal", 2, 150, 50, 0, false)
+S.cl("UNIT_DIED", { guid = "", flags = 0 }, mob)
+-- second target: DoT applied, one tick, target dies -> 2 ticks lost
+S.cl("SPELL_CAST_SUCCESS", me, mob2, 1978, "Serpent Sting", 8) S.cl("SPELL_AURA_APPLIED", me, mob2, 1978, "Serpent Sting", 8, "DEBUFF")
+S.advance(3) S.cl("SPELL_PERIODIC_DAMAGE", me, mob2, 1978, "Serpent Sting", 8, 20, 0, 8, 0, 0, 0, false)
+S.cl("SWING_DAMAGE", me, mob2, 30, 0, 1, 0, 0, 0, false) S.advance(1)
+S.cl("UNIT_DIED", { guid = "", flags = 0 }, mob2)
+S.inCombat = false S.fire("PLAYER_REGEN_ENABLED")
+local c = CSm:Stats()
+check(c.dmgPlayer == 420 + 60 + 20 + 30 and c.dmgPet == 120, "damage split player/pet (" .. c.dmgPlayer .. "/" .. c.dmgPet .. ")")
+check(c.petShare and math.abs(c.petShare - 120 / 650) < 0.001, "pet damage share")
+local a = c.autos["Auto Shot"]
+check(a and a.shots == 4 and math.abs(a.clipped - 1.0) < 0.01 and a.speed == 2.0, "auto shot clipping 1.0s over 4 shots")
+local d = c.dots[1]
+check(d and d.name == "Serpent Sting" and d.applied == 2 and d.ticks == 4 and d.maxTicks == 3 and d.truncated == 1 and d.wasted == 2 and math.abs(d.efficiency - 4 / 6) < 0.01, "DoT efficiency 4 of 6 ticks")
+check(d.perMana and math.abs(d.perMana - 80 / 60) < 0.01, "DoT damage per mana from cast cost")
+local h = c.heals[1]
+check(h and h.total == 150 and h.over == 50 and math.abs(h.overPct - 0.25) < 0.01 and h.perMana == 1.5, "heal with overheal and heal per mana")
+check(c.fights == 2 and c.taken == 40, "two fights closed by UNIT_DIED, damage taken counted")
+local mobRec = FO:GetModule("Grinding.MobDatabase").db.mobs[595]
+check(mobRec and mobRec.clN == 2 and mobRec.takenN == 1 and mobRec.taken == 40 and mobRec.clTime > 16, "MobDatabase received FO_FIGHT timing and damage taken (" .. tostring(mobRec and mobRec.clN) .. "/" .. tostring(mobRec and mobRec.takenN) .. "/" .. tostring(mobRec and mobRec.taken) .. "/" .. tostring(mobRec and mobRec.clTime) .. ")")
+local hl = table.concat(FO.Classes.HUNTER:Lines(), "\n")
+check(hl:find("Pet damage 18%%") and hl:find("Auto Shot 4"), "hunter HUD lines show pet share and clipping")
+for _, cmd in ipairs({ "combat", "dots", "heals", "autoshot", "combatlog" }) do SlashCmdList.FOREVEROPTIMIZER(cmd) end
+check(outHas("Serpent Sting") and outHas("Lesser Heal") and outHas("clipped") and outHas("combat log: live"), "combat commands print")
+SlashCmdList.FOREVEROPTIMIZER("mob 595") check(outHas("combat log:"), "/fo mob shows combat-log timing")
+noErrors("combat log")
+
+-- Rotation optimizer: hand-authored data validates against the client seed, priorities render, builds check
+local RM = FO.Rotation
+local report = RM:ValidateAll()
+local errs, warns = {}, 0
+for _, r in ipairs(report) do if r.warning then warns = warns + 1 else errs[#errs + 1] = r.class .. ": " .. r.line end end
+check(#errs == 0, "rotation/build names all exist in the seed (" .. warns .. " optional rune abilities absent)")
+for _, e in ipairs(errs) do print("   " .. e) end
+check(FO.Seed.spellCount > 2000 and #FO.Seed.talents > 400, "spell and talent seeds loaded (" .. FO.Seed.spellCount .. " spells, " .. #FO.Seed.talents .. " talents)")
+local known = RM:Known("HUNTER", "Serpent Sting")
+check(known and known.id == 1978, "known rank resolved from spellbook")
+check(RM:Trainable("HUNTER", "Serpent Sting", 23) ~= nil, "higher Serpent Sting rank flagged trainable at 23")
+local est = RM:Estimate(FO.Seed.spells[1978])
+check(est.ticks == 5 and est.cost == 15 and est.dpm and est.dpm > 0, "estimate derives ticks from duration/period and dmg per mana")
+local m = RM:Measured("Auto Shot")
+check(m == nil or m.dmgPerCast, "measured lookup tolerates few casts")
+SlashCmdList.FOREVEROPTIMIZER("rotation")
+check(outHas("Serpent Sting r1") and outHas("Auto Shot") and outHas("upgrades at the trainer"), "/fo rotation prints priorities and trainer upgrades")
+SlashCmdList.FOREVEROPTIMIZER("rotation check") check(outHas("optional runes absent") or outHas("all spells and talents found"), "/fo rotation check reports")
+SlashCmdList.FOREVEROPTIMIZER("build") check(outHas("Beast Mastery leveling") and outHas("next points"), "/fo build shows plan vs live talents")
+SlashCmdList.FOREVEROPTIMIZER("build list") SlashCmdList.FOREVEROPTIMIZER("build use 2") SlashCmdList.FOREVEROPTIMIZER("build")
+check(outHas("Marksmanship leveling"), "/fo build use switches builds")
+SlashCmdList.FOREVEROPTIMIZER("rotation WARLOCK") check(outHas("WARLOCK rotation"), "/fo rotation <class> works for other classes")
+SlashCmdList.FOREVEROPTIMIZER("spell Serpent Sting") check(outHas("known"), "/fo spell lists ranks with known flag")
+local bad = RM:ValidateBuild("HUNTER", { name = "bad", talents = { { "Intimidation", 1 }, { "Nope", 1 }, { "Endurance Training", 9 } } })
+check(#bad == 3, "build validation catches tier gate, unknown talent, over-max rank (" .. #bad .. ")")
+noErrors("rotation optimizer")
 noErrors("all " .. #cmds .. " slash commands")
 
 -- Dashboard tabs render
@@ -261,6 +335,17 @@ S.fire("ADDON_LOADED", "ForeverOptimizer") S.fire("PLAYER_LOGIN")
 check(FO2:GetModule("Classes.Warlock").disabled == true and FO2:GetModule("Classes.Warlock").db == nil, "disabled module skipped on load")
 check(FO2.state.disabledCount == 1, "disabled count reported")
 noErrors("second load")
+
+-- Third load with the combat log refused (12.x behaviour): everything degrades, nothing errors
+ForeverOptimizerDB.account.modules.disabled["Classes.Warlock"] = nil
+S.combatLogAllowed = false
+S.frames, S.registered, S.tickers, S.timers = nil, {}, {}, {}
+local FO3 = S.loadAddon("ForeverOptimizer")
+S.fire("ADDON_LOADED", "ForeverOptimizer") S.fire("PLAYER_LOGIN")
+check(FO3.CombatLog.registered == false and FO3.CombatLog.available == false, "combat log refusal detected")
+SlashCmdList.FOREVEROPTIMIZER("combat") check(outHas("combat log not available"), "combat commands degrade")
+check(#FO3.Classes.HUNTER:Lines() >= 3, "hunter lines still render without the log")
+noErrors("third load (no combat log)")
 
 print(string.format("\n%d failures, %d chat lines", failures, #S.out))
 os.exit(failures == 0 and 0 or 1)

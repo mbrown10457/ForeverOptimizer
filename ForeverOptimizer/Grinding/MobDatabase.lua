@@ -107,6 +107,14 @@ MD.lastHostile = function() return lastHostileName end
 -- Message handlers
 -- ---------------------------------------------------------------------------
 MD.messages = {
+    -- Combat-log fight record (Grinding.CombatStats): precise kill time and damage taken per kill
+    FO_FIGHT = function(self, npcID, guid, dur, done, taken, name)
+        if not npcID then return end
+        local m = self:Mob(npcID, name)
+        if dur and dur > 0.5 and dur < 120 then m.clTime = (m.clTime or 0) + dur m.clN = (m.clN or 0) + 1 end
+        if taken and taken > 0 then m.taken = (m.taken or 0) + taken m.takenN = (m.takenN or 0) + 1 end
+        if done then m.done = (m.done or 0) + done end
+    end,
     FO_KILL = function(self, name, xp, npcID, guid, now)
         local e = engaged[name]
         local m
@@ -211,7 +219,9 @@ MD.events = {
 function MD:Metrics(id, m)
     local kills = m.kills or 0
     local xpk = kills > 0 and (m.xp or 0) / kills or 0
-    local ttk = (m.killN or 0) > 0 and m.killTime / m.killN or nil
+    local ttkChat = (m.killN or 0) > 0 and m.killTime / m.killN or nil
+    local ttkCL = (m.clN or 0) >= 3 and m.clTime / m.clN or nil      -- combat-log timing wins once it has a few samples
+    local ttk = ttkCL or ttkChat
     local gap = (m.gapN or 0) > 0 and m.gapTime / m.gapN or nil
     local looted = m.looted or 0
     local valuePerLoot, ahPart = 0, 0
@@ -226,6 +236,8 @@ function MD:Metrics(id, m)
         kills = kills, looted = looted, deaths = m.deaths or 0,
         xpk = xpk, ttk = ttk, gap = gap, xpPerSec = (ttk and ttk > 0) and xpk / ttk or nil,
         hpLoss = (m.hpN or 0) > 0 and m.hpLoss / m.hpN or nil, manaLoss = (m.manaN or 0) > 0 and m.manaLoss / m.manaN or nil,
+        ttkCL = (m.clN or 0) > 0 and m.clTime / m.clN or nil, clN = m.clN or 0,
+        dmgTaken = (m.takenN or 0) > 0 and m.taken / m.takenN or nil, dmgDone = (m.clN or 0) > 0 and (m.done or 0) / m.clN or nil,
         valuePerKill = valuePerLoot, vendorPerKill = valuePerLoot - ahPart, ahPerKill = ahPart,
     }
 end
@@ -330,6 +342,7 @@ MD.commands = {
         print("  kills %d looted %d deaths %d | xp/kill %.0f | kill %s, gap %s | value/kill %s (AH %s)",
             r.kills, r.looted, r.deaths, r.xpk, r.ttk and string.format("%.1fs", r.ttk) or "--",
             r.gap and string.format("%.1fs", r.gap) or "--", U.FormatMoney(r.valuePerKill), U.FormatMoney(r.ahPerKill))
+        if r.ttkCL then print("  combat log: %.1fs per kill, %d damage dealt and %d taken per fight (%d fights)", r.ttkCL, r.dmgDone or 0, r.dmgTaken or 0, r.clN) end
         if r.hpLoss then print("  after a solo fight: %.0f%% health gone%s (%d samples)", r.hpLoss * 100, r.manaLoss and string.format(", %.0f%% mana", r.manaLoss * 100) or "", m.hpN or 0) end
         local rows = self:DropRates(npc)
         for i = 1, math.min(15, #(rows or {})) do

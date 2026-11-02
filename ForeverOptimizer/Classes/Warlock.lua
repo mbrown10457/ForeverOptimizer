@@ -57,6 +57,20 @@ function W:Lines()
     if st and st.by.rest.t > 0 and st.productive > 0 then
         lines[#lines + 1] = string.format("Drink share %.0f%% (Life Tap + Drain more?)", st.by.rest.t / (st.productive + st.by.rest.t) * 100)
     end
+    -- Combat-log extras: DoT efficiency, demon share, mana economy
+    local CS = FO.CombatStats
+    if CS and CS:Available() then
+        local c = CS:Stats()
+        for i = 1, math.min(3, #c.dots) do
+            local d = c.dots[i]
+            lines[#lines + 1] = string.format("%s eff %.0f%%%s%s", U.Trunc(d.name, 14), d.efficiency * 100,
+                d.early > 0 and string.format(" (%d early)", d.early) or "", d.truncated > 0 and string.format(" (%d died)", d.truncated) or "")
+        end
+        if c.petShare and c.dmgTotal > 0 then lines[#lines + 1] = string.format("Demon damage %.0f%%", c.petShare * 100) end
+        if c.manaSpent > 0 then
+            lines[#lines + 1] = string.format("Mana spent %d, gained %d, %.1f dmg/mana", c.manaSpent, c.manaGained, c.dmgTotal / c.manaSpent)
+        end
+    end
     return lines
 end
 

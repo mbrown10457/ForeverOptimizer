@@ -40,6 +40,24 @@ function P:Lines()
     local mana, manaMax = U.Num(UnitPower("player", 0)), U.Num(UnitPowerMax("player", 0))
     if mana and manaMax and manaMax > 0 then lines[#lines + 1] = string.format("Mana %d%%", mana / manaMax * 100) end
     if share > 30 then lines[#lines + 1] = "Spirit > Int until drink share < 20%; wand more." end
+    -- Combat-log extras: healing and damage per mana, wand share by damage
+    local CS = FO.CombatStats
+    if CS and CS:Available() then
+        local c = CS:Stats()
+        for i = 1, math.min(2, #c.heals) do
+            local h = c.heals[i]
+            if h.perMana then lines[#lines + 1] = string.format("%s %.2f heal/mana, %.0f%% overheal", U.Trunc(h.name, 14), h.perMana, h.overPct * 100) end
+        end
+        local wandDmg = 0
+        for _, sp in ipairs(c.spells) do
+            if sp.name == "Shoot" then wandDmg = sp.total end
+        end
+        if c.dmgTotal > 0 then lines[#lines + 1] = string.format("Wand %.0f%% of damage%s", wandDmg / c.dmgTotal * 100, c.manaSpent > 0 and string.format(", %.1f dmg/mana", c.dmgTotal / c.manaSpent) or "") end
+        for i = 1, math.min(2, #c.dots) do
+            local d = c.dots[i]
+            lines[#lines + 1] = string.format("%s eff %.0f%%%s", U.Trunc(d.name, 14), d.efficiency * 100, d.perMana and string.format(", %.1f dmg/mana", d.perMana) or "")
+        end
+    end
     return lines
 end
 

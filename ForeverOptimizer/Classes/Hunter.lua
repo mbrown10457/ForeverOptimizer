@@ -60,6 +60,19 @@ function H:Lines()
     lines[#lines + 1] = aspect or "|cffffd100No aspect|r"
     local st = FO.Session:Stats()
     if st and st.deaths > 0 and st.kills > 0 then lines[#lines + 1] = string.format("Deaths per 100 kills: %.1f", st.deaths / st.kills * 100) end
+    -- Combat-log extras (optimistic: only when the client exposes the log)
+    local CS = FO.CombatStats
+    if CS and CS:Available() then
+        local c = CS:Stats()
+        if c.petShare and c.dmgTotal > 0 then
+            lines[#lines + 1] = string.format("Pet damage %.0f%%%s", c.petShare * 100, c.petShare < 0.2 and " |cffffd100low: pet idle or dead?|r" or "")
+        end
+        local a = c.autos["Auto Shot"]
+        if a and a.shots >= 3 and a.clipPct then
+            lines[#lines + 1] = string.format("Auto Shot %d, clipped %.0f%% (%s lost)%s", a.shots, a.clipPct * 100, U.FormatDuration(a.clipped),
+                a.clipPct > 0.15 and " |cffff6060cast less between shots|r" or "")
+        end
+    end
     return lines
 end
 

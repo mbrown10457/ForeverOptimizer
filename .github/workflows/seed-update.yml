@@ -1,0 +1,60 @@
+# Every day: if wago.tools lists a newer Forever (wowf) client build, regenerate the item, spell and
+# talent seeds from it, run the harness and the rotation-data validator, and either commit the new
+# seeds to main (green) or open an issue with the validator output (a patch renamed/removed something
+# the hand-authored rotations or builds reference).
+name: seed-update
+on:
+  schedule:
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+  issues: write
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install Lua
+        run: sudo apt-get update -q && sudo apt-get install -y -q lua5.4
+      - name: Newest client build?
+        id: check
+        run: |
+          set +e
+          latest=$(python3 scripts/check_build.py wowf)
+          code=$?
+          echo "latest=$latest" >> "$GITHUB_OUTPUT"
+          if [ "$code" = "0" ]; then echo "new=true" >> "$GITHUB_OUTPUT"; elif [ "$code" = "3" ]; then echo "new=false" >> "$GITHUB_OUTPUT"; else exit 1; fi
+      - name: Rebuild seeds
+        if: steps.check.outputs.new == 'true'
+        run: |
+          python3 scripts/build_seed.py --build "${{ steps.check.outputs.latest }}"
+          python3 scripts/build_spells.py --build "${{ steps.check.outputs.latest }}"
+      - name: Validate
+        if: steps.check.outputs.new == 'true'
+        id: validate
+        run: |
+          set +e
+          { lua5.4 test/run.lua && lua5.4 test/validate_data.lua; } > validate.log 2>&1
+          echo "ok=$?" >> "$GITHUB_OUTPUT"
+          tail -60 validate.log
+      - name: Commit new seeds
+        if: steps.check.outputs.new == 'true' && steps.validate.outputs.ok == '0'
+        run: |
+          git config user.name "seed-bot"
+          git config user.email "seed-bot@users.noreply.github.com"
+          git add ForeverOptimizer/Data
+          git commit -m "Seeds: Forever client build ${{ steps.check.outputs.latest }}" || exit 0
+          git push
+      - name: Open an issue when the data no longer matches
+        if: steps.check.outputs.new == 'true' && steps.validate.outputs.ok != '0'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          title="Client build ${{ steps.check.outputs.latest }}: rotation data needs attention"
+          existing=$(gh issue list --search "$title in:title" --state open --json number -q '.[0].number')
+          body=$(printf 'New Forever build **%s** was published on wago.tools. Seeds regenerated, but the harness or the rotation validator failed:\n\n```\n%s\n```\n\nFix `ForeverOptimizer/Data/Rotations.lua` (or the code) and rerun `scripts/build_seed.py` + `scripts/build_spells.py`.' "${{ steps.check.outputs.latest }}" "$(tail -80 validate.log)")
+          if [ -n "$existing" ]; then gh issue comment "$existing" --body "$body"; else gh issue create --title "$title" --body "$body"; fi

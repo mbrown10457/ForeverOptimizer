@@ -70,7 +70,7 @@ function CreateFrame(kind, name, parent, template)
     local setScript = f.SetScript
     f.SetScript = function(self, k, fn) setScript(self, k, fn) if k == "OnUpdate" then S.updaters = S.updaters or {} S.updaters[#S.updaters + 1] = self end end
     f.RegisterEvent = function(self, ev)
-        if ev == "COMBAT_LOG_EVENT_UNFILTERED" or ev == "COMBAT_LOG_EVENT" then error("event is restricted") end
+        if (ev == "COMBAT_LOG_EVENT_UNFILTERED" or ev == "COMBAT_LOG_EVENT") and not S.combatLogAllowed then error("event is restricted") end
         S.registered[ev] = true
         S.frames = S.frames or {}
         for _, f in ipairs(S.frames) do if f == self then return end end
@@ -79,6 +79,36 @@ function CreateFrame(kind, name, parent, template)
     return f
 end
 UIParent, GameTooltip, ItemRefTooltip = Region(), Region(), Region()
+
+-- Combat log (optimistic path; S.combatLogAllowed=false simulates the 12.x refusal)
+S.combatLogAllowed = true
+S.clArgs = { n = 0 }
+function CombatLogGetCurrentEventInfo() return unpack(S.clArgs, 1, S.clArgs.n) end
+-- S.cl(subevent, src, dst, ...): src/dst = { guid=, name=, flags= }; ... = prefix+suffix params
+function S.cl(sub, src, dst, ...)
+    local a = { S.clock, sub, false, src.guid, src.name, src.flags or 0, 0, dst.guid, dst.name, dst.flags or 0, 0, ... }
+    a.n = 11 + select("#", ...)
+    S.clArgs = a
+    S.fire("COMBAT_LOG_EVENT_UNFILTERED")
+end
+bit = bit or { band = load("return function(a, b) return a & b end")() }
+COMBATLOG_OBJECT_AFFILIATION_MINE, COMBATLOG_OBJECT_TYPE_PLAYER, COMBATLOG_OBJECT_TYPE_PET, COMBATLOG_OBJECT_TYPE_GUARDIAN = 0x1, 0x400, 0x1000, 0x2000
+function UnitRangedDamage() return 2.0, 50, 70 end
+S.spellCost = {}
+-- Spellbook / talents (classic tab API)
+S.knownSpells = { [75] = true, [1978] = true, [3044] = true, [1130] = true, [2973] = true, [5116] = true, [2643] = true, [136] = true, [14260] = true }
+function IsSpellKnown(id) return S.knownSpells[id] == true end
+function IsPlayerSpell(id) return S.knownSpells[id] == true end
+S.talents = {
+    { "Beast Mastery", { { "Endurance Training", 1, 3, 5, 5 }, { "Deadly Aspects", 1, 2, 2, 5 }, { "Thick Hide", 2, 3, 0, 3 }, { "Unleashed Fury", 3, 3, 0, 5 } } },
+    { "Marksmanship", { { "Efficiency", 1, 3, 0, 5 } } },
+    { "Survival", { { "Deflection", 1, 3, 0, 5 } } },
+}
+function GetNumTalentTabs() return #S.talents end
+function GetTalentTabInfo(i) local t = S.talents[i] local pts = 0 for _, x in ipairs(t[2]) do pts = pts + x[4] end return t[1], nil, pts end
+function GetNumTalents(tab) return #S.talents[tab][2] end
+function GetTalentInfo(tab, i) local x = S.talents[tab][2][i] return x[1], nil, x[2], x[3], x[4], x[5] end
+function GetSpellPowerCost(id) return { { type = 0, cost = S.spellCost[id] or 0 } } end
 function Region_HookScript(self, k, fn) self.hooks = self.hooks or {} self.hooks[k] = self.hooks[k] or {} table.insert(self.hooks[k], fn) end
 
 -- World map (modern map canvas API subset: data providers + pin pools)

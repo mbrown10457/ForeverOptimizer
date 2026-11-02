@@ -41,6 +41,8 @@ Everything is `/fo <command>`. `/fo help` lists them grouped by area. Highlights
 | Character | `plan [level]`, `skip`, `proftrain`, `goal`, `gear <link>`, `weights`, `consumables`, `rep [faction]`, `hearth`, `eta [level]`, `me`, `skills` |
 | Classes | `hunter`, `warlock`, `priest` |
 | HUD | `show`, `hide`, `toggle`, `tab <name>`, `scale <n>`, `lock` |
+| Combat log | `combat`, `dots`, `heals`, `autoshot`, `combatlog` (only when the client allows the log) |
+| Rotation | `rotation [check\|CLASS]`, `build [list\|<n>\|use <n>]`, `spell <name>` |
 | Map | `map [nodes\|rares\|spawns\|coords on\|off]`, `map minseen <n>`, `map refresh`, `coords` |
 | Setup | `verify`, `errors [n\|clear]`, `seed [id\|name]`, `module [on\|off <name>]`, `dbstats`, `wipe <namespace\|all> confirm` |
 
@@ -48,6 +50,8 @@ Everything is `/fo <command>`. `/fo help` lists them grouped by area. Highlights
 
 - **SessionManager** decides every second what you're doing (quest / grind / dungeon / travel / rest / town / dead / idle) and attributes XP, kills and gold to it. Everything else reads from that one session or listens to its `FO_*` messages.
 - **Kills** come from the "X dies, you gain N experience" chat line; **drops** from the loot window and its source GUIDs. The combat log is never relied on: 12.x refuses it, and whether Forever's 1.60 client does is one of the first things `/fo verify` reports.
+- **Combat log, optimistically.** `Core/CombatLog.lua` tries to register the combat log in a protected call. If the client allows it, `Grinding/CombatStats.lua` measures damage by spell and by source (you vs pet), damage taken, fight lengths, healing with overheal, mana spent per spell (cost read at cast time), DoT efficiency (ticks delivered vs lost to early refresh or the target dying), and Auto Shot / wand clipping. The class modules show pet share, clipping, DoT efficiency and heal-per-mana lines, and MobDatabase gets precise kill times and damage taken per fight. If the client refuses the log, or hides amounts as secret values, every consumer falls back to the chat-line and loot-window paths and `/fo combatlog` says why.
+- **Rotation optimizer.** `Data/Spells.lua` and `Data/Talents.lua` are generated from the client's own spell and talent tables (every class spell with ranks, learn levels, costs, cast times, cooldowns, durations and base points; every talent with tab, tier, column, ranks and prerequisites). `Data/Rotations.lua` holds hand-authored leveling priorities and talent builds for all nine classes, written against Forever's trees, which include rune-style "Engrave" abilities and reworked talents. `/fo rotation` prints the priority list for the spells you actually know, with measured damage or healing per cast and per mana from the combat log where there are enough casts, estimates from the seed otherwise, plus ranks you can train now and abilities still ahead of you. `/fo build` compares a build to your live talent points and names the next points to spend. Every name is validated against the seed at load, in the harness, and in CI.
 - **Item seed**: `Data/Items.lua` carries every item in the Forever client (name, vendor sell and buy price, quality, class, levels, stack size, bind type), generated from the client's own data tables on wago.tools by `scripts/build_seed.py`. Item helpers fall back to it when the client cache is cold, so bag values and vendor costs are right from the first minute. Live data always overrides it. `/fo seed <id|name>` looks items up; rerun the script when the client build changes.
 - **World map overlay**: the open map shows your coordinates and the cursor's in its bottom-left corner, and pins every herb and ore node you have gathered (green and yellow), every rare you have seen (red), and optionally the spawn points of mobs you track with their respawn estimate (gray). Pins come from your own records, so a zone fills in as you play it; hover a pin for how often and how recently it was seen. `/fo map` toggles layers. The HUD Overview also carries a position line and `/fo coords` prints it to chat.
 - **Errors** inside any handler, tick or command are caught by `FO.Try`, printed at most three times, and saved with a stack to `account.errors.log`. `/fo errors` lists them in game; `scripts/fo_sqlite.py` exports them.
@@ -68,6 +72,10 @@ The SavedVariables file is written on logout or `/reload`:
 `scripts/savedvars_to_json.py <file> --var ForeverOptimizerDB -o fo.json` converts it with no Lua runtime. `scripts/fo_sqlite.py <file> -o fo.sqlite` goes further and upserts sessions, zone segments, dungeons, mobs, drops, encounters, loot, prices, quests, nodes, respawns, verify results and the saved error log into SQLite, so history outlives the in-game caps. Everything lives under `account.<namespace>` and `chars.<Name-Realm>.<namespace>`.
 
 `scripts/package.sh` zips the addon plus `INSTALL.txt` into `dist/` for friends on either platform.
+
+## Keeping the data current
+
+The seeds are regenerated from the client's tables, so numbers, ranks, levels and talent trees follow patches without hand edits. `scripts/check_build.py` reports whether wago.tools lists a newer Forever build than `ForeverOptimizer/Data/BUILD`; `scripts/build_seed.py` and `scripts/build_spells.py` rebuild the seeds for a build. The `seed-update` GitHub Actions workflow runs daily: when a new client build appears it regenerates the seeds, runs the harness and the rotation validator, commits to main if everything passes, and opens an issue with the validator output if a patch renamed or removed something the hand-authored rotations or builds reference. The `ci` workflow runs the harness on every push and the `release` workflow attaches the zip to a GitHub Release on every `v*` tag.
 
 ## Tests
 

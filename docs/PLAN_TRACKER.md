@@ -52,17 +52,17 @@ Status key: **done** = implemented and exercised by `test/run.lua`; **partial** 
 
 | Item | Status | Notes |
 |---|---|---|
-| Hunter: pet damage contribution, uptime | n/a / partial | No combat log; pet presence shown. Uptime could be added from `UnitExists("pet")` per tick |
+| Hunter: pet damage contribution, uptime | done (combat log) | Pet share of damage on HUD from CombatStats; falls back to pet presence if the log is refused |
 | Hunter: happiness, loyalty, food compatibility | partial | Happiness and food types shown when the client has the classic pet API (verify) |
 | Hunter: ammo remaining, pet training planning | partial | Ammo count + low warning. Pet training points not read yet |
 | Hunter: aspect state | done | Current aspect on HUD |
-| Hunter: Auto Shot timing / clipping | n/a | Needs combat log or cast timing not exposed |
+| Hunter: Auto Shot timing / clipping | done (combat log) | Shot gaps vs ranged speed from cast-success/range-damage events; `/fo autoshot`, HUD line |
 | Warlock: shard inventory and consumption | done | Count, low/high warnings |
 | Warlock: Life Tap / Drain Life tradeoffs | partial | Casts per kill counted; health/mana tradeoff math not yet |
-| Warlock: DoT efficiency, demon contribution | n/a | No combat log |
-| Priest: wand vs spell | partial | Wand share counted from "Shoot" casts; no damage comparison |
+| Warlock: DoT efficiency, demon contribution | done (combat log) | Ticks delivered vs lost to early refresh/death per DoT, demon damage share, mana spent vs gained; `/fo dots` |
+| Priest: wand vs spell | done (combat log) | Wand share by damage when the log is live; by casts otherwise |
 | Priest: Spirit Tap / regen timing | partial | Drink share and mana shown; no per-fight regen model |
-| Priest: healing/damage per mana, buff uptime | n/a / planned | Per-mana needs combat log; buff uptime could use aura scan |
+| Priest: healing/damage per mana, buff uptime | done / planned | Heal per mana with overheal and damage per mana from CombatStats (`/fo heals`); buff uptime still planned |
 
 ## Metrics and formulas
 
@@ -125,6 +125,9 @@ All of these are probed by `/fo verify` and the result is saved to `account.veri
 | Persistent Lua error log with stacks, dedupe, `/fo errors [n\|clear]`, SQLite export | `FO.Try` / `FO:Error` in `Core/Init.lua`, persistence in `Core/DataStorage.lua` | done |
 | Client item seed (19,267 items from the `wowf` 1.60.1.70707 ItemSparse/Item tables) with Util fallbacks and `/fo seed` | `Data/Items.lua`, `Core/SeedData.lua`, `scripts/build_seed.py` | done; creature and quest POI tables in the client are near-empty, so mobs and quests stay learned, not seeded |
 | Git repository with tagged releases | repo root | done (v0.4.0, v0.5.0, v0.6.0) |
+| Combat log adapter built optimistically for the 1.60 client, with graceful refusal; CombatStats (damage by spell/source, pet share, damage taken, fight timing, heals and overheal, mana per spell, DoT efficiency, Auto Shot clipping); class modules upgraded; MobDatabase gets precise kill time and damage taken | `Core/CombatLog.lua`, `Grinding/CombatStats.lua`, `Classes/*` | done pending in-game confirmation that the log is allowed; falls back to chat/loot paths otherwise |
+| Rotation optimizer: spell and talent seeds from the client tables, hand-authored rotations and builds for all nine classes validated against the seed, `/fo rotation`, `/fo build`, `/fo spell` | `scripts/build_spells.py`, `Data/Spells.lua`, `Data/Talents.lua`, `Data/Rotations.lua`, `Character/Rotation.lua` | done; rotations are first drafts to tune against measured data |
+| Auto-updating data: daily workflow regenerates seeds on a new client build, validates, commits or opens an issue; CI on push; release zip on tag | `.github/workflows/*.yml`, `scripts/check_build.py`, `test/validate_data.lua` | done, untested until the repo has run its first Actions job |
 | World map overlay: player and cursor coordinates, pins for recorded herb/ore nodes, rare sightings and tracked spawn points with respawn estimate; `/fo map`, `/fo coords`, HUD position line | `Dashboard/MapOverlay.lua` + `.xml` (map data-provider API) | done; degrades to coordinates only if the client lacks `WorldMapFrame:AddDataProvider`, which `/fo map` reports |
 
 ## Immediate next steps (from the plan)

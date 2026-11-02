@@ -41,7 +41,7 @@ function V:Run()
         has("C_RestrictedActions.IsAddOnRestrictionActive") and ("active=" .. tostring(C_RestrictedActions.IsAddOnRestrictionActive())) or "absent")
     local f = CreateFrame("Frame")
     local clOk = pcall(f.RegisterEvent, f, "COMBAT_LOG_EVENT_UNFILTERED")
-    add("combat log refused (expected on 12.x)", not clOk, clOk and "combat log IS available; MobDatabase could use it" or "refused, as designed around")
+    add("combat log registrable", nil, clOk and "available: CombatStats, class analytics and FO_FIGHT timing are live" or "refused: chat/loot paths in use")
     local npOk = pcall(f.RegisterEvent, f, "NAME_PLATE_UNIT_ADDED")
     add("NAME_PLATE_UNIT_ADDED registrable", npOk, "needed for respawn confirmation")
 
