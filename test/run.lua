@@ -9,7 +9,7 @@ local function outHas(pat) for i = #S.out, 1, -1 do if S.out[i]:find(pat, 1, tru
 local function noErrors(label) check(#S.errors == 0, label .. " (no handler errors)") if #S.errors > 0 then for _, e in ipairs(S.errors) do print("   " .. e) end S.errors = {} end end
 
 local FO, order = S.loadAddon("ForeverOptimizer")
-check(#order == 46, "loaded " .. #order .. " files from TOC")
+check(#order == 47, "loaded " .. #order .. " files from TOC")
 check(#FO.modules >= 26, #FO.modules .. " modules registered")
 check(ForeverOptimizerDB == nil or true, "pre-login")
 
@@ -343,6 +343,25 @@ DB:ClickControl("Marksmanship") check(FO.Rotation.db.build.HUNTER == 2, "build b
 SlashCmdList.FOREVEROPTIMIZER("hud list") check(outHas("Character tab buttons"), "/fo hud list prints the buttons")
 SlashCmdList.FOREVEROPTIMIZER("hud click beast") check(outHas("active build set to 1"), "/fo hud click presses a button by name")
 noErrors("HUD controls")
+
+-- Help tab and manual window
+DB:SelectTab("Help")
+labels = {}
+for _, c in ipairs(DB:Controls()) do labels[#labels + 1] = c.label end
+check(table.concat(labels, ",") == "Core,HUD,Grind,Quest,Econ,Char,Class,<,>,Window", "Help tab buttons (" .. table.concat(labels, ",") .. ")")
+local help = table.concat(FO.Help:Lines(), "\n")
+check(help:find("Setup and session") and help:find("verify") and help:find("/fo <cmd>", 1, true), "Help tab lists Core commands with syntax")
+DB:ClickControl("Grind") help = table.concat(FO.Help:Lines(), "\n")
+check(help:find("Grinding and combat") and (help:find("dps") or help:find("mobs")), "Help Grind area lists grinding commands")
+DB:ClickControl(">") check(FO.Help.page == 2 and table.concat(FO.Help:Lines(), "\n"):find("page 2/"), "Help pages forward")
+DB:ClickControl("<") check(FO.Help.page == 1, "Help pages back")
+if FO.Help:IsOpen() then FO.Help:Toggle() end   -- the command smoke test above already opened it once
+DB:ClickControl("Window") check(FO.Help:IsOpen(), "Window button opens the manual")
+local text = FO.Help:Text()
+check(text:find("/fo dps", 1, true) and text:find("Meter  buttons: Fight, Last, Session, DPS, HPS, Mine", 1, true) and text:find("Help  buttons:", 1, true), "manual text carries every command and each tab's buttons")
+SlashCmdList.FOREVEROPTIMIZER("manual") check(not FO.Help:IsOpen(), "/fo manual toggles the window closed")
+DB:SelectTab("Overview")
+noErrors("help")
 noErrors("combat log")
 
 -- Rotation optimizer: hand-authored data validates against the client seed, priorities render, builds check

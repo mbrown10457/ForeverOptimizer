@@ -53,7 +53,8 @@ local function Region()
     local r = { shown = true }
     for _, m in ipairs({ "SetPoint", "SetText", "SetJustifyH", "SetWordWrap", "SetTextColor", "SetSize", "SetBackdrop", "SetBackdropColor",
                          "SetScale", "SetMovable", "EnableMouse", "RegisterForDrag", "SetClampedToScreen", "SetHeight", "StartMoving", "StopMovingOrSizing", "AddLine",
-                         "SetTexture", "SetAlpha", "SetOwner", "ClearLines", "SetFontObject", "SetWidth" }) do
+                         "SetTexture", "SetAlpha", "SetOwner", "ClearLines", "SetFontObject", "SetWidth",
+                         "SetScrollChild", "SetBackdropBorderColor", "SetFrameStrata", "SetSpacing", "SetVerticalScroll" }) do
         r[m] = function() end
     end
     r.Show = function(self) self.shown = true end

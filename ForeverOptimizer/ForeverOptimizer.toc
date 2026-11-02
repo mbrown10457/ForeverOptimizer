@@ -2,7 +2,7 @@
 ## Title: ForeverOptimizer
 ## Notes: One core, many modules: leveling, gold, mobs, quests, auction house, inventory, gear, training and downtime analytics built from your own gameplay.
 ## Author: Mike
-## Version: 0.9.3
+## Version: 0.9.4
 ## SavedVariables: ForeverOptimizerDB
 ## OptionalDeps: QuestieDB
 ## IconTexture: Interface\Icons\INV_Misc_Map_01
@@ -65,5 +65,6 @@ Dashboard\Leveling.lua
 Dashboard\Economy.lua
 Dashboard\Character.lua
 Dashboard\History.lua
+Dashboard\Help.lua
 Dashboard\MapOverlay.lua
 Dashboard\MapOverlay.xml

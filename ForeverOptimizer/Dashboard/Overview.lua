@@ -24,7 +24,7 @@ end
 
 local frame, lines, buttons, controlButtons
 local MAX_LINES = 12
-local MAX_CONTROLS = 8
+local MAX_CONTROLS = 10
 local Render
 
 local function Eval(v) if type(v) == "function" then local ok, r = pcall(v) return ok and r or nil end return v end
@@ -49,13 +49,13 @@ local function LayoutControls(tab)
         local b, c = controlButtons[i], list[i]
         if c then
             b.text:SetText(c.label)
-            local w = ((b.text.GetStringWidth and b.text:GetStringWidth()) or (#c.label * 6)) + 10
+            local w = ((b.text.GetStringWidth and b.text:GetStringWidth()) or (#c.label * 6)) + 8
             b:SetSize(w, 14)
             b:SetPoint("TOPLEFT", frame, "TOPLEFT", x, -24)
             b.control = c
             if c.active then b.text:SetTextColor(1, 0.82, 0) b:SetBackdropColor(1, 0.82, 0, 0.18) else b.text:SetTextColor(0.78, 0.78, 0.78) b:SetBackdropColor(1, 1, 1, 0.07) end
             b:Show()
-            x = x + w + 4
+            x = x + w + 3
         else
             b.control = nil
             b:Hide()
@@ -92,6 +92,8 @@ end
 
 -- Buttons of the current tab (resolved), for /fo hud and the harness
 function D:Controls() return ControlList(tabs[self.db.tab] or tabs.Overview) end
+function D:ControlsFor(name) return ControlList(tabs[name]) end
+function D:TabNames() local t = {} for _, n in ipairs(tabOrder) do t[#t + 1] = n end return t end
 
 -- Press a button of the current tab by label (case-insensitive)
 function D:ClickControl(label)
