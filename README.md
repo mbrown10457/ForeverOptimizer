@@ -29,6 +29,14 @@ The addon is the same on both platforms; only the helper scripts differ.
 - **Working from the repo:** `powershell -ExecutionPolicy Bypass -File scripts\install.ps1` copies the addon into AddOns (it finds the game via the registry and the usual folders, or takes `-AddOns <path>`). Add `-Link` for a directory junction so the game loads the repo copy directly, the Windows equivalent of the Mac symlink.
 - **Offline tools** (`savedvars_to_json.py`, `fo_sqlite.py`, `build_seed.py`) are plain Python 3 and run unchanged. The saved data is at `...\_forever_\WTF\Account\<ACCOUNT>\SavedVariables\ForeverOptimizerDB.lua`.
 
+## What it looks like
+
+[docs/mockup.html](docs/mockup.html) is an interactive mock of the addon in game: the HUD with every tab and its buttons, the world map pins, and the chat output of the day-one commands. Open it in a browser. The text is produced by the addon's own code run through the test harness (`scripts/mock/dump_ui.lua`), with sample session numbers; regenerate it after UI changes with:
+
+```
+lua scripts/mock/dump_ui.lua > /tmp/ui_dump.txt && python3 scripts/mock/build_mock.py /tmp/ui_dump.txt scripts/mock/template.html docs/mockup.html
+```
+
 ## Commands
 
 Everything is `/fo <command>`. `/fo help` lists them grouped by area. Highlights:

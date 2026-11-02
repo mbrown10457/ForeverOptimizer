@@ -1,0 +1,356 @@
+<title>ForeverOptimizer In-Game Mockup</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Arimo:wght@400;700&display=swap">
+<style>
+/* Layout: one 16:9 "game screen" with absolutely placed UI, a control strip underneath, notes below. */
+:root {
+  --bg: #e9ebef; --fg: #1b1f26; --muted: #5b6370; --line: #d0d5dc; --panel: #ffffff; --accent: #b24a2b;
+  --font-ui: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-wow: "Arimo", Arial, Helvetica, sans-serif;
+  /* in-game colours are fixed: they come from the client, not the theme */
+  --wow-gold: #ffd100; --wow-white: #ffffff; --wow-grey: #b3b3b3; --wow-bg: rgba(0,0,0,0.65); --wow-border: #6a5a3c;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #15181d; --fg: #e6e8ec; --muted: #9aa3b0; --line: #333a44; --panel: #1e2229; --accent: #e0714d; color-scheme: dark; } }
+:root[data-theme="dark"] { --bg: #15181d; --fg: #e6e8ec; --muted: #9aa3b0; --line: #333a44; --panel: #1e2229; --accent: #e0714d; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--font-ui); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 48px; }
+.wrap { max-width: 1100px; margin: 0 auto; }
+header { padding-block: 24px 14px; }
+h1 { font-size: 24px; font-weight: 600; margin: 0 0 4px; letter-spacing: -0.01em; text-wrap: balance; }
+.sub { color: var(--muted); margin: 0; max-width: 70ch; }
+
+/* ---- the screen ---- */
+.screen { position: relative; width: 100%; aspect-ratio: 16 / 9; max-width: 100%; border-radius: 6px; overflow: hidden;
+  background: radial-gradient(ellipse at 60% 70%, #6e3b22 0%, #3d2114 45%, #1d1210 100%); font-family: var(--font-wow); color: var(--wow-white);
+  container-type: inline-size; }
+.screen::after { content: ""; position: absolute; inset: 0; background:
+  linear-gradient(180deg, rgba(255,210,150,0.06) 0%, rgba(0,0,0,0) 40%),
+  repeating-linear-gradient(115deg, rgba(0,0,0,0.05) 0 14px, rgba(0,0,0,0) 14px 36px); pointer-events: none; }
+.screen > * { z-index: 1; }
+.hint { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); color: rgba(255,255,255,0.35); font-size: 1.3cqw; text-align: center; pointer-events: none; }
+
+/* minimap */
+.minimap { position: absolute; top: 1.2cqw; right: 1.2cqw; width: 12.5cqw; height: 12.5cqw; border-radius: 50%; border: 0.35cqw solid #5b4a2e;
+  background: radial-gradient(circle at 50% 50%, #7a4a2c 0%, #4a2b18 70%, #2a1810 100%); box-shadow: 0 0 0 0.15cqw #2a2016 inset; }
+.minimap i { position: absolute; left: 50%; top: 50%; width: 0.9cqw; height: 0.9cqw; margin: -0.45cqw; background: #fff; transform: rotate(45deg); clip-path: polygon(50% 0, 100% 100%, 50% 75%, 0 100%); }
+.minimap span { position: absolute; left: 0; right: 0; top: -1.6cqw; text-align: center; font-size: 0.95cqw; color: var(--wow-gold); text-shadow: 0 0 2px #000; }
+
+/* HUD: 300px wide frame, tooltip backdrop, tabs row, 15px line pitch (GameFontHighlightSmall) */
+.hud { position: absolute; top: calc(15cqw + 2cqw); right: 1.6cqw; width: 26.5cqw; background: var(--wow-bg);
+  border: 0.18cqw solid var(--wow-border); border-radius: 0.35cqw; box-shadow: 0 0 0 0.08cqw #2a2016 inset; padding: 0.45cqw 0.5cqw 0.6cqw; }
+.hud .tabs { display: flex; gap: 0; margin-bottom: 0.35cqw; }
+.hud .tabs button { font: inherit; font-family: var(--font-wow); font-size: 0.8cqw; font-weight: 700; color: var(--wow-grey); background: none; border: 0; padding: 0 0.2cqw 0 0; flex: 1 1 0; min-width: 0; overflow: hidden; text-align: left; cursor: pointer; text-shadow: 0 0 2px #000; }
+.hud .tabs button.on { color: var(--wow-gold); }
+.hud .tabs button:focus-visible { outline: 1px solid var(--wow-gold); }
+.hud .ctrls { display: flex; flex-wrap: wrap; gap: 0.3cqw; margin: 0.1cqw 0 0.4cqw; }
+.hud .ctrls:empty { display: none; }
+.hud .ctrls button { font: inherit; font-family: var(--font-wow); font-size: 0.78cqw; font-weight: 700; color: #c7c7c7; background: rgba(255,255,255,0.07); border: 0; border-radius: 0.15cqw; padding: 0.05cqw 0.45cqw; cursor: pointer; text-shadow: 0 0 2px #000; line-height: 1.1cqw; }
+.hud .ctrls button.on { color: var(--wow-gold); background: rgba(255,209,0,0.18); }
+.hud .ctrls button:hover, .hud .ctrls button:focus-visible { color: #fff; outline: none; }
+.hud .lines { display: flex; flex-direction: column; }
+.hud .lines div { font-size: 0.88cqw; line-height: 1.17cqw; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 0 2px #000; }
+
+/* chat frame */
+.chat { position: absolute; left: 1.2cqw; bottom: 1.4cqw; width: 42cqw; height: 22cqw; display: flex; flex-direction: column; justify-content: flex-end; }
+.chat .log { overflow-y: auto; max-height: 100%; padding: 0.3cqw 0.5cqw; background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.35) 100%); scrollbar-width: thin; }
+.chat .log div { font-size: 0.95cqw; line-height: 1.25cqw; white-space: pre; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 0 2px #000; font-family: var(--font-wow); }
+.chat .log div.typed { color: #fff; }
+.chat .log div.typed::before { content: "[Mike]: "; color: #fff; }
+.chat .editbox { margin-top: 0.3cqw; height: 1.7cqw; border: 0.1cqw solid #5b4a2e; background: rgba(0,0,0,0.5); font-size: 0.95cqw; line-height: 1.5cqw; padding: 0 0.5cqw; color: #fff; }
+.chat .editbox span { color: var(--wow-gold); }
+
+/* action bar strip */
+.actionbar { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); display: flex; gap: 0.2cqw; padding: 0.4cqw; background: rgba(0,0,0,0.5); border-radius: 0.4cqw 0.4cqw 0 0; }
+.actionbar i { width: 2.6cqw; height: 2.6cqw; border: 0.12cqw solid #333; border-radius: 0.3cqw; background: linear-gradient(145deg, #5a4a3a, #2c2218); }
+.actionbar i:nth-child(2) { background: linear-gradient(145deg, #7a2d1c, #3a150c); }
+.actionbar i:nth-child(3) { background: linear-gradient(145deg, #3a6a2b, #16301a); }
+.actionbar i:nth-child(5) { background: linear-gradient(145deg, #2b4a7a, #0f1f3a); }
+
+/* world map panel */
+.map { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 58cqw; height: 44cqw; background: #1a140f; border: 0.3cqw solid #5b4a2e; border-radius: 0.4cqw; box-shadow: 0 0 2cqw #000; }
+.map .title { position: absolute; top: -1.4cqw; left: 50%; transform: translateX(-50%); color: var(--wow-gold); font-size: 1.1cqw; font-weight: 700; background: #1a140f; padding: 0 0.8cqw; border: 0.15cqw solid #5b4a2e; border-radius: 0.4cqw; white-space: nowrap; }
+.map .close { position: absolute; top: 0.3cqw; right: 0.4cqw; font: inherit; font-family: var(--font-wow); font-size: 1cqw; color: #fff; background: #3a2a1a; border: 0.1cqw solid #5b4a2e; border-radius: 50%; width: 1.8cqw; height: 1.8cqw; cursor: pointer; line-height: 1; }
+.map svg { position: absolute; inset: 0.6cqw; width: calc(100% - 1.2cqw); height: calc(100% - 1.2cqw); }
+.map .coords { position: absolute; left: 0.8cqw; bottom: 0.6cqw; color: var(--wow-gold); font-size: 0.85cqw; font-weight: 700; text-shadow: 0 0 2px #000; }
+.map .legend { position: absolute; right: 0.8cqw; bottom: 0.6cqw; color: #ccc; font-size: 0.75cqw; display: flex; gap: 0.8cqw; }
+.pin { position: absolute; width: 1.4cqw; height: 1.4cqw; margin: -0.7cqw; border-radius: 50%; cursor: pointer; box-shadow: 0 0 0 0.08cqw rgba(0,0,0,0.6); }
+.pin.herb { background: radial-gradient(circle at 35% 35%, #9eff8a, #2f9a1c 70%); }
+.pin.ore { background: radial-gradient(circle at 35% 35%, #fff2a0, #c9a018 70%); }
+.pin.rare { background: radial-gradient(circle at 35% 35%, #ffb0a0, #c0251a 70%); }
+.pin.spawn { background: radial-gradient(circle at 35% 35%, #dcdcdc, #6b6b6b 70%); }
+.pin.quest, .pin.turnin, .pin.objective { border-radius: 0; background: none; box-shadow: none; font-weight: 700; font-size: 1.5cqw; line-height: 1.4cqw; text-align: center; text-shadow: 0 0 2px #000, 0 0 2px #000; }
+.pin.quest { color: var(--wow-gold); }
+.pin.turnin { color: var(--wow-gold); }
+.pin.objective { color: #c8c8c8; }
+.pin.player { width: 1cqw; height: 1cqw; margin: -0.5cqw; background: #fff; clip-path: polygon(50% 0, 100% 100%, 50% 75%, 0 100%); border-radius: 0; box-shadow: none; transform: rotate(20deg); cursor: default; }
+.flash { position: absolute; left: 50%; top: 22%; transform: translateX(-50%); color: #ff8c1a; font-size: 1.5cqw; font-weight: 700; text-shadow: 0 0 3px #000, 0 0 3px #000; white-space: nowrap; pointer-events: none; transition: opacity .6s; }
+.manual { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 52cqw; height: 40cqw; background: #120e0a; border: 0.3cqw solid #5b4a2e; border-radius: 0.4cqw; box-shadow: 0 0 2cqw #000; z-index: 4; }
+.manual .mtitle { position: absolute; top: 0.8cqw; left: 0; right: 0; text-align: center; color: var(--wow-gold); font-size: 1.1cqw; font-weight: 700; }
+.manual .close { position: absolute; top: 0.3cqw; right: 0.4cqw; font: inherit; font-family: var(--font-wow); font-size: 1cqw; color: #fff; background: #3a2a1a; border: 0.1cqw solid #5b4a2e; border-radius: 50%; width: 1.8cqw; height: 1.8cqw; cursor: pointer; line-height: 1; }
+.manual .mbody { position: absolute; top: 3cqw; left: 1.4cqw; right: 1.4cqw; bottom: 1.2cqw; overflow-y: auto; font-size: 0.85cqw; line-height: 1.2cqw; scrollbar-width: thin; }
+.manual .mbody div { white-space: pre-wrap; text-shadow: 0 0 2px #000; }
+.tip { position: absolute; display: none; background: rgba(0,0,0,0.85); border: 0.12cqw solid #5b4a2e; border-radius: 0.3cqw; padding: 0.35cqw 0.6cqw; font-size: 0.85cqw; line-height: 1.15cqw; white-space: nowrap; pointer-events: none; z-index: 5; }
+.tip b { color: #fff; font-weight: 700; display: block; }
+.tip span { color: #ccc; display: block; }
+.tip em { color: var(--wow-gold); font-style: normal; display: block; }
+
+/* controls under the screen */
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding-block: 12px; border-bottom: 1px solid var(--line); }
+.controls .lbl { color: var(--muted); font-size: 13px; margin-right: 4px; }
+.controls button { font: inherit; font-size: 13px; color: var(--fg); background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 4px 10px; cursor: pointer; font-family: ui-monospace, Menlo, Consolas, monospace; }
+.controls button:hover, .controls button:focus-visible { border-color: var(--accent); outline: none; }
+.controls button.key { font-family: var(--font-ui); }
+.notes { padding-block: 18px; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px 28px; }
+.notes h2 { font-size: 15px; font-weight: 600; margin: 0 0 6px; }
+.notes p, .notes li { margin: 0; color: var(--muted); font-size: 14px; }
+.notes ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 4px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+<header>
+  <h1>ForeverOptimizer In-Game Mockup</h1>
+  <p class="sub">What the addon puts on screen: the HUD under the minimap, the world map pins, and the chat output of the day-one commands. Text comes from the addon's own code run through the test harness; the numbers are a sample level-12 Durotar session.</p>
+</header>
+
+<div class="screen" id="screen">
+  <div class="hint" id="hint">Durotar, outside Razor Hill. Press M below to open the map.</div>
+  <div class="minimap"><span>Razor Hill</span><i></i></div>
+  <div class="flash" id="flash" hidden></div>
+  <div class="manual" id="manual" hidden>
+    <div class="mtitle">ForeverOptimizer manual</div>
+    <button class="close" id="manualclose" type="button" aria-label="Close manual">×</button>
+    <div class="mbody" id="manualbody"></div>
+  </div>
+
+  <div class="hud" id="hud" aria-label="ForeverOptimizer HUD">
+    <div class="tabs" id="tabs"></div>
+    <div class="ctrls" id="ctrls"></div>
+    <div class="lines" id="hudlines"></div>
+  </div>
+
+  <div class="map" id="map" hidden>
+    <div class="title">Durotar</div>
+    <button class="close" id="mapclose" type="button" aria-label="Close map">×</button>
+    <svg viewBox="0 0 580 420" preserveAspectRatio="none" aria-hidden="true">
+      <defs>
+        <linearGradient id="land" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8a5a34"/><stop offset="1" stop-color="#5e3a20"/></linearGradient>
+      </defs>
+      <rect x="0" y="0" width="580" height="420" fill="#213a4d"/>
+      <path d="M120 10 L390 10 Q470 60 440 150 Q420 230 470 300 Q500 360 440 410 L150 410 Q90 350 110 280 Q130 200 90 120 Q80 50 120 10 Z" fill="url(#land)"/>
+      <path d="M150 60 Q210 40 300 70 Q360 100 340 170 Q300 200 230 180 Q160 150 150 60 Z" fill="#6a4426" opacity="0.6"/>
+      <path d="M470 300 Q520 330 560 400 L580 420 L520 420 Q470 380 440 330 Z" fill="#2c4a5e"/>
+      <g fill="#f1dcb8" font-family="Arimo, Arial, sans-serif" font-size="13" font-weight="700" opacity="0.85">
+        <text x="190" y="35">Orgrimmar</text>
+        <text x="285" y="190">Razor Hill</text>
+        <text x="230" y="300">Valley of Trials</text>
+        <text x="330" y="330">Sen'jin Village</text>
+        <text x="470" y="330" font-size="11">Echo Isles</text>
+        <text x="140" y="140" font-size="11">Thunder Ridge</text>
+        <text x="420" y="110" font-size="11">Skull Rock</text>
+      </g>
+    </svg>
+    <div id="pins"></div>
+    <div class="coords" id="coords">52.3, 41.7</div>
+    <div class="legend"><span>● herb</span><span style="color:#e2c050">● ore</span><span style="color:#e0604d">● rare</span><span style="color:#999">● spawn</span><span style="color:#ffd100">! quest</span></div>
+    <div class="tip" id="tip"></div>
+  </div>
+
+  <div class="chat">
+    <div class="log" id="log"></div>
+    <div class="editbox"><span>/fo</span> <span id="typing" style="color:#fff"></span></div>
+  </div>
+  <div class="actionbar"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+</div>
+
+<div class="controls">
+  <span class="lbl">Type a command</span>
+  <span id="cmdbtns"></span>
+  <span class="lbl" style="margin-left:8px">Events</span>
+  <button type="button" class="key" id="btn-map">M: world map</button>
+  <button type="button" class="key" id="btn-alert">ammo alert</button>
+  <button type="button" class="key" id="btn-rare">rare sighting</button>
+  <button type="button" class="key" id="btn-hud">toggle HUD (bound key)</button>
+  <button type="button" class="key" id="btn-clear">clear chat</button>
+</div>
+
+<div class="notes">
+  <div>
+    <h2>What is real</h2>
+    <ul>
+      <li>HUD frame: 360 px wide, tooltip backdrop at 65% black, anchored under the minimap, tabs Overview / Hunter / Meter / Leveling / Economy / Character / History (the class tab is named after your class), 15 px line pitch, movable unless locked.</li>
+      <li>Button rows under the tabs. Every tab's buttons drive the same code as its commands: Meter (Fight / Last / Session, DPS / HPS, Mine), Overview (Pause, Reset, Lock, Sound, Flash), Leveling (objective, forced activity), Economy (Scan AH, Autoscan, Autosell, Sell trash), Character (builds), History (Newer / Older / Report). Click them here.</li>
+      <li>Help tab: every command by area, ten per page, built from the command registry at display time. Its Window button and <code>/fo manual</code> open a scrollable manual with syntax, the HUD tabs and their buttons, key binds and the full command list.</li>
+      <li>Meter tab and <code>/fo dps</code>, <code>/fo hps</code>: group damage and healing per player for the fight, last fight or session, with pets credited to their owner. Each copy of the addon reads its own combat log; nothing is synced between players.</li>
+      <li>Every HUD line and chat line uses the exact format strings in the addon. Colour codes are the addon's own.</li>
+      <li>Map pins: 14 px indicator textures (green herb, yellow ore, red rare, grey spawn point) and the client's quest icons for available, objective and turn-in. Hover shows the pin tooltip. The gold coordinates sit bottom-left of the map.</li>
+      <li>Alerts print to chat with an orange "!", play a sound, and flash for a few seconds in the client's centre-screen error frame (the same place "Not enough mana" appears). The flash can be turned off.</li>
+    </ul>
+  </div>
+  <div>
+    <h2>What is sample</h2>
+    <ul>
+      <li>The numbers: a made-up 42-minute level-12 session in Durotar. The harness character is a level-23 hunter in Stranglethorn, so the session lines were rewritten with Durotar values in the same format.</li>
+      <li>The Durotar map art and pin positions. Real pins come from your own recorded nodes, rares and spawn points plus QuestieDB quest givers.</li>
+      <li>The client's own frames (minimap, action bar, chat styling) are stand-ins. The real client draws those.</li>
+      <li>The verify output is cut to the first lines plus the summary. In game it prints all 36 checks.</li>
+    </ul>
+  </div>
+</div>
+</div>
+
+<script>
+var DATA = {"tabOrder": ["Overview", "Hunter", "Meter", "Leveling", "Economy", "Character", "History", "Help"], "tabs": {"Overview": ["|cff80c0ffgrind|r  00:42  Durotar", "XP 1830  |cffaaaaaa2614/hr|r  TTL 00:38", "Kills 31  |cffaaaaaa44/hr|r  deaths 0", "Net 9s 40c  |cffaaaaaa13s/hr|r", "Eff 42s 10c  |cffaaaaaa60s/hr|r  (bags 32s 70c)", "Downtime 18%  rest 05:10  travel 02:30", "|cffaaaaaaPos|r 52.3, 41.7"], "Hunter": ["Ammo 58 |cffff6060LOW|r", "Pet Boar content", "Aspect of the Hawk", "Pet damage 41%", "Auto Shot 112, clipped 6% (14s lost)"], "Meter": ["|cffffd100DPS|r fight 00:38  total 7.9k", "1. |cffabd473Mike|r 118/s  57% |cffaaaaaapet 41%|r", "2. |cff8788eeGrok|r 90/s  43% |cffaaaaaapet 36%|r"], "Leveling": ["quest 2900/hr  grind 2614/hr  dng --/hr", "Spot: 44 k/hr x 59 xp = 2614 xp/hr", "kill 7.1s + gap 74s", "Scorpid Worker Tail 6/10 42%", "Cactus Apple 3/10 37%", "L12 hist: q 2900  g 2614  d --"], "Economy": ["Loot 9s 40c  quests 14s 0c  vendor 12s 30c", "Repairs 0c  buys 2s 40c  train 1s 20c", "Bags: AH 32s 70c  vendor 8s 15c  (14 items)", "Net 13s/hr  Eff 60s/hr", "Slots 9/36 free", "AH: 2 items priced, no scan yet"], "Character": ["L12 Hunter  1g 12s", "Training: 1s 20c now, 9s 85c thru L16", "mount + ridin…: 1g 12s/90g", "First Aid 42/75", "Skinning 38/75", "Hearth: Razor Hill"], "History": ["vs 1 sessions: xp |cff60ff60+12%|r  gold |cff60ff60+4%|r  down |cff60ff60-9|r", "11/04 L10 Durotar      2330 xp/hr 11s"], "Help": ["|cffffd100Setup and session|r  18 commands, page 1/2   |cffaaaaaa/fo <cmd> [args]|r", "|cffffffffseed|r Client item seed: info, or look up <id|name>", "|cffffffffmodule|r list | on <name> | off <name> — enable/disable modules", "|cffffffffhelp|r this list", "|cfffffffferrors|r Saved Lua errors: list, <n> for stack, clear", "|cffffffffdbstats|r SavedVariables size by namespace", "|cffffffffwipe|r <namespace|all> confirm — delete saved data", "|cffffffffalerts|r Alert settings: list | <rare|respawn|bags|ammo|shards|sound|flash> on|off | bags <slots> | ammo <n> | shards <n>", "|cffffffffskills|r skill lines below max (weapon skills etc.)", "|cffffffffme|r character profile", "|cffffffffsession|r report | reset | pause | force quest|grind|auto"]}, "ctrls": {"Overview": [{"label": "Pause", "active": false}, {"label": "Reset", "active": false}, {"label": "Unlock", "active": true}, {"label": "Sound", "active": true}, {"label": "Flash", "active": true}], "Hunter": [], "Meter": [{"label": "Fight", "active": true}, {"label": "Last", "active": false}, {"label": "Session", "active": false}, {"label": "DPS", "active": true}, {"label": "HPS", "active": false}, {"label": "Mine", "active": false}], "Leveling": [{"label": "XP", "active": false}, {"label": "Gold", "active": false}, {"label": "Safe", "active": false}, {"label": "Balanced", "active": true}, {"label": "Quest", "active": false}, {"label": "Grind", "active": false}, {"label": "Auto", "active": false}], "Economy": [{"label": "Scan AH", "active": false}, {"label": "Autoscan", "active": true}, {"label": "Autosell", "active": true}, {"label": "Sell trash", "active": false}], "Character": [{"label": "Beast", "active": false}, {"label": "Marksmanship", "active": true}], "History": [{"label": "Newer", "active": false}, {"label": "Older", "active": false}, {"label": "Report", "active": false}], "Help": [{"label": "Core", "active": true}, {"label": "HUD", "active": false}, {"label": "Grind", "active": false}, {"label": "Quest", "active": false}, {"label": "Econ", "active": false}, {"label": "Char", "active": false}, {"label": "Class", "active": false}, {"label": "<", "active": false}, {"label": ">", "active": false}, {"label": "Window", "active": false}]}, "manual": ["|cff4ce57fFO:Core|r commands:", "|cff4ce57fFO:Core|r   /fo |cffffffffseed|r Client item seed: info, or look up <id|name>", "|cff4ce57fFO:Core|r   /fo |cffffffffmodule|r list | on <name> | off <name> — enable/disable modules", "|cff4ce57fFO:Core|r   /fo |cffffffffhelp|r this list", "|cff4ce57fFO:Core|r   /fo |cfffffffferrors|r Saved Lua errors: list, <n> for stack, clear", "|cff4ce57fFO:Core|r   /fo |cffffffffdbstats|r SavedVariables size by namespace", "|cff4ce57fFO:Core|r   /fo |cffffffffwipe|r <namespace|all> confirm — delete saved data", "|cff4ce57fFO:Core|r   /fo |cffffffffalerts|r Alert settings: list | <rare|respawn|bags|ammo|shards|sound|flash> on|off | bags <slots> | ammo <n> | shards <n>", "|cff4ce57fFO:Core|r   /fo |cffffffffskills|r skill lines below max (weapon skills etc.)", "|cff4ce57fFO:Core|r   /fo |cffffffffme|r character profile", "|cff4ce57fFO:Core|r   /fo |cffffffffsession|r report | reset | pause | force quest|grind|auto", "|cff4ce57fFO:Core|r   /fo |cffffffffnote|r <text> — stamp a note into this session (no text: list notes)", "|cff4ce57fFO:Core|r   /fo |cffffffffcombatlog|r Combat log availability and event counts", "|cff4ce57fFO:Core|r   /fo |cffffffffestimate|r unified efficiency estimate for this spot", "|cff4ce57fFO:Core|r   /fo |cffffffffrecommend|r adaptive leveling recommendation", "|cff4ce57fFO:Core|r   /fo |cffffffffzones|r [window] — zone comparison near your level, ranked by your objective", "|cff4ce57fFO:Core|r   /fo |cffffffffobjective|r xp | gold | safe | balanced | custom <xp> <gold> <safe>", "|cff4ce57fFO:Core|r   /fo |cffffffffverify|r probe the client APIs this addon depends on", "|cff4ce57fFO:Core|r   /fo |cffffffffchecklist|r First-hour checklist of visits and commands that seed the data | checklist reset", "|cffccccccFO:Dashboard|r   /fo |cffffffffhide|r hide HUD", "|cffccccccFO:Dashboard|r   /fo |cffffffffshow|r show HUD", "|cffccccccFO:Dashboard|r   /fo |cfffffffftab|r <Overview|Leveling|Economy|Character>", "|cffccccccFO:Dashboard|r   /fo |cffffffffhud|r list | click <button> — the buttons on the current HUD tab (for macros and key binds)", "|cffccccccFO:Dashboard|r   /fo |cfffffffflock|r toggle HUD drag lock", "|cffccccccFO:Dashboard|r   /fo |cfffffffftoggle|r toggle HUD", "|cffccccccFO:Dashboard|r   /fo |cffffffffscale|r <0.5-2>", "|cffccccccFO:Dashboard|r   /fo |cffffffffhistory|r [n] — last sessions and comparison with comparable ones", "|cffccccccFO:Dashboard|r   /fo |cffffffffmanual|r open or close the in-game manual: every command, HUD tab and button", "|cffccccccFO:Dashboard|r   /fo |cffffffffcoords|r Your current map coordinates", "|cffccccccFO:Dashboard|r   /fo |cffffffffmap|r World map overlay: status | nodes|rares|spawns|quests|objectives|turnins|coords on|off | minseen <n> | refresh", "|cff66b3ffFO:Grinding|r   /fo |cfffffffflevels|r xp/hr by activity for each level you've played", "|cff66b3ffFO:Grinding|r   /fo |cffffffffmobs|r [xp|gold|kills|safe] [here] — ranked mob table", "|cff66b3ffFO:Grinding|r   /fo |cffffffffmob|r <npcID|name> — drop rates and detail", "|cff66b3ffFO:Grinding|r   /fo |cffffffffcombat|r Damage by spell and source, mana, fights (combat log)", "|cff66b3ffFO:Grinding|r   /fo |cffffffffautoshot|r Auto Shot / wand clipping", "|cff66b3ffFO:Grinding|r   /fo |cffffffffdots|r DoT efficiency: ticks delivered vs lost to refresh/death", "|cff66b3ffFO:Grinding|r   /fo |cffffffffheals|r Healing per spell with overheal and mana efficiency", "|cff66b3ffFO:Grinding|r   /fo |cffffffffdps|r [fight|last|session] — group damage by player, pets credited to owners (combat log)", "|cff66b3ffFO:Grinding|r   /fo |cffffffffhps|r [fight|last|session] — group healing by player with overheal (combat log)", "|cff66b3ffFO:Grinding|r   /fo |cffffffffmeter|r Meter status | reset | rows <n> | mode dps|hps (HUD tab)", "|cff66b3ffFO:Grinding|r   /fo |cffffffffcompetition|r other players seen around here", "|cff66b3ffFO:Grinding|r   /fo |cffffffffrespawn|r [npcID|name] — respawn intervals (confirmed vs upper bound)", "|cff66b3ffFO:Grinding|r   /fo |cffffffffrares|r rare spawn sightings", "|cff66b3ffFO:Grinding|r   /fo |cffffffffnodes|r [herb|ore] — recorded gathering nodes on this map", "|cff66b3ffFO:Grinding|r   /fo |cffffffffdowntime|r where non-fighting time goes", "|cff66b3ffFO:Grinding|r   /fo |cfffffffflegs|r recorded travel legs between zones", "|cff66b3ffFO:Grinding|r   /fo |cffffffffdeaths|r recent corpse runs", "|cffe6cc4cFO:Quest|r   /fo |cffffffffroute|r (quest) ordered route through quest targets on this map | route all (adds pickups)", "|cffe6cc4cFO:Quest|r   /fo |cffffffffquest|r <questID> — recorded detail", "|cffe6cc4cFO:Quest|r   /fo |cffffffffautotrack|r toggle auto-watch on accept", "|cffe6cc4cFO:Quest|r   /fo |cffffffffquests|r list quests in log with known locations", "|cffe6cc4cFO:Quest|r   /fo |cffffffffquestinfo|r <id|name> — quest facts from the database: givers, objectives, prerequisites, chain", "|cffe6cc4cFO:Quest|r   /fo |cffffffffnearby|r Quests you can pick up on this map, nearest first (needs QuestieDB) | nearby all", "|cffe6cc4cFO:Quest|r   /fo |cffffffffqdb|r Quest database status", "|cffe6cc4cFO:Quest|r   /fo |cffffffffquestxp|r xp per hour of questing vs reward sizes", "|cffe6cc4cFO:Quest|r   /fo |cffffffffdrops|r quest drop odds and kills-to-finish for active objectives", "|cffe6cc4cFO:Quest|r   /fo |cffffffffnext|r [questID] — waypoint to the next known quest location", "|cffffb333FO:Economy|r   /fo |cffffffffmovers|r [pct] — items that moved vs their 7-day average", "|cffffb333FO:Economy|r   /fo |cffffffffprice|r <item> — latest, 7d and 30d stats", "|cffffb333FO:Economy|r   /fo |cffffffffwatch|r [<item> <price>] — alert when at/below price", "|cffffb333FO:Economy|r   /fo |cffffffffunwatch|r <item>", "|cffffb333FO:Economy|r   /fo |cffffffffflips|r auction opportunities: below vendor, or far below 7d average", "|cffffb333FO:Economy|r   /fo |cffffffffscan|r full AH scan (AH must be open)", "|cffffb333FO:Economy|r   /fo |cffffffffahstats|r scan history", "|cffffb333FO:Economy|r   /fo |cffffffffautoscan|r toggle full scan on AH open", "|cffffb333FO:Economy|r   /fo |cffffffffdungeons|r dungeon profitability vs open world", "|cffffb333FO:Economy|r   /fo |cffffffffgold|r gold breakdown and effective gold/hr", "|cffffb333FO:Economy|r   /fo |cfffffffffind|r <item> — search all characters' bags and bank", "|cffffb333FO:Economy|r   /fo |cffffffffmats|r materials across all characters", "|cffffb333FO:Economy|r   /fo |cffffffffbags|r [trash|auction|material|quest|worst|sell|autosell|keep <item>|min <price>|ratio <n>|low <n>]", "|cffffb333FO:Economy|r   /fo |cffffffffbank|r rescan bank (bank must be open)", "|cffffb333FO:Economy|r   /fo |cffffffffcraft|r [prof] | all [prof] | skillup [prof] | info <recipe> | capture | sellthrough <0-1>", "|cff99ffccFO:Character|r   /fo |cffffffffgear|r <item link> — upgrade score vs equipped", "|cff99ffccFO:Character|r   /fo |cffffffffweights|r [set <STAT> <n> | reset] — stat weights for your class", "|cff99ffccFO:Character|r   /fo |cffffffffgoal|r [add <name> <price> [level] | del <n>]", "|cff99ffccFO:Character|r   /fo |cffffffffproftrain|r profession training not yet learned", "|cff99ffccFO:Character|r   /fo |cffffffffskip|r [min price] — skippable spell ranks", "|cff99ffccFO:Character|r   /fo |cffffffffplan|r [level] — training costs ahead and savings goals", "|cff99ffccFO:Character|r   /fo |cffffffffconsumables|r consumable spend and buffed vs unbuffed rates", "|cff99ffccFO:Character|r   /fo |cffffffffeta|r [level] — time to level estimate", "|cff99ffccFO:Character|r   /fo |cffffffffhearth|r hearth/travel suggestions", "|cff99ffccFO:Character|r   /fo |cffffffffrep|r [faction] — rep sources and kills to next standing", "|cff99ffccFO:Character|r   /fo |cffffffffbuild|r Talent build vs your points: build | build list | build <n> | build use <n>", "|cff99ffccFO:Character|r   /fo |cffffffffrotation|r Leveling priority for your class with measured/estimated efficiency | check | <CLASS>", "|cff99ffccFO:Character|r   /fo |cffffffffspell|r Look a class spell up in the client seed: ranks, levels, cost, cast, cooldown", "|cffff99e6FO:Classes|r   /fo |cffffffffhunter|r ammo & pet status", "|cffff99e6FO:Classes|r   /fo |cffffffffwarlock|r shard & demon status", "|cffff99e6FO:Classes|r   /fo |cffffffffpriest|r mana downtime status"], "cmds": {"/fo hunter": ["|cffff99e6FO:Classes|r Ammo 58 |cffff6060LOW|r", "|cffff99e6FO:Classes|r Pet Boar content", "|cffff99e6FO:Classes|r Aspect of the Hawk", "|cffff99e6FO:Classes|r Pet damage 41%", "|cffff99e6FO:Classes|r Auto Shot 112, clipped 6% (14s lost)"], "/fo build": ["|cff99ffccFO:Character|r Beast Mastery leveling (1/2)  level 12, 3 points to place", "|cff99ffccFO:Character|r   Endurance Training                 Beast Mastery 3/5  have 2", "|cff99ffccFO:Character|r   Deadly Aspects                     Beast Mastery 0/5  have 0", "|cff99ffccFO:Character|r   Unleashed Fury                     Beast Mastery 0/5  have 0", "|cff99ffccFO:Character|r |cffffd100next points:|r Endurance Training 2/3"], "/fo rotation": ["|cff99ffccFO:Character|r HUNTER rotation at level 12  (estimates only, no combat log; seed build 1.60.1.70707)", "|cff99ffccFO:Character|r  1. Hunter's Mark r1       |cffffd100opener   |r on pull; refresh if it drops  ", "|cff99ffccFO:Character|r  2. Serpent Sting r1       |cffffd100dot      |r keep up on anything that lives past 10s  |cffaaaaaaest 10 dmg, 0.7/mana|r |cffff6060train r1|r", "|cff99ffccFO:Character|r  3. Auto Shot              |cffffd100filler   |r always running; never clip it with casts  ", "|cff99ffccFO:Character|r  4. Arcane Shot r1         |cffffd100cd       |r on cooldown above 50% mana; skip below  |cffaaaaaaest 20 dmg, 0.8/mana|r |cffff6060train r2|r", "|cff99ffccFO:Character|r  5. Multi-Shot             |cffffd100cd       |r two or more targets, or mana to spare  ", "|cff99ffccFO:Character|r  6. Raptor Strike r2       |cffffd100melee    |r if forced into melee; queue it with Auto Attack   |cffff6060train r1|r", "|cff99ffccFO:Character|r  7. Concussive Shot        |cffffd100control  |r kite runners and adds  ", "|cff99ffccFO:Character|r  8. Mend Pet r1            |cffffd100pet      |r pet under 50%  |cffaaaaaaest 100 heal, 2.00/mana|r", "|cff99ffccFO:Character|r not yet: Mongoose Bite (L16), Wing Clip (|cffff6060train now|r), Feign Death (L30), Freezing Trap (L20)", "|cff99ffccFO:Character|r |cffff6060upgrades at the trainer:|r Serpent Sting rank 1, Arcane Shot rank 2, Raptor Strike rank 1"], "/fo verify": ["|cff4ce57fFO:Core|r Verify (1.60.1 build 99999, TOC 16001):", "|cff4ce57fFO:Core|r   |cffaaaaaaINFO|r client build                         1.60.1 (99999, Oct 31 2026) TOC 16001; Lua Lua 5.5", "|cff4ce57fFO:Core|r   |cff60ff60PASS|r TOC interface matches                we ship 120105, 16001; client says 16001", "|cff4ce57fFO:Core|r   |cffaaaaaaINFO|r issecretvalue present                no secret values on this client", "|cff4ce57fFO:Core|r   |cffaaaaaaINFO|r C_RestrictedActions                  absent", "|cff4ce57fFO:Core|r   |cffaaaaaaINFO|r combat log registrable               refused: chat/loot paths in use", "|cff4ce57fFO:Core|r   |cffaaaaaaINFO|r C_CombatLog.IsCombatLogRestricted    absent", "|cff4ce57fFO:Core|r   |cffaaaaaaINFO|r C_Secrets                            absent (no secret-value system)", "|cff4ce57fFO:Core|r   ... 28 more lines ...", "|cff4ce57fFO:Core|r 24 pass, 2 fail. Results saved; paste this or send the SavedVariables file."], "/fo checklist": ["|cff4ce57fFO:Core|r first-hour checklist, 9/10:", "|cff4ce57fFO:Core|r   |cff80ff80[x]|r 1. /fo verify                   |cffaaaaaadone 00:46 ago|r", "|cff4ce57fFO:Core|r   |cff80ff80[x]|r 2. /fo errors                   |cffaaaaaadone 00:46 ago|r", "|cff4ce57fFO:Core|r   |cff80ff80[x]|r 3. /fo combatlog                |cffaaaaaadone 00:46 ago|r", "|cff4ce57fFO:Core|r   |cff80ff80[x]|r 4. /fo qdb                      |cffaaaaaadone 00:46 ago|r", "|cff4ce57fFO:Core|r   |cff80ff80[x]|r 5. open the world map           |cffaaaaaadone 00:46 ago|r", "|cff4ce57fFO:Core|r   |cff80ff80[x]|r 6. visit a vendor               |cffaaaaaadone 13:11 ago|r", "|cff4ce57fFO:Core|r   |cff80ff80[x]|r 7. visit your class trainer     |cffaaaaaadone 00:51 ago|r", "|cff4ce57fFO:Core|r   |cff80ff80[x]|r 8. run an AH scan               |cffaaaaaadone 00:46 ago|r", "|cff4ce57fFO:Core|r   |cff80ff80[x]|r 9. open the bank                |cffaaaaaadone 00:49 ago|r", "|cff4ce57fFO:Core|r   |cffff6060[ ]|r 10. open a profession window     |cffaaaaaacaptures recipes for /fo craft|r"], "/fo nearby": ["|cffe6cc4cFO:Quest|r 3 quests available on Durotar:", "|cffe6cc4cFO:Quest|r     140y  |cffffd100L7|r  Vanquish the Betrayers           from Gar'Thok (52.0, 43.0)", "|cffe6cc4cFO:Quest|r     160y  |cffffd100L7|r  Carry Your Weight                from Furl Scornbrow (52.4, 42.1)", "|cffe6cc4cFO:Quest|r     900y  |cffff8040L6|r  Legging It                       from Vel'rin Fang (55.6, 74.1)"], "/fo route": ["|cffe6cc4cFO:Quest|r Quest route on Durotar, 3 stops, ~1420 yards:", "|cffe6cc4cFO:Quest|r    1. Scorpid Worker Tail            (46.2, 60.8) +0y [recorded]", "|cffe6cc4cFO:Quest|r    2. Cactus Apple                   (43.9, 64.0) +380y [database: Cactus Apple]", "|cffe6cc4cFO:Quest|r    3. Gornek                         (46.3, 69.4) +1040y [turn in]", "|cffe6cc4cFO:Quest|r waypoint set to stop 1."], "/fo map": ["|cffccccccFO:Dashboard|r world map overlay: pins |cff80ff80available|r, coords on", "|cffccccccFO:Dashboard|r layers: nodes on, rares on, spawns on, quests on, objectives on, turnins on, min seen 1", "|cffccccccFO:Dashboard|r this map (Durotar): 4 herb, 3 ore, 1 rare, 6 spawn point, 3 quest available, 2 objective, 1 turn in"], "/fo combatlog": ["|cff4ce57fFO:Core|r combat log: live, 1842 events this session, 0 secret values, amounts visible"], "/fo dps": ["|cff66b3ffFO:Grinding|r DPS, fight (00:38 active): 7.9k damage", "|cff66b3ffFO:Grinding|r    1. |cffabd473Mike          |r     4.5k     118/s   57.0%  pet 41%", "|cff66b3ffFO:Grinding|r       |cffaaaaaaAuto Shot 38%, Serpent Sting 14%, Arcane Shot 7%|r", "|cff66b3ffFO:Grinding|r    2. |cff8788eeGrok          |r     3.4k      90/s   43.0%  pet 36%"], "/fo hps": ["|cff66b3ffFO:Grinding|r HPS, fight (00:38 active): 420 healing", "|cff66b3ffFO:Grinding|r    1. |cff8788eeGrok          |r      420      11/s  100.0%  overheal 18%"], "/fo help": ["|cff4ce57fFO:Core|r commands:", "|cff4ce57fFO:Core|r   /fo |cffffffffseed|r Client item seed: info, or look up <id|name>", "|cff4ce57fFO:Core|r   /fo |cffffffffmodule|r list | on <name> | off <name> — enable/disable modules", "|cff4ce57fFO:Core|r   /fo |cffffffffhelp|r this list", "|cff4ce57fFO:Core|r   /fo |cfffffffferrors|r Saved Lua errors: list, <n> for stack, clear", "|cff4ce57fFO:Core|r   /fo |cffffffffdbstats|r SavedVariables size by namespace", "|cff4ce57fFO:Core|r   /fo |cffffffffwipe|r <namespace|all> confirm — delete saved data", "|cff4ce57fFO:Core|r   /fo |cffffffffalerts|r Alert settings: list | <rare|respawn|bags|ammo|shards|sound|flash> on|off | bags <slots> | ammo <n> | shards <n>", "|cff4ce57fFO:Core|r   /fo |cffffffffskills|r skill lines below max (weapon skills etc.)", "|cff4ce57fFO:Core|r   /fo |cffffffffme|r character profile", "|cff4ce57fFO:Core|r   /fo |cffffffffsession|r report | reset | pause | force quest|grind|auto", "|cff4ce57fFO:Core|r   /fo |cffffffffnote|r <text> — stamp a note into this session (no text: list notes)", "|cff4ce57fFO:Core|r   /fo |cffffffffcombatlog|r Combat log availability and event counts", "|cff4ce57fFO:Core|r   /fo |cffffffffestimate|r unified efficiency estimate for this spot", "|cff4ce57fFO:Core|r   /fo |cffffffffrecommend|r adaptive leveling recommendation", "|cff4ce57fFO:Core|r   /fo |cffffffffzones|r [window] — zone comparison near your level, ranked by your objective", "|cff4ce57fFO:Core|r   /fo |cffffffffobjective|r xp | gold | safe | balanced | custom <xp> <gold> <safe>", "|cff4ce57fFO:Core|r   /fo |cffffffffverify|r probe the client APIs this addon depends on", "|cff4ce57fFO:Core|r   /fo |cffffffffchecklist|r First-hour checklist of visits and commands that seed the data | checklist reset", "|cffccccccFO:Dashboard|r   /fo |cffffffffhide|r hide HUD", "|cffccccccFO:Dashboard|r   /fo |cffffffffshow|r show HUD", "|cffccccccFO:Dashboard|r   /fo |cfffffffftab|r <Overview|Leveling|Economy|Character>", "|cffccccccFO:Dashboard|r   /fo |cffffffffhud|r list | click <button> — the buttons on the current HUD tab (for macros and key binds)", "|cffccccccFO:Dashboard|r   /fo |cfffffffflock|r toggle HUD drag lock", "|cffccccccFO:Dashboard|r   /fo |cfffffffftoggle|r toggle HUD", "|cffccccccFO:Dashboard|r   /fo |cffffffffscale|r <0.5-2>", "|cffccccccFO:Dashboard|r   /fo |cffffffffhistory|r [n] — last sessions and comparison with comparable ones", "|cffccccccFO:Dashboard|r   /fo |cffffffffmanual|r open or close the in-game manual: every command, HUD tab and button", "|cffccccccFO:Dashboard|r   /fo |cffffffffcoords|r Your current map coordinates", "|cffccccccFO:Dashboard|r   /fo |cffffffffmap|r World map overlay: status | nodes|rares|spawns|quests|objectives|turnins|coords on|off | minseen <n> | refresh", "|cff66b3ffFO:Grinding|r   /fo |cfffffffflevels|r xp/hr by activity for each level you've played", "|cff66b3ffFO:Grinding|r   /fo |cffffffffmobs|r [xp|gold|kills|safe] [here] — ranked mob table", "|cff66b3ffFO:Grinding|r   /fo |cffffffffmob|r <npcID|name> — drop rates and detail", "|cff66b3ffFO:Grinding|r   /fo |cffffffffcombat|r Damage by spell and source, mana, fights (combat log)", "|cff66b3ffFO:Grinding|r   /fo |cffffffffautoshot|r Auto Shot / wand clipping", "|cff66b3ffFO:Grinding|r   /fo |cffffffffdots|r DoT efficiency: ticks delivered vs lost to refresh/death", "|cff66b3ffFO:Grinding|r   /fo |cffffffffheals|r Healing per spell with overheal and mana efficiency", "|cff66b3ffFO:Grinding|r   /fo |cffffffffdps|r [fight|last|session] — group damage by player, pets credited to owners (combat log)", "|cff66b3ffFO:Grinding|r   /fo |cffffffffhps|r [fight|last|session] — group healing by player with overheal (combat log)", "|cff66b3ffFO:Grinding|r   /fo |cffffffffmeter|r Meter status | reset | rows <n> | mode dps|hps (HUD tab)", "|cff66b3ffFO:Grinding|r   /fo |cffffffffcompetition|r other players seen around here", "|cff66b3ffFO:Grinding|r   /fo |cffffffffrespawn|r [npcID|name] — respawn intervals (confirmed vs upper bound)", "|cff66b3ffFO:Grinding|r   /fo |cffffffffrares|r rare spawn sightings", "|cff66b3ffFO:Grinding|r   /fo |cffffffffnodes|r [herb|ore] — recorded gathering nodes on this map", "|cff66b3ffFO:Grinding|r   /fo |cffffffffdowntime|r where non-fighting time goes", "|cff66b3ffFO:Grinding|r   /fo |cfffffffflegs|r recorded travel legs between zones", "|cff66b3ffFO:Grinding|r   /fo |cffffffffdeaths|r recent corpse runs", "|cffe6cc4cFO:Quest|r   /fo |cffffffffroute|r (quest) ordered route through quest targets on this map | route all (adds pickups)", "|cffe6cc4cFO:Quest|r   /fo |cffffffffquest|r <questID> — recorded detail", "|cffe6cc4cFO:Quest|r   /fo |cffffffffautotrack|r toggle auto-watch on accept", "|cffe6cc4cFO:Quest|r   /fo |cffffffffquests|r list quests in log with known locations", "|cffe6cc4cFO:Quest|r   /fo |cffffffffquestinfo|r <id|name> — quest facts from the database: givers, objectives, prerequisites, chain", "|cffe6cc4cFO:Quest|r   /fo |cffffffffnearby|r Quests you can pick up on this map, nearest first (needs QuestieDB) | nearby all", "|cffe6cc4cFO:Quest|r   /fo |cffffffffqdb|r Quest database status", "|cffe6cc4cFO:Quest|r   /fo |cffffffffquestxp|r xp per hour of questing vs reward sizes", "|cffe6cc4cFO:Quest|r   /fo |cffffffffdrops|r quest drop odds and kills-to-finish for active objectives", "|cffe6cc4cFO:Quest|r   /fo |cffffffffnext|r [questID] — waypoint to the next known quest location", "|cffffb333FO:Economy|r   /fo |cffffffffmovers|r [pct] — items that moved vs their 7-day average", "|cffffb333FO:Economy|r   /fo |cffffffffprice|r <item> — latest, 7d and 30d stats", "|cffffb333FO:Economy|r   /fo |cffffffffwatch|r [<item> <price>] — alert when at/below price", "|cffffb333FO:Economy|r   /fo |cffffffffunwatch|r <item>", "|cffffb333FO:Economy|r   /fo |cffffffffflips|r auction opportunities: below vendor, or far below 7d average", "|cffffb333FO:Economy|r   /fo |cffffffffscan|r full AH scan (AH must be open)", "|cffffb333FO:Economy|r   /fo |cffffffffahstats|r scan history", "|cffffb333FO:Economy|r   /fo |cffffffffautoscan|r toggle full scan on AH open", "|cffffb333FO:Economy|r   /fo |cffffffffdungeons|r dungeon profitability vs open world", "|cffffb333FO:Economy|r   /fo |cffffffffgold|r gold breakdown and effective gold/hr", "|cffffb333FO:Economy|r   /fo |cfffffffffind|r <item> — search all characters' bags and bank", "|cffffb333FO:Economy|r   /fo |cffffffffmats|r materials across all characters", "|cffffb333FO:Economy|r   /fo |cffffffffbags|r [trash|auction|material|quest|worst|sell|autosell|keep <item>|min <price>|ratio <n>|low <n>]", "|cffffb333FO:Economy|r   /fo |cffffffffbank|r rescan bank (bank must be open)", "|cffffb333FO:Economy|r   /fo |cffffffffcraft|r [prof] | all [prof] | skillup [prof] | info <recipe> | capture | sellthrough <0-1>", "|cff99ffccFO:Character|r   /fo |cffffffffgear|r <item link> — upgrade score vs equipped", "|cff99ffccFO:Character|r   /fo |cffffffffweights|r [set <STAT> <n> | reset] — stat weights for your class", "|cff99ffccFO:Character|r   /fo |cffffffffgoal|r [add <name> <price> [level] | del <n>]", "|cff99ffccFO:Character|r   /fo |cffffffffproftrain|r profession training not yet learned", "|cff99ffccFO:Character|r   /fo |cffffffffskip|r [min price] — skippable spell ranks", "|cff99ffccFO:Character|r   /fo |cffffffffplan|r [level] — training costs ahead and savings goals", "|cff99ffccFO:Character|r   /fo |cffffffffconsumables|r consumable spend and buffed vs unbuffed rates", "|cff99ffccFO:Character|r   /fo |cffffffffeta|r [level] — time to level estimate", "|cff99ffccFO:Character|r   /fo |cffffffffhearth|r hearth/travel suggestions", "|cff99ffccFO:Character|r   /fo |cffffffffrep|r [faction] — rep sources and kills to next standing", "|cff99ffccFO:Character|r   /fo |cffffffffbuild|r Talent build vs your points: build | build list | build <n> | build use <n>", "|cff99ffccFO:Character|r   /fo |cffffffffrotation|r Leveling priority for your class with measured/estimated efficiency | check | <CLASS>", "|cff99ffccFO:Character|r   /fo |cffffffffspell|r Look a class spell up in the client seed: ranks, levels, cost, cast, cooldown", "|cffff99e6FO:Classes|r   /fo |cffffffffhunter|r ammo & pet status", "|cffff99e6FO:Classes|r   /fo |cffffffffwarlock|r shard & demon status", "|cffff99e6FO:Classes|r   /fo |cffffffffpriest|r mana downtime status"], "/fo manual": ["|cff4ce57fFO:Core|r (the manual window opens; see the Window button on the Help tab)"], "/fo alerts": ["|cff4ce57fFO:Core|r alerts: sound on | flash on | rare on | respawn on | bags on (<= 3 free) | ammo on (< 60) | shards on (< 3)"], "/fo errors": ["|cff4ce57fFO:Core|r no errors saved."], "/fo eta 20": ["|cff99ffccFO:Character|r To L20: ~18400 xp at 2614 xp/hr (recent sessions near this level) = 07:02:20 of play. Rough: later levels are estimated at +9%/level."], "/fo note pet tamed": ["|cff4ce57fFO:Core|r noted (2 this session): pet tamed"], "/fo qdb": ["|cffe6cc4cFO:Quest|r quest database: QuestieDB baked mode, 5232 quests, 341 zone mappings, contract 4"]}, "cmdOrder": ["/fo checklist", "/fo verify", "/fo hunter", "/fo build", "/fo rotation", "/fo nearby", "/fo route", "/fo dps", "/fo hps", "/fo map", "/fo combatlog", "/fo qdb", "/fo alerts", "/fo eta 20", "/fo note pet tamed", "/fo errors", "/fo help", "/fo manual"], "alert": "|cff4ce57fFO:Core|r |cffff8000!|r |cffff6060ammo low:|r 58 left.", "rare": "|cff4ce57fFO:Core|r |cffff8000!|r |cffff8000rare|r Fizzle Darkstorm seen at Durotar (54.1, 51.0)"};
+(function () {
+  function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); }
+  function wow(s) {
+    // |cffRRGGBB ... |r  ->  span
+    var out = '', i = 0, open = 0;
+    s = esc(s);
+    while (i < s.length) {
+      if (s.substr(i, 4) === '|cff') { out += '<span style="color:#' + s.substr(i + 4, 6) + '">'; open++; i += 10; continue; }
+      if (s.substr(i, 2) === '|r') { if (open) { out += '</span>'; open--; } i += 2; continue; }
+      out += s[i]; i++;
+    }
+    while (open--) out += '</span>';
+    return out;
+  }
+  // HUD
+  var tabsEl = document.getElementById('tabs'), linesEl = document.getElementById('hudlines');
+  var current = 'Overview';
+  function renderHud() {
+    tabsEl.innerHTML = '';
+    DATA.tabOrder.forEach(function (name) {
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = name;
+      if (name === current) b.className = 'on';
+      b.addEventListener('click', function () { current = name; renderHud(); });
+      tabsEl.appendChild(b);
+    });
+    var ctrlEl = document.getElementById('ctrls');
+    ctrlEl.innerHTML = '';
+    (DATA.ctrls[current] || []).forEach(function (c) {
+      var b = document.createElement('button'); b.type = 'button'; b.textContent = c.label; if (c.active) b.className = 'on';
+      b.addEventListener('click', function () {
+        var group = DATA.ctrls[current];
+        var exclusive = { Fight: ['Fight', 'Last', 'Session'], Last: ['Fight', 'Last', 'Session'], Session: ['Fight', 'Last', 'Session'], DPS: ['DPS', 'HPS'], HPS: ['DPS', 'HPS'],
+                          XP: ['XP', 'Gold', 'Safe', 'Balanced'], Gold: ['XP', 'Gold', 'Safe', 'Balanced'], Safe: ['XP', 'Gold', 'Safe', 'Balanced'], Balanced: ['XP', 'Gold', 'Safe', 'Balanced'],
+                          Beast: ['Beast', 'Marksmanship'], Marksmanship: ['Beast', 'Marksmanship'] };
+        var ex = exclusive[c.label];
+        if (ex) { group.forEach(function (o) { if (ex.indexOf(o.label) >= 0) o.active = (o === c); }); }
+        else if (['Mine', 'Sound', 'Flash', 'Lock', 'Autoscan', 'Autosell', 'Pause'].indexOf(c.label) >= 0) { c.active = !c.active; }
+        if (current === 'Help') {
+          var areaTitles = { Core: 'Setup and session', HUD: 'HUD and map', Grind: 'Grinding and combat', Quest: 'Quests', Econ: 'Economy', Char: 'Character, talents and rotation', Class: 'Class modules' };
+          if (areaTitles[c.label]) { group.forEach(function (o) { if (areaTitles[o.label]) o.active = (o === c); }); DATA.tabs.Help = helpLines(c.label); }
+          if (c.label === 'Window') { showManual(true); }
+          renderHud(); return;
+        }
+        if (c.label === 'Pause' || c.label === 'Resume') { c.label = c.label === 'Pause' ? 'Resume' : 'Pause'; c.active = c.label === 'Resume'; }
+        if (current === 'Meter') {
+          var scope = group.filter(function (o) { return ['Fight', 'Last', 'Session'].indexOf(o.label) >= 0 && o.active; })[0].label.toLowerCase();
+          var hps = group.filter(function (o) { return o.label === 'HPS'; })[0].active;
+          var mine = group.filter(function (o) { return o.label === 'Mine'; })[0].active;
+          DATA.tabs.Meter = meterLines(scope, hps, mine);
+        }
+        renderHud();
+      });
+      ctrlEl.appendChild(b);
+    });
+    linesEl.innerHTML = (DATA.tabs[current] || []).slice(0, 12).map(function (l) { return '<div>' + wow(l) + '</div>'; }).join('');
+  }
+  var areaOf = { Core: 'Setup and session', HUD: 'HUD and map', Grind: 'Grinding and combat', Quest: 'Quests', Econ: 'Economy', Char: 'Character, talents and rotation', Class: 'Class modules' };
+  var areaColor = { Core: '4ce57f', HUD: 'cccccc', Grind: '66b3ff', Quest: 'e6cc4c', Econ: 'ffb333', Char: '99ffcc', Class: 'ff99e6' };
+  function helpLines(area) {
+    // the manual's lines are grouped by area colour in the /fo help output; pick those for this area
+    var rows = DATA.manual.filter(function (l) { return l.indexOf('|cff' + areaColor[area] + 'FO:') === 0 && l.indexOf('/fo ') >= 0; })
+      .map(function (l) { return l.replace(/^\|cff[0-9a-f]{6}FO:\w+\|r\s+\/fo /, ''); });
+    var pages = Math.max(1, Math.ceil(rows.length / 10));
+    var out = ['|cffffd100' + areaOf[area] + '|r  ' + rows.length + ' commands, page 1/' + pages + '   |cffaaaaaa/fo <cmd> [args]|r'].concat(rows.slice(0, 10));
+    if (pages === 1) out.push('|cffaaaaaaWindow: the full manual. [a|b] pick one, <n> a value.|r');
+    return out;
+  }
+  var manual = document.getElementById('manual'), manualBody = document.getElementById('manualbody');
+  function showManual(on) {
+    if (on && !manualBody.childNodes.length) {
+      var intro = ['|cffffd100ForeverOptimizer|r', 'Every command is |cffffffff/fo <command> [arguments]|r. |cffffffff[a|b]|r means pick one, |cffffffff<n>|r a number, |cffffffff<item>|r an item link or name.', '',
+        '|cffffd100HUD|r  Drag to move, /fo lock to pin, /fo toggle or the key bind to hide. Buttons under the tabs do what the matching command does.'];
+      DATA.tabOrder.forEach(function (n) { var ls = (DATA.ctrls[n] || []).map(function (c) { return c.label; }); intro.push('  |cffffffff' + n + '|r' + (ls.length ? '  buttons: ' + ls.join(', ') : '')); });
+      intro.push('', '|cffffd100Key binds|r  Esc > Key Bindings > ForeverOptimizer: Toggle HUD, Next waypoint, Nearby quests.', '');
+      var lines = intro.concat(DATA.manual.slice(1).map(function (l) { return l.replace(/^\|cff[0-9a-f]{6}FO:\w+\|r\s+/, '  '); }));
+      manualBody.innerHTML = lines.map(function (l) { return '<div>' + wow(l) + '</div>'; }).join('');
+    }
+    manual.hidden = !on;
+  }
+  document.getElementById('manualclose').addEventListener('click', function () { showManual(false); });
+  function meterLines(scope, hps, mine) {
+    var dur = { fight: '00:38', last: '01:12', session: '42:10' }[scope];
+    if (mine) return ['|cffffd100Mine|r ' + scope + ' ' + dur + '  ' + (hps ? 'healing' : 'damage')].concat(hps ? ['nothing recorded yet'] :
+      ['Auto Shot 1.7k  45/s  38%', 'Serpent Sting 630  17/s  14%', 'Arcane Shot 315  8/s  7%', '|cffaaaaaapet 1.8k  41%|r']);
+    if (hps) return ['|cffffd100HPS|r ' + scope + ' ' + dur + '  total 420', '1. |cff8788eeGrok|r 11/s  100% |cffaaaaaaover 18%|r'];
+    return ['|cffffd100DPS|r ' + scope + ' ' + dur + '  total 7.9k', '1. |cffabd473Mike|r 118/s  57% |cffaaaaaapet 41%|r', '2. |cff8788eeGrok|r 90/s  43% |cffaaaaaapet 36%|r'];
+  }
+  renderHud();
+  // chat
+  var log = document.getElementById('log'), typing = document.getElementById('typing');
+  function say(lines) { lines.forEach(function (l) { var d = document.createElement('div'); d.innerHTML = wow(l); log.appendChild(d); }); log.scrollTop = log.scrollHeight; }
+  function run(cmd) {
+    var d = document.createElement('div'); d.className = 'typed'; d.textContent = cmd; log.appendChild(d);
+    typing.textContent = cmd.replace(/^\/fo ?/, '');
+    say(DATA.cmds[cmd] || []);
+    if (cmd === '/fo map') showMap(true);
+    if (cmd === '/fo manual') showManual(true);
+  }
+  var btns = document.getElementById('cmdbtns');
+  DATA.cmdOrder.forEach(function (cmd) { var b = document.createElement('button'); b.type = 'button'; b.textContent = cmd; b.addEventListener('click', function () { run(cmd); }); btns.appendChild(b); });
+  var flash = document.getElementById('flash'), flashTimer = null;
+  function doFlash(text) {
+    flash.textContent = text.replace(/\|cff[0-9a-f]{6}/gi, '').replace(/\|r/g, '').replace(/^.*?!\|r? ?/, '').replace(/^FO:Core /, '');
+    flash.hidden = false; flash.style.opacity = '1';
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(function () { flash.style.opacity = '0'; setTimeout(function () { flash.hidden = true; }, 600); }, 3000);
+  }
+  document.getElementById('btn-alert').addEventListener('click', function () { say([DATA.alert]); doFlash('ammo low: 58 left.'); });
+  document.getElementById('btn-rare').addEventListener('click', function () { say([DATA.rare]); doFlash('rare Fizzle Darkstorm seen at Durotar (54.1, 51.0)'); });
+  document.getElementById('btn-clear').addEventListener('click', function () { log.innerHTML = ''; typing.textContent = ''; });
+  document.getElementById('btn-hud').addEventListener('click', function () { var h = document.getElementById('hud'); h.hidden = !h.hidden; });
+  // map
+  var map = document.getElementById('map'), hint = document.getElementById('hint');
+  function showMap(on) { map.hidden = !on; hint.hidden = on; }
+  document.getElementById('btn-map').addEventListener('click', function () { showMap(map.hidden); });
+  document.getElementById('mapclose').addEventListener('click', function () { showMap(false); });
+  var pins = [
+    { k: 'herb', x: 31, y: 36, name: 'Peacebloom', n: 4, last: '12:40' }, { k: 'herb', x: 44, y: 62, name: 'Silverleaf', n: 2, last: '31:05' },
+    { k: 'herb', x: 58, y: 70, name: 'Peacebloom', n: 1, last: '48:12' }, { k: 'herb', x: 39, y: 28, name: 'Earthroot', n: 3, last: '06:50' },
+    { k: 'ore', x: 29, y: 30, name: 'Copper Vein', n: 3, last: '09:15' }, { k: 'ore', x: 70, y: 22, name: 'Copper Vein', n: 5, last: '02:03' }, { k: 'ore', x: 51, y: 55, name: 'Copper Vein', n: 1, last: '55:30' },
+    { k: 'rare', x: 54, y: 51, name: 'Fizzle Darkstorm', n: 1, last: '00:20', extra: 'rare: seen once' },
+    { k: 'spawn', x: 46, y: 60, name: 'Scorpid Worker', n: 12 }, { k: 'spawn', x: 48, y: 63, name: 'Scorpid Worker', n: 9 }, { k: 'spawn', x: 43, y: 58, name: 'Scorpid Worker', n: 7 },
+    { k: 'spawn', x: 36, y: 44, name: 'Razormane Scout', n: 4 }, { k: 'spawn', x: 34, y: 47, name: 'Razormane Quilboar', n: 6 }, { k: 'spawn', x: 60, y: 40, name: 'Venomtail Scorpid', n: 3 },
+    { k: 'quest', x: 52, y: 43, name: 'Vanquish the Betrayers', extra: 'L7 from Gar\'Thok' }, { k: 'quest', x: 52.6, y: 41.2, name: 'Carry Your Weight', extra: 'L7 from Furl Scornbrow' }, { k: 'quest', x: 55.6, y: 74.1, name: 'Legging It', extra: 'L6 from Vel\'rin Fang' },
+    { k: 'objective', x: 43.9, y: 64, name: 'Cactus Apple', extra: 'Galgar\'s Cactus Apple Surprise 3/10' }, { k: 'objective', x: 46.2, y: 60.8, name: 'Scorpid Worker Tail', extra: 'Sting of the Scorpid 6/10' },
+    { k: 'turnin', x: 46.3, y: 69.4, name: 'Gornek', extra: 'turn in: Sting of the Scorpid' },
+    { k: 'player', x: 52.3, y: 41.7, name: 'You' }
+  ];
+  var labels = { herb: 'Herb', ore: 'Ore', rare: 'Rare', spawn: 'Spawn point', quest: 'Quest available', objective: 'Objective', turnin: 'Turn in' };
+  var glyph = { quest: '!', objective: '?', turnin: '?' };
+  var pinsEl = document.getElementById('pins'), tip = document.getElementById('tip');
+  pins.forEach(function (p) {
+    var d = document.createElement('div'); d.className = 'pin ' + p.k; d.style.left = p.x + '%'; d.style.top = p.y + '%';
+    if (glyph[p.k]) d.textContent = glyph[p.k];
+    if (p.k !== 'player') {
+      d.addEventListener('mouseenter', function () {
+        var h = '<b>' + esc(p.name) + '</b><span>' + labels[p.k] + '  ' + p.x.toFixed(1) + ', ' + p.y.toFixed(1) + '</span>';
+        if (p.n) h += '<span>seen ' + p.n + ' time' + (p.n === 1 ? '' : 's') + '</span>';
+        if (p.last) h += '<span>last ' + p.last + ' ago</span>';
+        if (p.extra) h += '<em>' + esc(p.extra) + '</em>';
+        tip.innerHTML = h; tip.style.display = 'block'; tip.style.left = 'calc(' + p.x + '% + 1.2cqw)'; tip.style.top = p.y + '%';
+      });
+      d.addEventListener('mouseleave', function () { tip.style.display = 'none'; });
+    }
+    pinsEl.appendChild(d);
+  });
+  // opening scene
+  say(['|cff4ce57fFO:Core|r v0.9.0 loaded, 34 modules. /fo for commands.', '|cffe6cc4cFO:Quest|r quest database: QuestieDB baked mode, 5232 quests, 341 zone mappings, contract 4']);
+  run('/fo checklist');
+})();
+</script>
