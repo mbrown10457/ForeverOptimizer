@@ -200,6 +200,14 @@ end
 
 function SM:Activity() return S and S.activity or "idle" end
 function SM:ProductiveActivity() return S and (PRODUCTIVE[S.activity] and S.activity or S.lastProductive) or "grind" end
+-- Stamp a note into the live session (also used by Runes and anything else worth remembering)
+function SM:AddNote(text)
+    if not S then return false end
+    local zone, sub = U.ZoneName()
+    S.notes[#S.notes + 1] = { t = time(), elapsed = math.floor(SM:Elapsed()), level = FO.Player.level or 0, zone = (zone or "?") .. ((sub and sub ~= "") and (" / " .. sub) or ""), activity = S.activity, text = text }
+    return true
+end
+
 function SM:Force(activity)
     -- manual override: pretend an objective tick (quest) or clear it (grind)
     if activity == "quest" then S.lastObjective = GetTime() + 3600
@@ -509,8 +517,7 @@ SM.commands = {
             for _, n in ipairs(S.notes) do print("  %s  L%d %s: %s", date("%H:%M", n.t), n.level, n.zone, n.text) end
             return
         end
-        local zone, sub = U.ZoneName()
-        S.notes[#S.notes + 1] = { t = time(), elapsed = math.floor(SM:Elapsed()), level = FO.Player.level or 0, zone = zone .. (sub ~= "" and (" / " .. sub) or ""), activity = S.activity, text = text }
+        self:AddNote(text)
         print("noted (%d this session): %s", #S.notes, text)
     end },
     session = { help = "report | reset | pause | force quest|grind|auto", fn = function(self, arg)

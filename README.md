@@ -37,6 +37,12 @@ The addon is the same on both platforms; only the helper scripts differ.
 lua scripts/mock/dump_ui.lua > /tmp/ui_dump.txt && python3 scripts/mock/build_mock.py /tmp/ui_dump.txt scripts/mock/template.html docs/mockup.html
 ```
 
+## After a session: send the data
+
+- **Mac:** `scripts/collect.sh` copies every account's `ForeverOptimizerDB.lua`, converts it to JSON, prints the launch-day summary (`scripts/summarize.py`: verify results, saved errors, sessions with notes, checklist, runes) and zips it under `dist/collect/`.
+- **Windows:** the collect line in [WINDOWS_README.md](WINDOWS_README.md) zips the same data to the Desktop.
+- **Nightly backup (Mac):** `scripts/backup-install.sh` installs a launchd agent that copies the SavedVariables to `~/Backups/ForeverOptimizer/<date>/` at 04:30 and at login, keeping 30 days. `status` and `remove` are the other verbs. Plain user paths, no extra permissions.
+
 ## Commands
 
 Everything is `/fo <command>`. `/fo help` lists them grouped by area. Highlights:
@@ -52,6 +58,7 @@ Everything is `/fo <command>`. `/fo help` lists them grouped by area. Highlights
 | HUD | `show`, `hide`, `toggle`, `tab <name>`, `scale <n>`, `lock` |
 | Combat log | `combat`, `dots`, `heals`, `autoshot`, `combatlog` (only when the client allows the log) |
 | Group meter | `dps [fight\|last\|session]`, `hps [...]`, `meter [reset\|rows <n>\|mode dps\|hps]` — damage and healing per player, pets credited to their owner, plus a Meter tab on the HUD (combat log only) |
+| Runes | `runes` — engravings and rune abilities learned, with level, zone and position; each new one is announced, flashed and stamped into the session notes |
 | Help | `manual` — opens the in-game manual window; the HUD's Help tab pages through every command by area and has a Window button for the same |
 | HUD buttons | `hud list`, `hud click <button>` — every HUD tab has a row of buttons under the tabs (Meter: Fight / Last / Session, DPS / HPS, Mine; Overview: Pause, Reset, Lock, Sound, Flash; Leveling: objective and forced activity; Economy: Scan AH, Autoscan, Autosell, Sell trash; Character: builds; History: Newer / Older / Report). The command form exists for macros and key binds. |
 | Rotation | `rotation [check\|CLASS]`, `build [list\|<n>\|use <n>]`, `spell <name>` |

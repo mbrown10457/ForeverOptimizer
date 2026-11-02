@@ -9,7 +9,7 @@ local function outHas(pat) for i = #S.out, 1, -1 do if S.out[i]:find(pat, 1, tru
 local function noErrors(label) check(#S.errors == 0, label .. " (no handler errors)") if #S.errors > 0 then for _, e in ipairs(S.errors) do print("   " .. e) end S.errors = {} end end
 
 local FO, order = S.loadAddon("ForeverOptimizer")
-check(#order == 47, "loaded " .. #order .. " files from TOC")
+check(#order == 48, "loaded " .. #order .. " files from TOC")
 check(#FO.modules >= 26, #FO.modules .. " modules registered")
 check(ForeverOptimizerDB == nil or true, "pre-login")
 
@@ -362,6 +362,20 @@ check(text:find("/fo dps", 1, true) and text:find("Meter|r  buttons: Fight, Last
 SlashCmdList.FOREVEROPTIMIZER("manual") check(not FO.Help:IsOpen(), "/fo manual toggles the window closed")
 DB:SelectTab("Overview")
 noErrors("help")
+
+-- Rune discovery: a new Engrave spell in the book is announced, noted and saved with position
+local RU = FO.Runes
+check(RU and RU.cdb and next(RU.cdb.learned) == nil, "no runes known at login")
+S.knownSpells[410110] = true
+S.fire("SPELLS_CHANGED")
+local rec = RU.cdb.learned[410110]
+check(rec and rec.name == "Engrave Chest - Beast Mastery" and rec.level == 23 and rec.x and outHas("rune learned:"), "new engraving announced and recorded with position")
+local lastNote = FO.Session:Live() and FO.Session:Live().notes[#FO.Session:Live().notes]
+check(lastNote and lastNote.text == "rune: Engrave Chest - Beast Mastery", "rune stamped into the session notes")
+S.fire("SPELLS_CHANGED") check(RU:Scan(true) == 0, "known rune is not announced twice")
+SlashCmdList.FOREVEROPTIMIZER("runes") check(outHas("1 learned") and outHas("not yet"), "/fo runes lists learned and missing engravings")
+S.knownSpells[410110] = nil
+noErrors("runes")
 noErrors("combat log")
 
 -- Rotation optimizer: hand-authored data validates against the client seed, priorities render, builds check

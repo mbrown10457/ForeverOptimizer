@@ -50,6 +50,16 @@ powershell -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.c
   C:\Program Files (x86)\World of Warcraft\_forever_\WTF\Account\<YOUR ACCOUNT>\SavedVariables\ForeverOptimizerDB.lua
   ```
 
+## Send your data to Mike
+
+After a session, log out (the game only writes its data on logout or `/reload`), then paste this in PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/mbrown10457/ForeverOptimizer/main/scripts/collect.ps1 | iex
+```
+
+It puts `ForeverOptimizer-data-<date>.zip` on your Desktop. Send that file. It holds the addon's saved data and the game's General.log, nothing else.
+
 ## Remove it
 
 Delete the `ForeverOptimizer` and `QuestieDB` folders from `Interface\AddOns`. Your recorded data stays in the `WTF` folder until you delete `ForeverOptimizerDB.lua` as well.
