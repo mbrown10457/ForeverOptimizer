@@ -9,7 +9,7 @@ local print = FO:Printer("Dashboard")
 -- ===========================================================================
 local D = FO:NewModule("Dashboard.Overview", {
     account = "dashboard",
-    defaults = { shown = true, tab = "Overview", scale = 1.0, locked = false, point = nil, width = 300 },
+    defaults = { shown = true, tab = "Overview", scale = 1.0, locked = false, point = nil, width = 320 },
 })
 FO.Dashboard = D
 
@@ -69,9 +69,10 @@ local function Build()
 
     buttons = {}
     local x = 8
+    local step = math.max(44, math.floor((D.db.width - 16) / math.max(1, #tabOrder)))
     for _, name in ipairs(tabOrder) do
         local b = CreateFrame("Button", nil, frame)
-        b:SetSize(50, 16)
+        b:SetSize(step - 4, 16)
         b:SetPoint("TOPLEFT", frame, "TOPLEFT", x, -6)
         b.text = b:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
         b.text:SetPoint("LEFT", b, "LEFT", 0, 0)
@@ -79,7 +80,7 @@ local function Build()
         b.tabName = name
         b:SetScript("OnClick", function() D:SelectTab(name) end)
         buttons[#buttons + 1] = b
-        x = x + 56
+        x = x + step
     end
 
     lines = {}
@@ -108,15 +109,24 @@ D:RegisterTab("Overview", 1, function()
         string.format("Eff %s  |cffaaaaaa%s/hr|r  (bags %s)", U.ShortMoney(st.effective), st.egph and U.ShortMoney(st.egph) or "--", U.ShortMoney(st.ahEst)),
         string.format("Downtime %.0f%%  rest %s  travel %s", st.downtimePct, U.FormatDuration(st.by.rest.t), U.FormatDuration(st.by.travel.t)),
     }
-    local cls = FO.Classes and FO.Classes[FO.Player.class]
-    if cls and cls.Lines then for _, l in ipairs(cls:Lines()) do out[#out + 1] = l end end
     local _, px, py = U.PlayerPosition()
     if px and py then out[#out + 1] = string.format("|cffaaaaaaPos|r %.1f, %.1f", px * 100, py * 100) end
     if st.dungeon then out[#out + 1] = string.format("|cffff8040%s|r %s  %d xp  %s", U.Trunc(st.dungeon.name, 16), U.FormatDuration(st.dungeon.seconds), st.dungeon.xp, U.ShortMoney(st.dungeon.gold + st.dungeon.ahEst + st.dungeon.vendorEst)) end
     return out
 end)
 
+-- The class module (Hunter, Warlock, Priest) gets its own tab so its lines
+-- never push the Overview past the 12-line cap once the combat log fills in.
+local function RegisterClassTab()
+    local cls = FO.Classes and FO.Classes[FO.Player.class]
+    if not (cls and cls.Lines) then return end
+    local label = tostring(FO.Player.class or "Class")
+    label = label:sub(1, 1):upper() .. label:sub(2):lower()
+    if not tabs[label] then D:RegisterTab(label, 1.5, function() return cls:Lines() end) end
+end
+
 function D:OnEnable()
+    RegisterClassTab()
     Build()
     C_Timer.NewTicker(1, Render)
     Render()

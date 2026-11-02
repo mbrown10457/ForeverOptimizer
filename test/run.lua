@@ -360,7 +360,11 @@ check(FO:Alert("custom", "ping %d", 1) == false, "identical alert throttled")
 SlashCmdList.FOREVEROPTIMIZER("alerts sound off") check(FO:Alert("custom", "quiet") == true and #S.sounds == soundsBefore + 1, "alerts sound off mutes the sound")
 SlashCmdList.FOREVEROPTIMIZER("alerts rare off") check(FO:Alert("rare", "a rare") == false, "disabled kind is silent")
 SlashCmdList.FOREVEROPTIMIZER("alerts rare on") SlashCmdList.FOREVEROPTIMIZER("alerts sound on") SlashCmdList.FOREVEROPTIMIZER("alerts")
-check(outHas("alerts: sound on"), "/fo alerts prints settings")
+check(outHas("alerts: sound on | flash on"), "/fo alerts prints settings")
+local flashesBefore = #S.flashes
+FO:Alert("custom", "|cffff6060flash me|r now") check(#S.flashes == flashesBefore + 1 and S.flashes[#S.flashes] == "flash me now", "alert flashes plain text in UIErrorsFrame")
+SlashCmdList.FOREVEROPTIMIZER("alerts flash off") FO:Alert("custom", "no flash") check(#S.flashes == flashesBefore + 1, "alerts flash off skips the error frame")
+SlashCmdList.FOREVEROPTIMIZER("alerts flash on")
 -- respawn window alert: a confirmed estimate elapses while we stand at the kill spot
 local FEa = FO:GetModule("Grinding.FarmingEfficiency")
 FEa.db.spawns[777] = { name = "Test Boar", points = { { S.pos.map, S.pos.x, S.pos.y, confirmed = { 30 }, bounds = {}, lastKill = S.clock - 31 } } }
@@ -373,7 +377,13 @@ noErrors("checklist/notes/alerts")
 noErrors("all " .. #cmds .. " slash commands")
 
 -- Dashboard tabs render
-for _, name in ipairs({ "Overview", "Leveling", "Economy", "Character", "History" }) do FO.Dashboard:SelectTab(name) S.advance(1) end
+for _, name in ipairs({ "Overview", "Hunter", "Leveling", "Economy", "Character", "History" }) do FO.Dashboard:SelectTab(name) S.advance(1) end
+do
+    local tabs
+    for i = 1, 20 do local n, v = debug.getupvalue(FO.Dashboard.SelectTab, i) if n == "tabs" then tabs = v end end
+    local ov, hu = table.concat(tabs.Overview.fn(), "\n"), tabs.Hunter and table.concat(tabs.Hunter.fn(), "\n") or ""
+    check(tabs.Hunter and hu:find("Ammo") and not ov:find("Ammo"), "class lines live on the Hunter tab, not Overview")
+end
 noErrors("dashboard tabs")
 
 -- Logout archives

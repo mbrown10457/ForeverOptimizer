@@ -20,8 +20,6 @@ FO.Dashboard:RegisterTab("Character", 4, function()
         end
     end
     for name, pr in pairs(C.professions or {}) do out[#out + 1] = string.format("%s %d/%d", name, pr.rank, pr.max) end
-    local cls = FO.Classes and FO.Classes[C.class]
-    if cls and cls.Lines then for _, l in ipairs(cls:Lines()) do out[#out + 1] = l end end
     out[#out + 1] = "Hearth: " .. U.Trunc(C.bind or "?", 20)
     return out
 end)

@@ -21,6 +21,8 @@ function hooksecurefunc(name, fn)
     _G[name] = function(...) local r = { orig(...) } fn(...) return unpack(r) end
 end
 
+S.flashes = {}
+UIErrorsFrame = { AddMessage = function(_, msg) S.flashes[#S.flashes + 1] = msg end }
 DEFAULT_CHAT_FRAME = { AddMessage = function(_, msg)
     S.out[#S.out + 1] = msg
     if msg:find("error in") or msg:find("failed:") or msg:find("OnTick error") then S.errors[#S.errors + 1] = msg end
