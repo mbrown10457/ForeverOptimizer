@@ -16,7 +16,7 @@ ForeverOptimizer/
 ## Install
 
 1. Launch WoW Forever once so the client creates its `_forever_/Interface` folder.
-2. `scripts/install.sh` symlinks `ForeverOptimizer/` into `Interface/AddOns`. Pass the path if auto-detect fails.
+2. `scripts/install.sh` symlinks `ForeverOptimizer/` into `Interface/AddOns` and, if `scripts/get_questiedb.sh` has staged it, installs QuestieDB next to it. Pass the path if auto-detect fails.
 3. In game: `/reload`, then `/fo help`. If it shows as out of date, tick "Load out of date AddOns" and note the real Interface number.
 4. Lua errors inside the addon are caught and saved; `/fo errors` lists them and `/fo errors <n>` shows the stack. BugSack + BugGrabber are still useful for errors in other addons or Blizzard code.
 

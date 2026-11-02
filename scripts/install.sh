@@ -33,5 +33,15 @@ if [[ -L "$dst" ]]; then echo "  relink  $ADDON"; rm "$dst"
 elif [[ -e "$dst" ]]; then echo "  SKIP    $ADDON (real folder exists at $dst; remove it to link the repo copy)"; exit 1
 else echo "  link    $ADDON"; fi
 ln -s "$REPO/$ADDON" "$dst"
+
+# Optional: QuestieDB (quest database the quest layer reads). Download with scripts/get_questiedb.sh.
+QZIP="$REPO/dist/questiedb/QuestieDB-Forever.zip"
+if [[ -f "$QZIP" ]]; then
+  if [[ -d "$TARGET/QuestieDB" ]]; then echo "  replace QuestieDB (from $(basename "$QZIP"))"; rm -rf "$TARGET/QuestieDB"
+  else echo "  install QuestieDB (from $(basename "$QZIP"))"; fi
+  unzip -q "$QZIP" -d "$TARGET"
+else
+  echo "  (QuestieDB not staged; run scripts/get_questiedb.sh to add the quest database)"
+fi
 echo "AddOns dir: $TARGET"
 echo "Done. In game: /reload, then /fo help."
