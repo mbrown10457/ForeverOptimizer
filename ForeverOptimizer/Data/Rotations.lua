@@ -35,11 +35,11 @@ FO.Rotations = {
         },
         builds = {
             { name = "Beast Mastery leveling", talents = {
-                { "Endurance Training", 5 }, { "Deadly Aspects", 5 }, { "Thick Hide", 3 }, { "Improved Revive Pet", 2 },
-                { "Unleashed Fury", 5 }, { "Bestial Swiftness", 1 }, { "Ferocity", 5 },
-                { "Improved Mend Pet", 2 }, { "Intimidation", 1 }, { "Spirit Bond", 2 }, { "Bestial Discipline", 2 },
-                { "Efficiency", 5 }, { "Lethal Attacks", 5 }, { "Improved Hunter's Mark", 5 }, { "Aimed Shot", 1 },
-                { "Improved Arcane Shot", 2 },
+                -- pet first: the pet is the tank and most of the damage, so pet damage talents come as soon as each tier opens
+                { "Endurance Training", 5 }, { "Deadly Aspects", 5 }, { "Unleashed Fury", 5 }, { "Bestial Swiftness", 1 },
+                { "Thick Hide", 3 }, { "Ferocity", 5 }, { "Intimidation", 1 }, { "Frenzy", 5 }, { "Bestial Wrath", 1 },
+                { "Improved Mend Pet", 2 }, { "Spirit Bond", 2 }, { "Bestial Discipline", 2 },
+                { "Efficiency", 5 }, { "Lethal Attacks", 5 }, { "Improved Hunter's Mark", 4 },
             } },
             { name = "Marksmanship leveling", talents = {
                 { "Efficiency", 5 }, { "Lethal Attacks", 5 }, { "Improved Hunter's Mark", 5 }, { "Aimed Shot", 1 },
@@ -76,7 +76,8 @@ FO.Rotations = {
                 { "Fel Domination", 1 }, { "Improved Healthstone", 2 }, { "Unholy Power", 5 },
             } },
             { name = "Demonology leveling", talents = {
-                { "Demonic Embrace", 5 }, { "Improved Imp", 3 }, { "Improved Voidwalker", 3 }, { "Fel Vitality", 5 },
+                -- Voidwalker tanks from level 10, so its talent comes before the Imp's
+                { "Demonic Embrace", 5 }, { "Improved Voidwalker", 3 }, { "Fel Vitality", 5 }, { "Improved Imp", 3 },
                 { "Fel Domination", 1 }, { "Improved Sayaad", 3 }, { "Unholy Power", 5 }, { "Demonic Sacrifice", 1 },
                 { "Improved Corruption", 5 }, { "Improved Life Tap", 2 }, { "Soul Siphon", 5 },
             } },
