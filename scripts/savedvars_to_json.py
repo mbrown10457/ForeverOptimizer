@@ -128,6 +128,8 @@ def main():
     ap.add_argument("--var", help="only emit this top-level variable")
     ap.add_argument("-o", "--out")
     a = ap.parse_args()
+    # Windows consoles default to a legacy code page; the JSON must be UTF-8 either way.
+    if hasattr(sys.stdout, "reconfigure"): sys.stdout.reconfigure(encoding="utf-8")
     with open(a.file, encoding="utf-8", errors="replace") as f:
         data = parse_file(f.read())
     if a.var:

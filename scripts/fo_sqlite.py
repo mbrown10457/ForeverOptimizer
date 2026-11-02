@@ -15,7 +15,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 def load(path):
     out = subprocess.run([sys.executable, "-I", os.path.join(HERE, "savedvars_to_json.py"), path, "--var", "ForeverOptimizerDB"],
-                         capture_output=True, text=True, check=True)
+                         capture_output=True, text=True, encoding="utf-8", check=True)
     return json.loads(out.stdout)
 
 SCHEMA = """
