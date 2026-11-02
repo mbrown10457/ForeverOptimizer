@@ -9,7 +9,7 @@ local print = FO:Printer("Dashboard")
 -- ===========================================================================
 local D = FO:NewModule("Dashboard.Overview", {
     account = "dashboard",
-    defaults = { shown = true, tab = "Overview", scale = 1.0, locked = false, point = nil, width = 320 },
+    defaults = { shown = true, tab = "Overview", scale = 1.0, locked = false, point = nil, width = 360 },
 })
 FO.Dashboard = D
 

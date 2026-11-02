@@ -9,7 +9,7 @@ local function outHas(pat) for i = #S.out, 1, -1 do if S.out[i]:find(pat, 1, tru
 local function noErrors(label) check(#S.errors == 0, label .. " (no handler errors)") if #S.errors > 0 then for _, e in ipairs(S.errors) do print("   " .. e) end S.errors = {} end end
 
 local FO, order = S.loadAddon("ForeverOptimizer")
-check(#order == 45, "loaded " .. #order .. " files from TOC")
+check(#order == 46, "loaded " .. #order .. " files from TOC")
 check(#FO.modules >= 26, #FO.modules .. " modules registered")
 check(ForeverOptimizerDB == nil or true, "pre-login")
 
@@ -288,6 +288,37 @@ check(hl:find("Pet damage 18%%") and hl:find("Auto Shot 4"), "hunter HUD lines s
 for _, cmd in ipairs({ "combat", "dots", "heals", "autoshot", "combatlog" }) do SlashCmdList.FOREVEROPTIMIZER(cmd) end
 check(outHas("Serpent Sting") and outHas("Lesser Heal") and outHas("clipped") and outHas("combat log: live"), "combat commands print")
 SlashCmdList.FOREVEROPTIMIZER("mob 595") check(outHas("combat log:"), "/fo mob shows combat-log timing")
+
+-- Group meter: party member and party pet credited to the owner, self-damage excluded, fight vs session
+local MT = FO.Meter
+MT:Reset()
+S.units.party1 = { name = "Grok", guid = "Player-1-DEF" }
+S.units.party1pet = { name = "Voidwalker", guid = "Pet-0-1-2-3-4-0000VW01" }
+S.fire("GROUP_ROSTER_UPDATE")
+local ally = { guid = "Player-1-DEF", name = "Grok", flags = 0x512 }
+local vw = { guid = "Pet-0-1-2-3-4-0000VW01", name = "Voidwalker", flags = 0x1112 }
+local mob3 = { guid = "Creature-0-1-2-3-595-0000CL03", name = "Bloodscalp Warrior", flags = 0xA48 }
+S.cl("SPELL_DAMAGE", me, mob3, 3044, "Arcane Shot", 64, 100, 0, 64, 0, 0, 0, false)
+S.cl("SWING_DAMAGE", pet, mob3, 50, 0, 1, 0, 0, 0, false)
+S.cl("SPELL_DAMAGE", ally, mob3, 686, "Shadow Bolt", 32, 200, 0, 32, 0, 0, 0, false)
+S.cl("SWING_DAMAGE", vw, mob3, 40, 0, 1, 0, 0, 0, false)
+S.cl("SPELL_DAMAGE", ally, ally, 1454, "Life Tap", 32, 60, 0, 32, 0, 0, 0, false)
+S.cl("SPELL_HEAL", ally, me, 755, "Health Funnel", 32, 80, 30, 0, false)
+S.advance(4)
+S.cl("SWING_DAMAGE", me, mob3, 50, 0, 1, 0, 0, 0, false)
+local mrows = MT:Table(MT.cur, "dmg")
+check(#mrows == 2 and mrows[1].name == "Grok" and mrows[1].value == 240 and mrows[1].pet == 40 and mrows[2].value == 200 and mrows[2].pet == 50, "meter credits the party pet to its owner and ignores Life Tap (" .. tostring(mrows[1] and mrows[1].value) .. "/" .. tostring(mrows[2] and mrows[2].value) .. ")")
+local hrows = MT:Table(MT.cur, "heal")
+check(#hrows == 1 and hrows[1].value == 50 and hrows[1].over == 30, "meter counts effective healing and overheal")
+S.advance(10) MT:OnTick(GetTime())
+check(MT.last and MT.last.dmg == 440 and MT.cur.start == nil and MT.fights == 1, "fight segment closes after the gap")
+local ml = table.concat(MT:Lines(), "\n")
+check(ml:find("DPS") and ml:find("last fight") and ml:find("Grok") and ml:find("pet"), "meter HUD lines show the last fight with pet share while idle")
+S.cl("SWING_DAMAGE", me, mob3, 50, 0, 1, 0, 0, 0, false)
+check(MT.cur.dmg == 50 and MT.total.dmg == 490, "new fight starts; session total keeps accumulating")
+for _, cmd in ipairs({ "dps", "hps last", "dps session", "meter" }) do SlashCmdList.FOREVEROPTIMIZER(cmd) end
+check(outHas("Grok") and outHas("meter: combat log live"), "/fo dps, hps and meter print")
+S.units.party1, S.units.party1pet = nil, nil
 noErrors("combat log")
 
 -- Rotation optimizer: hand-authored data validates against the client seed, priorities render, builds check

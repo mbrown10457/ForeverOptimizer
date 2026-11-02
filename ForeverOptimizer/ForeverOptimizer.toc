@@ -30,6 +30,7 @@ Grinding\XPTracker.lua
 Grinding\LootTracker.lua
 Grinding\MobDatabase.lua
 Grinding\CombatStats.lua
+Grinding\Meter.lua
 Grinding\FarmingEfficiency.lua
 Grinding\DowntimeAnalyzer.lua
 

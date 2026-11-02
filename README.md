@@ -43,6 +43,7 @@ Everything is `/fo <command>`. `/fo help` lists them grouped by area. Highlights
 | Classes | `hunter`, `warlock`, `priest` |
 | HUD | `show`, `hide`, `toggle`, `tab <name>`, `scale <n>`, `lock` |
 | Combat log | `combat`, `dots`, `heals`, `autoshot`, `combatlog` (only when the client allows the log) |
+| Group meter | `dps [fight\|last\|session]`, `hps [...]`, `meter [reset\|rows <n>\|mode dps\|hps]` — damage and healing per player, pets credited to their owner, plus a Meter tab on the HUD (combat log only) |
 | Rotation | `rotation [check\|CLASS]`, `build [list\|<n>\|use <n>]`, `spell <name>` |
 | Quests | `nearby [all]`, `questinfo <id\|name>`, `qdb`, `route all` (quest database via QuestieDB, optional) |
 | Map | `map [nodes\|rares\|spawns\|coords on\|off]`, `map minseen <n>`, `map refresh`, `coords` |
