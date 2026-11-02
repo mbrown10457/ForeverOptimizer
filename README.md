@@ -33,6 +33,7 @@ Everything is `/fo <command>`. `/fo help` lists them grouped by area. Highlights
 | Character | `plan [level]`, `skip`, `proftrain`, `goal`, `gear <link>`, `weights`, `consumables`, `rep [faction]`, `hearth`, `eta [level]`, `me`, `skills` |
 | Classes | `hunter`, `warlock`, `priest` |
 | HUD | `show`, `hide`, `toggle`, `tab <name>`, `scale <n>`, `lock` |
+| Map | `map [nodes\|rares\|spawns\|coords on\|off]`, `map minseen <n>`, `map refresh`, `coords` |
 | Setup | `verify`, `errors [n\|clear]`, `seed [id\|name]`, `module [on\|off <name>]`, `dbstats`, `wipe <namespace\|all> confirm` |
 
 ## How it works
@@ -40,6 +41,7 @@ Everything is `/fo <command>`. `/fo help` lists them grouped by area. Highlights
 - **SessionManager** decides every second what you're doing (quest / grind / dungeon / travel / rest / town / dead / idle) and attributes XP, kills and gold to it. Everything else reads from that one session or listens to its `FO_*` messages.
 - **Kills** come from the "X dies, you gain N experience" chat line; **drops** from the loot window and its source GUIDs. The combat log is never relied on: 12.x refuses it, and whether Forever's 1.60 client does is one of the first things `/fo verify` reports.
 - **Item seed**: `Data/Items.lua` carries every item in the Forever client (name, vendor sell and buy price, quality, class, levels, stack size, bind type), generated from the client's own data tables on wago.tools by `scripts/build_seed.py`. Item helpers fall back to it when the client cache is cold, so bag values and vendor costs are right from the first minute. Live data always overrides it. `/fo seed <id|name>` looks items up; rerun the script when the client build changes.
+- **World map overlay**: the open map shows your coordinates and the cursor's in its bottom-left corner, and pins every herb and ore node you have gathered (green and yellow), every rare you have seen (red), and optionally the spawn points of mobs you track with their respawn estimate (gray). Pins come from your own records, so a zone fills in as you play it; hover a pin for how often and how recently it was seen. `/fo map` toggles layers. The HUD Overview also carries a position line and `/fo coords` prints it to chat.
 - **Errors** inside any handler, tick or command are caught by `FO.Try`, printed at most three times, and saved with a stack to `account.errors.log`. `/fo errors` lists them in game; `scripts/fo_sqlite.py` exports them.
 - **Prices** come from full AH scans, passive browsing, and vendor windows. `Util.ItemValue` (what you could get) and `Util.ItemCost` (what it costs you) are the two numbers every module uses.
 - **Respawn timers** are only called "confirmed" when you stayed in range of the kill spot and saw the replacement appear. Otherwise they're reported as upper bounds.

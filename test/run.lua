@@ -9,7 +9,7 @@ local function outHas(pat) for i = #S.out, 1, -1 do if S.out[i]:find(pat, 1, tru
 local function noErrors(label) check(#S.errors == 0, label .. " (no handler errors)") if #S.errors > 0 then for _, e in ipairs(S.errors) do print("   " .. e) end S.errors = {} end end
 
 local FO, order = S.loadAddon("ForeverOptimizer")
-check(#order == 35, "loaded " .. #order .. " files from TOC")
+check(#order == 36, "loaded " .. #order .. " files from TOC")
 check(#FO.modules >= 26, #FO.modules .. " modules registered")
 check(ForeverOptimizerDB == nil or true, "pre-login")
 
@@ -219,6 +219,28 @@ check(select(1, FO.Util.ItemInstant(4306)) == 7 and FO.Util.VendorBuy(929) == 30
 check(FO.Util.VendorSell(2770) == 15, "client item cache overrides seed sell price")
 SlashCmdList.FOREVEROPTIMIZER("seed Silk Cloth") check(outHas("4306 Silk Cloth"), "/fo seed name lookup")
 SlashCmdList.FOREVEROPTIMIZER("seed 6948") check(outHas("Hearthstone"), "/fo seed id lookup")
+
+-- World map overlay: pins for recorded nodes on the displayed map, coordinates text
+local MapM, FEm = FO:GetModule("Dashboard.Map"), FO:GetModule("Grinding.FarmingEfficiency")
+check(MapM.available == true and MapM.provider ~= nil, "map data provider registered")
+local nodeMap
+for _, node in pairs(FEm.db.nodes) do for _, pt in ipairs(node.points) do nodeMap = nodeMap or pt[1] end end
+check(nodeMap ~= nil, "harness recorded gathering nodes to pin")
+S.worldMap.mapID = nodeMap
+WorldMapFrame:Show()
+check(#WorldMapFrame.pins > 0 and WorldMapFrame.pins[1].x and WorldMapFrame.pins[1].template == "FOMapPinTemplate", "node pins placed on map open (" .. #WorldMapFrame.pins .. ")")
+WorldMapFrame.pins[1]:OnMouseEnter() WorldMapFrame.pins[1]:OnMouseLeave()
+S.mapUpdate()
+check(MapM.coordText and MapM.coordText:IsShown(), "coordinate text shown while map open")
+SlashCmdList.FOREVEROPTIMIZER("map") check(outHas("world map overlay: pins") and outHas("this map"), "/fo map status")
+SlashCmdList.FOREVEROPTIMIZER("map nodes off") SlashCmdList.FOREVEROPTIMIZER("map refresh")
+check(#WorldMapFrame.pins == 0, "nodes layer off removes pins")
+SlashCmdList.FOREVEROPTIMIZER("map nodes on") SlashCmdList.FOREVEROPTIMIZER("map spawns on") SlashCmdList.FOREVEROPTIMIZER("map refresh")
+check(#WorldMapFrame.pins > 0, "layers back on restores pins")
+WorldMapFrame:Hide()
+check(not MapM.coordText:IsShown(), "coordinate text hidden with map")
+SlashCmdList.FOREVEROPTIMIZER("coords") check(outHas("(map "), "/fo coords prints position")
+noErrors("map overlay")
 noErrors("all " .. #cmds .. " slash commands")
 
 -- Dashboard tabs render

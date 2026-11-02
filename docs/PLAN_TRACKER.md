@@ -124,7 +124,8 @@ All of these are probed by `/fo verify` and the result is saved to `account.veri
 |---|---|---|
 | Persistent Lua error log with stacks, dedupe, `/fo errors [n\|clear]`, SQLite export | `FO.Try` / `FO:Error` in `Core/Init.lua`, persistence in `Core/DataStorage.lua` | done |
 | Client item seed (19,267 items from the `wowf` 1.60.1.70707 ItemSparse/Item tables) with Util fallbacks and `/fo seed` | `Data/Items.lua`, `Core/SeedData.lua`, `scripts/build_seed.py` | done; creature and quest POI tables in the client are near-empty, so mobs and quests stay learned, not seeded |
-| Git repository with tagged releases | repo root | done (v0.4.0, v0.5.0) |
+| Git repository with tagged releases | repo root | done (v0.4.0, v0.5.0, v0.6.0) |
+| World map overlay: player and cursor coordinates, pins for recorded herb/ore nodes, rare sightings and tracked spawn points with respawn estimate; `/fo map`, `/fo coords`, HUD position line | `Dashboard/MapOverlay.lua` + `.xml` (map data-provider API) | done; degrades to coordinates only if the client lacks `WorldMapFrame:AddDataProvider`, which `/fo map` reports |
 
 ## Immediate next steps (from the plan)
 

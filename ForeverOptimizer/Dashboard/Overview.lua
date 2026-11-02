@@ -110,6 +110,8 @@ D:RegisterTab("Overview", 1, function()
     }
     local cls = FO.Classes and FO.Classes[FO.Player.class]
     if cls and cls.Lines then for _, l in ipairs(cls:Lines()) do out[#out + 1] = l end end
+    local _, px, py = U.PlayerPosition()
+    if px and py then out[#out + 1] = string.format("|cffaaaaaaPos|r %.1f, %.1f", px * 100, py * 100) end
     if st.dungeon then out[#out + 1] = string.format("|cffff8040%s|r %s  %d xp  %s", U.Trunc(st.dungeon.name, 16), U.FormatDuration(st.dungeon.seconds), st.dungeon.xp, U.ShortMoney(st.dungeon.gold + st.dungeon.ahEst + st.dungeon.vendorEst)) end
     return out
 end)

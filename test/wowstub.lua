@@ -50,7 +50,8 @@ function S.flush() S.advance(0) local due = S.timers S.timers = {} for _, t in i
 local function Region()
     local r = { shown = true }
     for _, m in ipairs({ "SetPoint", "SetText", "SetJustifyH", "SetWordWrap", "SetTextColor", "SetSize", "SetBackdrop", "SetBackdropColor",
-                         "SetScale", "SetMovable", "EnableMouse", "RegisterForDrag", "SetClampedToScreen", "SetHeight", "StartMoving", "StopMovingOrSizing", "AddLine" }) do
+                         "SetScale", "SetMovable", "EnableMouse", "RegisterForDrag", "SetClampedToScreen", "SetHeight", "StartMoving", "StopMovingOrSizing", "AddLine",
+                         "SetTexture", "SetAlpha", "SetOwner", "ClearLines", "SetFontObject", "SetWidth" }) do
         r[m] = function() end
     end
     r.Show = function(self) self.shown = true end
@@ -65,6 +66,9 @@ end
 S.registered = {}
 function CreateFrame(kind, name, parent, template)
     local f = Region()
+    f.HookScript = Region_HookScript
+    local setScript = f.SetScript
+    f.SetScript = function(self, k, fn) setScript(self, k, fn) if k == "OnUpdate" then S.updaters = S.updaters or {} S.updaters[#S.updaters + 1] = self end end
     f.RegisterEvent = function(self, ev)
         if ev == "COMBAT_LOG_EVENT_UNFILTERED" or ev == "COMBAT_LOG_EVENT" then error("event is restricted") end
         S.registered[ev] = true
@@ -75,6 +79,39 @@ function CreateFrame(kind, name, parent, template)
     return f
 end
 UIParent, GameTooltip, ItemRefTooltip = Region(), Region(), Region()
+function Region_HookScript(self, k, fn) self.hooks = self.hooks or {} self.hooks[k] = self.hooks[k] or {} table.insert(self.hooks[k], fn) end
+
+-- World map (modern map canvas API subset: data providers + pin pools)
+function Mixin(obj, ...) for i = 1, select("#", ...) do for k, v in pairs((select(i, ...))) do obj[k] = v end end return obj end
+function CreateFromMixins(...) return Mixin({}, ...) end
+MapCanvasDataProviderMixin = { OnAdded = function(self, map) self.owningMap = map end, GetMap = function(self) return self.owningMap end, RefreshAllData = function() end, RemoveAllData = function() end }
+MapCanvasPinMixin = { SetPosition = function(self, x, y) self.x, self.y = x, y end, SetScalingLimits = function() end, UseFrameLevelType = function() end, OnLoad = function() end }
+S.worldMap = { mapID = nil, cursor = { 0.25, 0.5 } }
+WorldMapFrame = Region()
+WorldMapFrame.shown = false
+WorldMapFrame.providers, WorldMapFrame.pins = {}, {}
+WorldMapFrame.HookScript = Region_HookScript
+WorldMapFrame.GetMapID = function() return S.worldMap.mapID or S.pos.map end
+WorldMapFrame.AddDataProvider = function(self, p) self.providers[#self.providers + 1] = p p:OnAdded(self) end
+WorldMapFrame.AcquirePin = function(self, template, ...)
+    local pin = CreateFromMixins(_G[(template:gsub("Template$", "")) .. "Mixin"] or MapCanvasPinMixin)
+    Mixin(pin, Region()) pin.Icon = Region() pin.template = template
+    for k, v in pairs(_G[(template:gsub("Template$", "")) .. "Mixin"] or {}) do pin[k] = v end
+    if pin.OnLoad then pin:OnLoad() end
+    if pin.OnAcquired then pin:OnAcquired(...) end
+    self.pins[#self.pins + 1] = pin
+    return pin
+end
+WorldMapFrame.RemoveAllPinsByTemplate = function(self, template) for i = #self.pins, 1, -1 do if self.pins[i].template == template then table.remove(self.pins, i) end end end
+WorldMapFrame.ScrollContainer = Region()
+WorldMapFrame.ScrollContainer.GetNormalizedCursorPosition = function() return S.worldMap.cursor[1], S.worldMap.cursor[2] end
+WorldMapFrame.Show = function(self)
+    self.shown = true
+    for _, p in ipairs(self.providers) do p:RefreshAllData() end
+    for _, fn in ipairs(self.hooks and self.hooks.OnShow or {}) do fn(self) end
+end
+WorldMapFrame.Hide = function(self) self.shown = false for _, fn in ipairs(self.hooks and self.hooks.OnHide or {}) do fn(self) end end
+function S.mapUpdate() for _, f in ipairs(S.updaters or {}) do f.scripts.OnUpdate(f, 0.2) end end
 function S.fire(ev, ...)
     for _, f in ipairs(S.frames or {}) do
         local h = f.scripts and f.scripts.OnEvent

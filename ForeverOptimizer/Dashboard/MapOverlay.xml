@@ -1,0 +1,17 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/">
+  <!-- One pin for every recorded node / rare sighting / spawn point on the open world map.
+       Logic lives in Dashboard\MapOverlay.lua (FOMapPinMixin). -->
+  <Frame name="FOMapPinTemplate" mixin="FOMapPinMixin" virtual="true">
+    <Size x="14" y="14"/>
+    <Layers>
+      <Layer level="ARTWORK">
+        <Texture parentKey="Icon" setAllPoints="true"/>
+      </Layer>
+    </Layers>
+    <Scripts>
+      <OnLoad method="OnLoad"/>
+      <OnEnter method="OnMouseEnter"/>
+      <OnLeave method="OnMouseLeave"/>
+    </Scripts>
+  </Frame>
+</Ui>

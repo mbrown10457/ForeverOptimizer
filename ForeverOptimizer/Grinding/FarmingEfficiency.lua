@@ -136,6 +136,7 @@ local function OnUnitAppeared(unit, viaNameplate)
         if not last or (time() - last[4]) > 300 then
             U.Push(r.sightings, { mapID, x, y, time() }, 30)
             print("|cffff80ffRare:|r %s seen at %s (%.1f, %.1f)", r.name or "?", U.MapName(mapID), x * 100, y * 100)
+            FO:Fire("FO_RARE", npcID, r.name, mapID, x, y)
         end
     end
 
