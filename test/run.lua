@@ -9,7 +9,7 @@ local function outHas(pat) for i = #S.out, 1, -1 do if S.out[i]:find(pat, 1, tru
 local function noErrors(label) check(#S.errors == 0, label .. " (no handler errors)") if #S.errors > 0 then for _, e in ipairs(S.errors) do print("   " .. e) end S.errors = {} end end
 
 local FO, order = S.loadAddon("ForeverOptimizer")
-check(#order == 42, "loaded " .. #order .. " files from TOC")
+check(#order == 43, "loaded " .. #order .. " files from TOC")
 check(#FO.modules >= 26, #FO.modules .. " modules registered")
 check(ForeverOptimizerDB == nil or true, "pre-login")
 
@@ -234,7 +234,8 @@ S.mapUpdate()
 check(MapM.coordText and MapM.coordText:IsShown(), "coordinate text shown while map open")
 SlashCmdList.FOREVEROPTIMIZER("map") check(outHas("world map overlay: pins") and outHas("this map"), "/fo map status")
 SlashCmdList.FOREVEROPTIMIZER("map nodes off") SlashCmdList.FOREVEROPTIMIZER("map refresh")
-check(#WorldMapFrame.pins == 0, "nodes layer off removes pins")
+local nodePins = 0 for _, p in ipairs(WorldMapFrame.pins) do if p.data.kind == "herb" or p.data.kind == "ore" then nodePins = nodePins + 1 end end
+check(nodePins == 0, "nodes layer off removes node pins")
 SlashCmdList.FOREVEROPTIMIZER("map nodes on") SlashCmdList.FOREVEROPTIMIZER("map spawns on") SlashCmdList.FOREVEROPTIMIZER("map refresh")
 check(#WorldMapFrame.pins > 0, "layers back on restores pins")
 WorldMapFrame:Hide()
@@ -315,6 +316,36 @@ SlashCmdList.FOREVEROPTIMIZER("spell Serpent Sting") check(outHas("known"), "/fo
 local bad = RM:ValidateBuild("HUNTER", { name = "bad", talents = { { "Intimidation", 1 }, { "Nope", 1 }, { "Endurance Training", 9 } } })
 check(#bad == 3, "build validation catches tier gate, unknown talent, over-max rank (" .. #bad .. ")")
 noErrors("rotation optimizer")
+
+-- Quest database (QuestieDB adapter): availability rules, nearest givers, objective targets, map pins, route fallback
+local QDBm = FO.QuestDB
+check(QDBm.available == true, "QuestieDB adapter connected (" .. tostring(QDBm.reason) .. ")")
+local avail = QDBm:AvailableOnMap(S.pos.map, S.pos.x, S.pos.y)
+local names = {} for _, r in ipairs(avail) do names[#names + 1] = r.name end
+check(#avail == 1 and avail[1].id == 201 and avail[1].giver == "Nimboya", "only the truly available quest is offered (" .. table.concat(names, ", ") .. ")")
+check(select(2, QDBm:Available(QDBm:Quest(203))) == "prerequisite" and select(2, QDBm:Available(QDBm:Quest(204))) == "completed" and select(2, QDBm:Available(QDBm:Quest(202))) == "level" and select(2, QDBm:Available(QDBm:Quest(205))) == "race", "availability reasons: prerequisite, completed, level, race")
+local targets = QDBm:ObjectiveTargets(101, S.pos.map)
+check(#targets == 4 and targets[1].kind == "creature" and targets[3].kind == "item", "objective targets from creature spawns and item drop sources (" .. #targets .. ")")
+local RPm = FO:GetModule("Quest.QuestRoutePlanner")
+local wm, wx, wy, wsrc = RPm:NextWaypoint(102)
+check(wm == S.pos.map and wx and math.abs(wx - 0.30) < 0.001 and wsrc and wsrc:find("database"), "route planner falls back to database objective (" .. tostring(wsrc) .. ")")
+S.completeInLog = { [102] = true }
+local fm, fx, fy, fsrc = RPm:NextWaypoint(102)
+check(fm == S.pos.map and math.abs(fx - 0.40) < 0.001 and fsrc == "turn-in (database)", "complete quest routes to database finisher (" .. tostring(fsrc) .. ")")
+local rm, rx, ry, rsrc = RPm:NextWaypoint(101)
+check(rsrc == "recorded" or rsrc == "turn-in", "your own recorded quest positions still win over the database (" .. tostring(rsrc) .. ")")
+S.completeInLog = nil
+SlashCmdList.FOREVEROPTIMIZER("nearby") check(outHas("Welcome to the Jungle"), "/fo nearby lists pickups")
+SlashCmdList.FOREVEROPTIMIZER("questinfo 101") check(outHas("Bloodscalp Ears (101)") and outHas("starts: Nimboya"), "/fo questinfo prints quest facts")
+SlashCmdList.FOREVEROPTIMIZER("questinfo Chained") check(outHas("not available: prerequisite"), "/fo questinfo by name with availability reason")
+SlashCmdList.FOREVEROPTIMIZER("qdb") check(outHas("quest database: QuestieDB"), "/fo qdb status")
+S.worldMap.mapID = S.pos.map
+WorldMapFrame:Show()
+local kinds = {} for _, p in ipairs(WorldMapFrame.pins) do kinds[p.data.kind] = (kinds[p.data.kind] or 0) + 1 end
+check((kinds.quest or 0) == 1 and (kinds.objective or 0) >= 4, "map shows quest giver and objective pins (quest " .. tostring(kinds.quest) .. ", objective " .. tostring(kinds.objective) .. ")")
+WorldMapFrame:Hide()
+SlashCmdList.FOREVEROPTIMIZER("route all") check(outHas("pick up: Welcome to the Jungle"), "/fo route all includes pickups")
+noErrors("quest database")
 noErrors("all " .. #cmds .. " slash commands")
 
 -- Dashboard tabs render

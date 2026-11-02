@@ -11,7 +11,7 @@ local U = FO.Util
 -- ===========================================================================
 local M = FO:NewModule("Dashboard.Map", {
     account = "map",
-    defaults = { settings = { nodes = true, rares = true, spawns = false, coords = true, minSeen = 1, maxPins = 400 } },
+    defaults = { settings = { nodes = true, rares = true, spawns = false, coords = true, quests = true, objectives = true, turnins = true, minSeen = 1, maxPins = 400 } },
 })
 local print = FO:Printer("Dashboard")
 
@@ -22,6 +22,9 @@ local STYLE = {
     rare  = { tex = "Interface\\COMMON\\Indicator-Red",    label = "Rare" },
     spawn = { tex = "Interface\\COMMON\\Indicator-Gray",   label = "Spawn point" },
     node  = { tex = "Interface\\COMMON\\Indicator-Green",  label = "Node" },
+    quest = { tex = "Interface\\GossipFrame\\AvailableQuestIcon", label = "Quest available" },
+    objective = { tex = "Interface\\GossipFrame\\IncompleteQuestIcon", label = "Objective" },
+    turnin = { tex = "Interface\\GossipFrame\\ActiveQuestIcon", label = "Turn in" },
 }
 
 -- ---------------------------------------------------------------------------
@@ -101,6 +104,31 @@ function M:Layers(mapID)
                 if p[1] == mapID then
                     rows[#rows + 1] = { kind = "spawn", name = sp.name or ("npc " .. npcID), x = p[2], y = p[3], n = p.kills or p.n, last = p.lastKillT,
                                         extra = est and string.format("respawn %s (%s)", U.FormatDuration(est), kind) or "respawn unknown" }
+                end
+            end
+        end
+    end
+    -- Quest layers from the quest database (QuestieDB) plus your own records
+    local QDB = FO.QuestDB
+    if QDB and QDB.available then
+        if s.quests then
+            for _, r in ipairs(QDB:AvailableOnMap(mapID)) do
+                rows[#rows + 1] = { kind = "quest", name = string.format("[%d] %s", r.level, r.name), x = r.x, y = r.y, n = 50, extra = "from " .. r.giver .. (r.kind == "recorded" and " (you were here)" or "") }
+            end
+        end
+        if s.objectives or s.turnins then
+            local QT = FO:GetModule("Quest.QuestTracker")
+            for _, e in ipairs(QT and QT:LogQuestIDs() or {}) do
+                local complete = C_QuestLog.IsComplete and C_QuestLog.IsComplete(e.id)
+                if s.objectives and not complete then
+                    for _, t in ipairs(QDB:ObjectiveTargets(e.id, mapID)) do
+                        rows[#rows + 1] = { kind = "objective", name = e.title or ("quest " .. e.id), x = t.x, y = t.y, n = 20, extra = t.label }
+                    end
+                end
+                if s.turnins and complete then
+                    for _, t in ipairs(QDB:Finishers(e.id, mapID)) do
+                        rows[#rows + 1] = { kind = "turnin", name = e.title or ("quest " .. e.id), x = t.x, y = t.y, n = 60, extra = "turn in to " .. t.label }
+                    end
                 end
             end
         end
@@ -228,11 +256,11 @@ M.commands = {
         end,
     },
     map = {
-        help = "World map overlay: status | nodes|rares|spawns|coords on|off | minseen <n> | refresh",
+        help = "World map overlay: status | nodes|rares|spawns|quests|objectives|turnins|coords on|off | minseen <n> | refresh",
         fn = function(self, arg)
             local s = self.db.settings
             local sub, rest = U.SplitCmd(arg or "")
-            if sub == "nodes" or sub == "rares" or sub == "spawns" or sub == "coords" then
+            if sub == "nodes" or sub == "rares" or sub == "spawns" or sub == "coords" or sub == "quests" or sub == "objectives" or sub == "turnins" then
                 if rest == "on" or rest == "off" then s[sub] = (rest == "on") else s[sub] = not s[sub] end
                 self.dirty = true
                 print("%s layer %s", sub, s[sub] and "|cff80ff80on|r" or "|cffff6060off|r")
@@ -253,7 +281,8 @@ M.commands = {
             local kinds = {}
             for _, r in ipairs(rows) do kinds[r.kind] = (kinds[r.kind] or 0) + 1 end
             print("world map overlay: pins %s, coords %s", self.available and "|cff80ff80available|r" or ("|cffff6060unavailable|r (" .. tostring(self.reason) .. ")"), s.coords and "on" or "off")
-            print("layers: nodes %s, rares %s, spawns %s, min seen %d", s.nodes and "on" or "off", s.rares and "on" or "off", s.spawns and "on" or "off", s.minSeen or 1)
+            print("layers: nodes %s, rares %s, spawns %s, quests %s, objectives %s, turnins %s, min seen %d", s.nodes and "on" or "off", s.rares and "on" or "off", s.spawns and "on" or "off", s.quests and "on" or "off", s.objectives and "on" or "off", s.turnins and "on" or "off", s.minSeen or 1)
+            if not (FO.QuestDB and FO.QuestDB.available) then print("quest layers need QuestieDB: %s", tostring(FO.QuestDB and FO.QuestDB.reason)) end
             local parts = {}
             for k, n in pairs(kinds) do parts[#parts + 1] = string.format("%d %s", n, (STYLE[k] or STYLE.node).label:lower()) end
             table.sort(parts)

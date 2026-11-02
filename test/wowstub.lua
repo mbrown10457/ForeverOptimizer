@@ -269,7 +269,53 @@ C_QuestLog = {
     GetTitleForQuestID = function(id) for _, q in ipairs(S.quests) do if q.questID == id then return q.title end end return "Quest " .. id end,
     GetNextWaypoint = function() return nil end,
     AddQuestWatch = function() end,
-    IsComplete = function() return false end,
+    IsComplete = function(id) return S.completeInLog and S.completeInLog[id] == true end,
+    IsQuestFlaggedCompleted = function(id) return S.qdb.completed[id] == true end,
+}
+function UnitRace() return "Orc", "Orc", 2 end
+
+-- QuestieDB fake (public API subset: entity getters, GetAllIds, Exists, IdsByName, Support zone map)
+S.qdb = {
+    completed = { [204] = true },
+    quests = {
+        [101] = { name = "Bloodscalp Ears", questLevel = 23, requiredLevel = 20, startedBy = { { 2497 } }, finishedBy = { { 2497 } },
+                  objectives = { { { 580, "Bloodscalp Warrior" } }, nil, { { 4106, "Bloodscalp Ear" } } }, zoneOrSort = 33, objectivesText = { "Collect 12 Bloodscalp Ears" } },
+        [102] = { name = "Singing Blue Shards", questLevel = 24, requiredLevel = 22, startedBy = { { 2497 } }, finishedBy = { { 2498 } }, objectives = { nil, { { 3001, "Crystal" } } } },
+        [201] = { name = "Welcome to the Jungle", questLevel = 24, requiredLevel = 22, startedBy = { { 2497 } }, finishedBy = { { 2498 } }, objectives = {} },
+        [202] = { name = "Too High", questLevel = 40, requiredLevel = 38, startedBy = { { 2497 } }, finishedBy = { { 2497 } }, objectives = {} },
+        [203] = { name = "Chained", questLevel = 23, requiredLevel = 20, startedBy = { { 2497 } }, finishedBy = { { 2497 } }, objectives = {}, preQuestSingle = { 101 } },
+        [204] = { name = "Done Already", questLevel = 23, requiredLevel = 20, startedBy = { { 2497 } }, finishedBy = { { 2497 } }, objectives = {} },
+        [205] = { name = "Horde Only Elsewhere", questLevel = 23, requiredLevel = 20, startedBy = { { 2499 } }, finishedBy = { { 2499 } }, objectives = {}, requiredRaces = 1 },
+    },
+    npcs = {
+        [2497] = { name = "Nimboya", spawns = { [33] = { { 48.0, 85.0 } } }, questStarts = { 101, 201, 202, 203, 204 }, minLevel = 30, maxLevel = 30 },
+        [2498] = { name = "Kebok", spawns = { [33] = { { 40.0, 60.0 } } }, questEnds = { 102, 201 } },
+        [2499] = { name = "Far Away", spawns = { [1] = { { 10.0, 10.0 } } } },
+        [580]  = { name = "Bloodscalp Warrior", spawns = { [33] = { { 50.0, 30.0 }, { 52.0, 33.0 } } }, minLevel = 22, maxLevel = 24 },
+    },
+    objects = { [3001] = { name = "Singing Crystal", spawns = { [33] = { { 30.0, 40.0 } } } } },
+    items = { [4106] = { name = "Bloodscalp Ear", npcDrops = { 580 } } },
+}
+local function copy(v) if type(v) ~= "table" then return v end local t = {} for k, x in pairs(v) do t[k] = copy(x) end return t end
+local function Entity(store, numericDefaults, tableAlways)
+    local E = {}
+    E.Exists = function(id) return store[id] ~= nil end
+    E.GetAllIds = function(hash) local ids = {} for id in pairs(store) do ids[#ids + 1] = id end table.sort(ids) if hash then local h = {} for _, id in ipairs(ids) do h[id] = true end return h end return ids end
+    E.IdsByName = function(name) local out = {} for id, r in pairs(store) do if r.name == name then out[#out + 1] = id end end table.sort(out) return #out > 0 and out or nil end
+    E.Get = function(id, key) local r = store[id] if not r then return nil end local v = r[key] if v == nil then if numericDefaults[key] then return 0 end if tableAlways[key] then return {} end return nil end if type(v) == "table" and next(v) == nil and not tableAlways[key] then return nil end return copy(v) end
+    return setmetatable(E, { __index = function(_, key) return function(id) return E.Get(id, key) end end })
+end
+local qNum = { questLevel = true, requiredLevel = true, requiredMaxLevel = true, requiredRaces = true, requiredClasses = true, zoneOrSort = true, nextQuestInChain = true, parentQuest = true, questFlags = true, specialFlags = true, sourceItemId = true }
+QuestDB = Entity(S.qdb.quests, qNum, { startedBy = true, finishedBy = true, objectives = true })
+NpcDB = Entity(S.qdb.npcs, { minLevel = true, maxLevel = true, rank = true, zoneID = true, factionID = true, npcFlags = true }, {})
+ObjectDB = Entity(S.qdb.objects, { zoneID = true, factionID = true }, {})
+ItemDB = Entity(S.qdb.items, { itemLevel = true, requiredLevel = true, class = true, subClass = true, startQuest = true, flags = true }, {})
+LibQuestieDB = {
+    Quest = QuestDB, Npc = NpcDB, Object = ObjectDB, Item = ItemDB,
+    readMode = "baked", contractVersion = 4, minSupportedContract = 1,
+    RequireContract = function(v) return v >= 1 and v <= 4, nil end,
+    Enum = { raceMaskById = { [1] = 1, [2] = 2, [3] = 4, [4] = 8, [5] = 16, [6] = 32, [7] = 64, [8] = 128 } },
+    Support = { Get = function(name) if name == "ZoneDB" then return { private = { areaIdToUiMapId = "return { [33] = " .. S.pos.map .. ", [1] = 1426 }" } } end end },
 }
 
 -- Misc API groups ------------------------------------------------------------

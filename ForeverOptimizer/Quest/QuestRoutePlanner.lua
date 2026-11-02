@@ -16,23 +16,35 @@ function RP:NextWaypoint(questID)
         mapID, x, y = U.Num(mapID), U.Num(x), U.Num(y)
         if mapID and x and y then return mapID, x, y, "blizzard" end
     end
-    local q = QT.db.quests[questID]
-    if not q then return nil end
+    local q = QT.db.quests[questID] or { objectives = {} }
+    local QDB = FO.QuestDB
+    local pmap, px, py = U.PlayerPosition()
     local objs = QT.ReadObjectives(questID) or {}
-    local allDone = #objs > 0
-    for idx, o in ipairs(objs) do
-        if not o.finished then
-            allDone = false
-            local saved = q.objectives[idx]
-            if saved and #saved.points > 0 then
-                local pt = saved.points[#saved.points]
-                return pt[1], pt[2], pt[3], "recorded"
+    local complete = (C_QuestLog.IsComplete and C_QuestLog.IsComplete(questID)) == true
+    if not complete then
+        local allDone = #objs > 0
+        for idx, o in ipairs(objs) do
+            if not o.finished then
+                allDone = false
+                local saved = q.objectives[idx]
+                if saved and #saved.points > 0 then
+                    local pt = saved.points[#saved.points]
+                    return pt[1], pt[2], pt[3], "recorded"
+                end
             end
         end
+        complete = allDone
     end
-    if allDone or (C_QuestLog.IsComplete and C_QuestLog.IsComplete(questID)) then
+    if complete then
         if q.turnin and q.turnin.mapID and q.turnin.x then return q.turnin.mapID, q.turnin.x, q.turnin.y, "turn-in" end
+        if QDB and QDB.available and pmap then
+            local f = QDB:NearestFinisher(questID, pmap, px, py)
+            if f then return f.mapID, f.x, f.y, "turn-in (database)" end
+        end
         if q.accept and q.accept.mapID and q.accept.x then return q.accept.mapID, q.accept.x, q.accept.y, "accept npc (turn-in unknown)" end
+    elseif QDB and QDB.available and pmap then
+        local t = QDB:NearestObjective(questID, pmap, px, py)
+        if t then return t.mapID, t.x, t.y, "database: " .. (t.label or t.kind) end
     end
     return nil
 end
@@ -49,7 +61,7 @@ local function Yards(mapID, x1, y1, x2, y2)
 end
 
 -- All quest targets on the current map, ordered greedily from the player
-function RP:Route()
+function RP:Route(includePickups)
     local QT = FO:GetModule("Quest.QuestTracker")
     local mapID, px, py = U.PlayerPosition()
     if not mapID or not px then return nil, "no position" end
@@ -57,6 +69,11 @@ function RP:Route()
     for _, e in ipairs(QT:LogQuestIDs()) do
         local m, x, y, src = self:NextWaypoint(e.id)
         if m == mapID and x then targets[#targets + 1] = { qid = e.id, title = e.title or "?", x = x, y = y, src = src } end
+    end
+    if includePickups and FO.QuestDB and FO.QuestDB.available then
+        for _, r in ipairs(FO.QuestDB:AvailableOnMap(mapID, px, py)) do
+            targets[#targets + 1] = { qid = r.id, title = "pick up: " .. r.name, x = r.x, y = r.y, src = "L" .. r.level .. " from " .. r.giver }
+        end
     end
     if #targets == 0 then return nil, "no quest targets known on this map" end
     local route, cx, cy, total = {}, px, py, 0
@@ -92,8 +109,8 @@ RP.commands = {
         print("%s -> %s (%.1f, %.1f) [%s]", title, U.MapName(mapID), x * 100, y * 100, src)
         if SetWaypoint(mapID, x, y) then print("waypoint set.") end
     end },
-    route = { help = "(quest) ordered route through quest targets on this map", fn = function(self)
-        local route, err, total, mapID = self:Route()
+    route = { help = "(quest) ordered route through quest targets on this map | route all (adds pickups)", fn = function(self, arg)
+        local route, err, total, mapID = self:Route((U.Str(arg) or "") == "all")
         if not route then print("route: %s", err) return end
         print("Quest route on %s, %d stops, ~%.0f yards:", U.MapName(mapID), #route, total)
         for i, t in ipairs(route) do print("  %2d. %-30s (%.1f, %.1f) +%.0fy [%s]", i, U.Trunc(t.title, 30), t.x * 100, t.y * 100, t.leg, t.src) end

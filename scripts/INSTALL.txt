@@ -29,6 +29,13 @@ data is not in that folder; it lives in
 and survives updates. That file is also what to send back if you want your
 sessions, drop rates and node sightings pooled with the group's.
 
+Optional: quest database
+------------------------
+Install "QuestieDB" from CurseForge as well (not Questie itself, just the
+database addon) and ForeverOptimizer will show quest givers, objectives and
+turn-ins on the map and list quests you can pick up nearby with /fo nearby.
+Without it those features say they are unavailable; everything else works.
+
 Checking it loaded
 ------------------
 At the character select screen, click AddOns and make sure ForeverOptimizer is
