@@ -31,6 +31,8 @@ The addon is the same on both platforms; only the helper scripts differ.
 
 ## What it looks like
 
+The full add-in catalog with architecture and open slots is at [mbrown10457.github.io/ForeverOptimizer/addins.html](https://mbrown10457.github.io/ForeverOptimizer/addins.html) (`docs/FEATURES.md` is the same list as a table; regenerate with `node scripts/build_features.js docs/addins.html docs/FEATURES.md`). Propose a new one with the **Add-in proposal** issue template.
+
 [mbrown10457.github.io/ForeverOptimizer/mockup.html](https://mbrown10457.github.io/ForeverOptimizer/mockup.html) (source: `docs/mockup.html`) is an interactive mock of the addon in game: the HUD with every tab and its buttons, the world map pins, and the chat output of the day-one commands. Open it in a browser. The text is produced by the addon's own code run through the test harness (`scripts/mock/dump_ui.lua`), with sample session numbers; regenerate it after UI changes with:
 
 ```

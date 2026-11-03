@@ -1,0 +1,67 @@
+name: Add-in proposal
+description: Propose a new ForeverOptimizer add-in (a module that turns something observable in game into a number)
+title: "add-in: "
+labels: ["add-in"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The catalog of what exists and the open slots is at https://mbrown10457.github.io/ForeverOptimizer/addins.html. Short answers are fine.
+  - type: input
+    id: name
+    attributes:
+      label: Name
+      placeholder: e.g. Buff uptime
+    validations:
+      required: true
+  - type: textarea
+    id: measures
+    attributes:
+      label: What it measures
+      description: The one number or line it would put on the HUD, and why it changes how you play.
+    validations:
+      required: true
+  - type: dropdown
+    id: source
+    attributes:
+      label: Where the data comes from
+      multiple: true
+      options:
+        - Game event (UNIT_*, PLAYER_*, QUEST_*, LOOT_*, ...)
+        - Combat log event
+        - Client API call (quest, auction house, tradeskill, map, spellbook)
+        - Something the player types or clicks
+        - Another addon's data (QuestieDB or similar)
+        - Not sure
+  - type: textarea
+    id: saves
+    attributes:
+      label: What it saves
+      description: Roughly what gets written to SavedVariables and how much per hour of play. "Nothing" is a valid answer.
+  - type: input
+    id: closest
+    attributes:
+      label: Closest existing module
+      placeholder: e.g. Grinding/CombatStats.lua
+  - type: dropdown
+    id: class
+    attributes:
+      label: Class-specific?
+      options:
+        - No, any class
+        - Hunter
+        - Warlock
+        - Priest
+        - Mage
+        - Rogue
+        - Warrior
+        - Paladin
+        - Shaman
+        - Druid
+  - type: checkboxes
+    id: build
+    attributes:
+      label: Would you build it?
+      options:
+        - label: I can write the module (Lua) and a harness test
+        - label: I can test it in game and send data

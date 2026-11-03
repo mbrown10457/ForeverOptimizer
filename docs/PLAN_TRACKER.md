@@ -136,6 +136,7 @@ All of these are probed by `/fo verify` and the result is saved to `account.veri
 | First-hour checklist, session notes, alerts (rare, respawn window, bags, ammo, shards) with per-kind toggles, key bindings | `Core/Checklist.lua`, `Core/Alerts.lua`, `Core/SessionManager.lua`, `Bindings.xml` | done |
 | Quest database: live QuestieDB adapter (optional dependency) for quest facts, availability rules and spawn coordinates; nearby pickups, quest facts, route fallbacks, map pins; recorded positions win | `Quest/QuestDatabase.lua`, `Quest/QuestRoutePlanner.lua`, `Dashboard/MapOverlay.lua` | done against QuestieDB's documented API; unverified until both addons run on the real client |
 | World map overlay: player and cursor coordinates, pins for recorded herb/ore nodes, rare sightings and tracked spawn points with respawn estimate; `/fo map`, `/fo coords`, HUD position line | `Dashboard/MapOverlay.lua` + `.xml` (map data-provider API) | done; degrades to coordinates only if the client lacks `WorldMapFrame:AddDataProvider`, which `/fo map` reports |
+| Add-in catalog: every module with status, commands and file, architecture layers, module contract, open slots, filters; markdown export and an issue template for proposals | `docs/addins.html`, `docs/FEATURES.md`, `scripts/build_features.js`, `.github/ISSUE_TEMPLATE/add-in.yml` | done 2026-11-02 |
 
 ## Immediate next steps (from the plan)
 

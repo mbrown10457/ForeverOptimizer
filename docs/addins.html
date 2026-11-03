@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ForeverOptimizer Add-in Catalog</title>
+</head>
+<body style="margin:0">
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one column of reading width; the add-in grid breaks out wider. Tooltip-dark by default, parchment when the viewer prefers light. */
+:root {
+  --bg: #0b0e14; --panel: #131822; --panel-2: #1a2130; --line: #2a3345; --line-2: #3a4660;
+  --fg: #e4e1d6; --fg-2: #a7a79a; --fg-3: #737463;
+  --gold: #ffd100; --gold-2: #c9a52a; --blue: #66b3ff; --green: #4ce57f; --amber: #ffb333; --rose: #ff99e6; --mint: #99ffcc; --quest: #e6cc4c;
+  --ok: #4ce57f; --live: #66b3ff; --part: #ffb333; --open: #ff99e6;
+  --display: "Cinzel", "Palatino Linotype", Georgia, serif;
+  --body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --mono: "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #f3efe4; --panel: #fbf8f0; --panel-2: #ede7d6; --line: #d8d0bb; --line-2: #bfb59a;
+    --fg: #1f1d17; --fg-2: #55523f; --fg-3: #8a8670;
+    --gold: #8a6a00; --gold-2: #a8841c; --blue: #1e63b3; --green: #1f8a4a; --amber: #a86a00; --rose: #b3338f; --mint: #1b8a68; --quest: #8a7600;
+    --ok: #1f8a4a; --live: #1e63b3; --part: #a86a00; --open: #b3338f;
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #f3efe4; --panel: #fbf8f0; --panel-2: #ede7d6; --line: #d8d0bb; --line-2: #bfb59a;
+  --fg: #1f1d17; --fg-2: #55523f; --fg-3: #8a8670;
+  --gold: #8a6a00; --gold-2: #a8841c; --blue: #1e63b3; --green: #1f8a4a; --amber: #a86a00; --rose: #b3338f; --mint: #1b8a68; --quest: #8a7600;
+  --ok: #1f8a4a; --live: #1e63b3; --part: #a86a00; --open: #b3338f;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 64px; }
+.wrap { max-width: 1120px; margin: 0 auto; }
+.prose { max-width: 68ch; }
+a { color: var(--blue); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+code, pre { font-family: var(--mono); font-size: 0.86em; }
+code { background: var(--panel-2); border: 1px solid var(--line); border-radius: 3px; padding: 0 5px; white-space: nowrap; }
+pre { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; overflow-x: auto; line-height: 1.5; }
+pre code { background: none; border: 0; padding: 0; white-space: pre; }
+h1, h2, h3 { font-family: var(--display); color: var(--gold); text-wrap: balance; line-height: 1.15; margin: 0; }
+h1 { font-size: clamp(28px, 4.5vw, 44px); font-weight: 700; }
+h2 { font-size: clamp(20px, 2.6vw, 26px); font-weight: 600; margin-top: 56px; padding-bottom: 8px; border-bottom: 1px solid var(--line-2); }
+h3 { font-size: 17px; font-weight: 600; }
+p { margin: 10px 0; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--fg-3); }
+
+/* header */
+header { padding-block: 44px 24px; display: grid; gap: 14px; }
+header .sub { color: var(--fg-2); font-size: 18px; max-width: 64ch; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px 22px; font-family: var(--mono); font-size: 13px; color: var(--fg-2); font-variant-numeric: tabular-nums; }
+.facts b { color: var(--fg); font-weight: 500; }
+.links { display: flex; flex-wrap: wrap; gap: 10px; }
+.links a { display: inline-block; border: 1px solid var(--line-2); border-radius: 4px; padding: 6px 12px; color: var(--fg); text-decoration: none; font-size: 14px; }
+.links a:hover, .links a:focus-visible { border-color: var(--gold-2); color: var(--gold); outline: none; }
+.links a.primary { background: var(--gold); color: #0b0e14; border-color: var(--gold); font-weight: 600; }
+.links a.primary:hover { color: #0b0e14; filter: brightness(1.08); }
+
+/* legend + filters */
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; font-size: 14px; color: var(--fg-2); margin-top: 14px; }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 6px; vertical-align: 1px; }
+.filters { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 18px 0 14px; }
+.filters input { flex: 1 1 200px; min-width: 0; background: var(--panel); color: var(--fg); border: 1px solid var(--line-2); border-radius: 4px; padding: 7px 10px; font: inherit; font-size: 14px; }
+.filters input:focus-visible { outline: 2px solid var(--gold-2); outline-offset: 1px; }
+.chip { background: var(--panel); border: 1px solid var(--line-2); color: var(--fg-2); border-radius: 999px; padding: 4px 12px; font: inherit; font-size: 13px; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--gold); border-color: var(--gold); color: #0b0e14; font-weight: 600; }
+.chip:focus-visible { outline: 2px solid var(--gold-2); outline-offset: 1px; }
+.count { font-family: var(--mono); font-size: 12px; color: var(--fg-3); margin-left: auto; font-variant-numeric: tabular-nums; }
+
+/* cards */
+.area-head { display: flex; align-items: baseline; gap: 12px; margin: 30px 0 10px; }
+.area-head h3 { font-size: 19px; }
+.area-head span { font-family: var(--mono); font-size: 12px; color: var(--fg-3); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 10px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 12px 14px 12px; display: grid; gap: 7px; align-content: start; min-width: 0; border-top: 2px solid var(--stripe, var(--line-2)); }
+.card .name { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.card .name b { font-weight: 600; font-size: 16px; }
+.card .what { color: var(--fg-2); font-size: 14px; margin: 0; }
+.card .gap { color: var(--fg-3); font-size: 13px; margin: 0; font-style: italic; }
+.card .cmds { display: flex; flex-wrap: wrap; gap: 4px; }
+.card .cmds code { font-size: 12px; }
+.card .meta { font-family: var(--mono); font-size: 11.5px; color: var(--fg-3); display: flex; gap: 10px; flex-wrap: wrap; }
+.status { font-family: var(--mono); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }
+.status::before { content: ""; display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; background: currentColor; vertical-align: 0; }
+.s-ok { color: var(--ok); } .s-live { color: var(--live); } .s-part { color: var(--part); } .s-open { color: var(--open); }
+.card.open { border-style: dashed; background: transparent; }
+.empty { color: var(--fg-3); font-style: italic; padding: 20px 0; }
+
+/* architecture */
+.arch { display: grid; gap: 0; margin-top: 18px; }
+.layer { display: grid; grid-template-columns: 150px 1fr; gap: 14px; background: var(--panel); border: 1px solid var(--line); border-radius: 4px; padding: 12px 14px; }
+.layer + .layer { margin-top: 0; }
+.joint { display: grid; grid-template-columns: 150px 1fr; gap: 14px; padding: 2px 14px; font-family: var(--mono); font-size: 12px; color: var(--fg-3); }
+.joint span:first-child { display: none; }
+.layer .lbl { font-family: var(--display); color: var(--gold); font-size: 14px; font-weight: 600; line-height: 1.3; }
+.layer .lbl small { display: block; font-family: var(--mono); color: var(--fg-3); font-size: 11px; font-weight: 400; margin-top: 3px; letter-spacing: 0.04em; }
+.boxes { display: flex; flex-wrap: wrap; gap: 6px; min-width: 0; }
+.box { border: 1px solid var(--line-2); background: var(--panel-2); border-radius: 3px; padding: 3px 9px; font-size: 13.5px; }
+.box.opt { border-style: dashed; color: var(--fg-2); }
+.box em { font-style: normal; color: var(--fg-3); font-family: var(--mono); font-size: 11px; margin-left: 5px; }
+@media (max-width: 560px) { .layer, .joint { grid-template-columns: 1fr; gap: 6px; } }
+
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; }
+th, td { text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--fg-2); font-weight: 600; font-size: 13px; letter-spacing: 0.04em; text-transform: uppercase; }
+td:first-child { white-space: nowrap; }
+.tablewrap { overflow-x: auto; }
+
+.callout { border: 1px solid var(--gold-2); border-radius: 4px; padding: 14px 18px; background: var(--panel); margin-top: 18px; }
+.callout h3 { margin-bottom: 6px; }
+ol, ul { padding-left: 22px; } li { margin: 4px 0; }
+footer { margin-top: 56px; color: var(--fg-3); font-size: 13px; font-family: var(--mono); }
+@media (prefers-reduced-motion: no-preference) { .card { transition: border-color .15s; } }
+.card:hover { border-color: var(--line-2); }
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">World of Warcraft: Forever &middot; addon &middot; <span id="ver">v0.9.6</span></div>
+  <h1>ForeverOptimizer Add-in Catalog</h1>
+  <p class="sub">One core, many add-ins. Every module below records something from your own play and turns it into a number on the HUD or a <code>/fo</code> command. This page is the full list of what exists, how the pieces fit, and the open slots where a new add-in is wanted.</p>
+  <div class="facts">
+    <span><b>36</b> modules</span><span><b>88</b> commands</span><span><b>9</b> HUD tabs</span><span><b>7,900</b> lines of module Lua</span><span><b>19,267</b> seeded items</span><span><b>9</b> class rotations</span><span><b>176</b> harness checks</span>
+  </div>
+  <div class="links">
+    <a class="primary" href="https://github.com/mbrown10457/ForeverOptimizer/issues/new?template=add-in.yml">Propose an add-in</a>
+    <a href="https://github.com/mbrown10457/ForeverOptimizer">GitHub repo</a>
+    <a href="https://mbrown10457.github.io/ForeverOptimizer/mockup.html">HUD mockup</a>
+    <a href="https://github.com/mbrown10457/ForeverOptimizer/blob/main/WINDOWS_README.md">Windows install</a>
+    <a href="https://mbrown10457.github.io/ForeverOptimizer/Hunter_Launch_Checklist">Hunter checklist</a>
+    <a href="https://mbrown10457.github.io/ForeverOptimizer/Warlock_Launch_Checklist">Warlock checklist</a>
+  </div>
+</header>
+
+<h2 id="catalog">Featured add-ins</h2>
+<div class="legend">
+  <span><i class="dot" style="background:var(--ok)"></i>Ready: built and exercised by the offline harness</span>
+  <span><i class="dot" style="background:var(--live)"></i>Live check: built, needs the real client to confirm an API</span>
+  <span><i class="dot" style="background:var(--part)"></i>Partial: works with a stated gap</span>
+  <span><i class="dot" style="background:var(--open)"></i>Open slot: wanted, not built</span>
+</div>
+<div class="filters" role="group" aria-label="Filter add-ins">
+  <input id="q" type="search" placeholder="Search names, commands, descriptions" aria-label="Search add-ins">
+  <button class="chip" data-status="all" aria-pressed="true">All</button>
+  <button class="chip" data-status="ok" aria-pressed="false">Ready</button>
+  <button class="chip" data-status="live" aria-pressed="false">Live check</button>
+  <button class="chip" data-status="part" aria-pressed="false">Partial</button>
+  <button class="chip" data-status="open" aria-pressed="false">Open slots</button>
+  <span class="count" id="count"></span>
+</div>
+<div id="catalogBody"></div>
+
+<h2 id="architecture">Architecture</h2>
+<p class="prose">Load order is the TOC: Core first, then feature modules, class modules, Dashboard last. Modules never call each other's internals; they register for game events and internal messages, write raw observations to their own saved namespace, and compute derived numbers at report time. Everything that leaves the game goes through the SavedVariables file.</p>
+<div class="arch">
+  <div class="layer"><div class="lbl">Game client<small>wowf 1.60.1 &middot; Interface 16001</small></div>
+    <div class="boxes"><span class="box">Game events</span><span class="box">Combat log<em>restricted?</em></span><span class="box">Quest, AH, tradeskill, map APIs</span><span class="box">Client DB tables<em>items, spells, talents</em></span><span class="box opt">QuestieDB<em>optional</em></span></div></div>
+  <div class="joint"><span></span><span>events, API calls, seed data built offline</span></div>
+  <div class="layer"><div class="lbl">Core<small>Core/ &middot; 12 files</small></div>
+    <div class="boxes"><span class="box">Init<em>module registry, FO.Try, error log</em></span><span class="box">EventManager<em>one frame, fan-out, ticker</em></span><span class="box">CombatLog adapter<em>FO_CL_* messages</em></span><span class="box">DataStorage<em>versioned, migrations, caps</em></span><span class="box">SessionManager<em>ledger, activity, notes</em></span><span class="box">CharacterProfile</span><span class="box">AnalyticsEngine</span><span class="box">Alerts</span><span class="box">Verify</span><span class="box">Checklist</span><span class="box">SeedData<em>Data/*.lua</em></span><span class="box">Util</span></div></div>
+  <div class="joint"><span></span><span>self.db / self.cdb, events, messages, commands</span></div>
+  <div class="layer"><div class="lbl">Add-ins<small>feature modules &middot; 25 files</small></div>
+    <div class="boxes"><span class="box" style="border-color:var(--blue)">Grinding<em>7</em></span><span class="box" style="border-color:var(--quest)">Quest<em>4</em></span><span class="box" style="border-color:var(--amber)">Economy<em>5</em></span><span class="box" style="border-color:var(--mint)">Character<em>6</em></span><span class="box" style="border-color:var(--rose)">Classes<em>Hunter, Warlock, Priest</em></span></div></div>
+  <div class="joint"><span></span><span>Lines(), Controls(), RegisterTab(), RegisterCommand()</span></div>
+  <div class="layer"><div class="lbl">Dashboard<small>Dashboard/ &middot; 7 files</small></div>
+    <div class="boxes"><span class="box">HUD frame<em>tabs + button row</em></span><span class="box">Overview</span><span class="box">Class tab</span><span class="box">Meter</span><span class="box">Leveling</span><span class="box">Economy</span><span class="box">Character</span><span class="box">History</span><span class="box">Help + manual</span><span class="box">World map overlay</span><span class="box">Alerts flash + sound</span></div></div>
+  <div class="joint"><span></span><span>written on logout or /reload</span></div>
+  <div class="layer"><div class="lbl">SavedVariables<small>ForeverOptimizerDB.lua</small></div>
+    <div class="boxes"><span class="box">account.*<em>mobs, loot, prices, quests, sessions, meter, verify, errors</em></span><span class="box">chars.&lt;realm-name&gt;.*<em>profile, runes, checklist</em></span></div></div>
+  <div class="joint"><span></span><span>scripts/ read the file; nothing writes back into the game</span></div>
+  <div class="layer"><div class="lbl">Outside the game<small>scripts/ &middot; .github/</small></div>
+    <div class="boxes"><span class="box">install.sh / install-windows.ps1</span><span class="box">collect.sh / collect.ps1</span><span class="box">summarize.py</span><span class="box">savedvars_to_json.py, fo_sqlite.py</span><span class="box">backup.sh<em>launchd nightly</em></span><span class="box">build_seed.py, build_spells.py</span><span class="box">test/run.lua<em>WoW API stub</em></span><span class="box">CI, release on tag, daily seed update</span><span class="box">GitHub Pages<em>docs/</em></span></div></div>
+</div>
+
+<h3 style="margin-top:28px">How an add-in is written</h3>
+<p class="prose">A module is one Lua file registered with the core. It declares its saved namespace, the events and internal messages it wants, its commands, and optionally a HUD tab with buttons. The core wraps every handler in <code>FO.Try</code>, so a broken add-in logs an error and keeps the rest running. This is the whole contract:</p>
+<pre><code>local ADDON, FO = ...
+local print = FO:Printer("Grinding")
+
+local M = FO:NewModule("Grinding.MyThing", {
+    account  = "mything",                 -- account-wide namespace -> self.db
+    defaults = { log = {}, settings = { on = true } },
+    -- char = "mything", cdefaults = {}   -- per-character -> self.cdb
+
+    events = {                            -- game events
+        PLAYER_TARGET_CHANGED = function(self) ... end,
+    },
+    messages = {                          -- internal messages from other modules
+        FO_CL_DAMAGE = function(self, ev) ... end,   -- combat log adapter
+        FO_SESSION_END = function(self, s) ... end,
+    },
+    commands = {
+        mything = { help = "[reset] - what it shows", fn = function(self, arg) print("...") end },
+    },
+})
+
+function M:OnEnable()                     -- PLAYER_LOGIN
+    FO.Dashboard:RegisterTab("MyThing", 2.5, function() return self:Lines() end,
+        function() return { { label = "Reset", fn = function() self.db.log = {} end } } end)
+end
+function M:OnTick(now) end               -- once a second, only if defined
+function M:Lines() return { "|cffffd100MyThing|r  12 things/hr" } end</code></pre>
+<p class="prose">Add the file to the TOC in its area, add a test block to <code>test/run.lua</code> (the stub fakes the client, fires events and reads chat output), and open a pull request. CI runs the syntax check, the harness, the rotation data validation and the packaging step.</p>
+
+<h3 style="margin-top:28px">Conventions worth knowing</h3>
+<div class="tablewrap"><table>
+<tr><th>Rule</th><th>Why</th></tr>
+<tr><td>Raw observations, derived at report time</td><td>Formulas change; encounters, loot rows, price snapshots and sessions never do. <code>/fo dbstats</code> shows namespace sizes; every log is capped.</td></tr>
+<tr><td>Sample sizes on every estimate</td><td>Drop rates use a Wilson interval; zone rankings carry a confidence label and low-confidence rows are down-weighted.</td></tr>
+<tr><td>Your own recordings beat the seed</td><td>A quest giver position you saw wins over the database; a measured kill time wins over the rotation estimate.</td></tr>
+<tr><td>No protected automation</td><td>Only user-triggered actions. Auto-sell uses an unprotected API and can be switched off.</td></tr>
+<tr><td>Degrade, never break</td><td>The combat log, the map data provider and QuestieDB are all optional. Each module says what it is missing (<code>/fo verify</code>, <code>/fo combatlog</code>, <code>/fo qdb</code>, <code>/fo map</code>).</td></tr>
+<tr><td>Everything has a chat command and a HUD line</td><td>The Help tab and <code>/fo manual</code> are built from the live registry, so a new command documents itself.</td></tr>
+</table></div>
+
+<h2 id="propose">Propose an add-in</h2>
+<div class="callout prose">
+  <h3>What a good proposal says</h3>
+  <ol>
+    <li><b>What it measures</b> and the one number or line it would put on the HUD.</li>
+    <li><b>Where the data comes from:</b> a game event, a combat log event, an API call, or something the player types.</li>
+    <li><b>What it saves</b> and roughly how much per hour of play.</li>
+    <li><b>Which existing module it is closest to</b>, so it can reuse its namespace or messages.</li>
+  </ol>
+  <p>Open one with the button at the top, or file an issue with the title prefix <code>add-in:</code>. Ideas without any of the above are still welcome; the open slots below show the shape.</p>
+</div>
+
+<footer>Generated from the v0.9.6 command registry and plan tracker on 2026-11-02. Source: docs/FEATURES.md in the repo.</footer>
+</div>
+
+<script>
+const AREAS = ["Core","Grinding","Quest","Economy","Character","Classes","Dashboard","Tooling","Open slots"];
+const STRIPE = { Core:"var(--green)", Grinding:"var(--blue)", Quest:"var(--quest)", Economy:"var(--amber)", Character:"var(--mint)", Classes:"var(--rose)", Dashboard:"var(--fg-3)", Tooling:"var(--fg-3)", "Open slots":"var(--open)" };
+const ADDINS = [
+ // Core
+ {a:"Core",n:"Session ledger",s:"ok",f:"Core/SessionManager.lua",t:"History",c:["session","note","history"],w:"Every play session with zone segments, activity (quest, grind, dungeon) detected from what you do, XP, gold in and out, deaths and your own timestamped notes. Comparable sessions are matched by level and activity."},
+ {a:"Core",n:"Alerts",s:"ok",f:"Core/Alerts.lua",t:"Overview buttons",c:["alerts"],w:"Rare spawn seen, respawn window opening, bags nearly full, ammo low, soul shards low or high. Chat line, sound and a centre-screen flash, each switchable."},
+ {a:"Core",n:"First-hour checklist",s:"ok",f:"Core/Checklist.lua",c:["checklist"],w:"The visits and commands that seed every other module on a fresh character, ticked off as you do them."},
+ {a:"Core",n:"Client verify",s:"ok",f:"Core/Verify.lua",c:["verify"],w:"Probes every client API the addon depends on and saves the result, so the first login tells us exactly which modules are degraded."},
+ {a:"Core",n:"Error log",s:"ok",f:"Core/Init.lua, Core/DataStorage.lua",c:["errors"],w:"Every handler runs inside FO.Try. Lua errors are deduplicated, kept with stacks, printed a few times, and saved so they can be read from the file after a crash."},
+ {a:"Core",n:"Combat log adapter",s:"live",f:"Core/CombatLog.lua",c:["combatlog"],w:"Normalizes COMBAT_LOG_EVENT_UNFILTERED into FO_CL_DAMAGE, HEAL, CAST and the rest, with mine/pet/party flags, so add-ins never parse the raw payload.",g:"Built for the 1.60 client; refuses cleanly if the log is restricted."},
+ {a:"Core",n:"Data storage",s:"ok",f:"Core/DataStorage.lua",c:["dbstats","wipe"],w:"Versioned saved-variables root with migrations, per-module namespaces, size caps and a per-namespace size report."},
+ {a:"Core",n:"Character profile",s:"ok",f:"Core/CharacterProfile.lua",c:["me","skills"],w:"Realm, class, level, professions, equipment snapshot and build, stamped onto sessions and encounters so numbers can be compared like with like."},
+ {a:"Core",n:"Analytics engine",s:"ok",f:"Core/AnalyticsEngine.lua",t:"Leveling",c:["objective","estimate","recommend","zones"],w:"Zone and activity rankings near your level, normalized to levels per hour, scored by your objective weights (XP, gold, safety) with confidence labels. The adaptive leveling recommendation lives here."},
+ {a:"Core",n:"Client seeds",s:"ok",f:"Core/SeedData.lua, Data/*.lua",c:["seed","spell"],w:"19,267 items plus every class spell and talent read from the client's own tables, rebuilt automatically when the game patches. Mobs and quests are learned, not seeded, because the client ships those tables empty."},
+ // Grinding
+ {a:"Grinding",n:"XP tracker",s:"ok",f:"Grinding/XPTracker.lua",t:"Overview",c:["levels"],w:"XP per hour by activity for each level you have played, wall-clock and fighting-only."},
+ {a:"Grinding",n:"Mob database",s:"ok",f:"Grinding/MobDatabase.lua",c:["mobs","mob"],w:"Every mob you fight: XP, gold and drop rates per kill, kill time, damage taken, deaths. Ranked tables by XP, gold, kills or safety, here or anywhere."},
+ {a:"Grinding",n:"Combat stats",s:"live",f:"Grinding/CombatStats.lua",t:"Class tab",c:["combat","heals","dots","autoshot"],w:"Damage by spell and source, pet share, healing with overheal, mana per spell, DoT ticks delivered versus lost, Auto Shot and wand clipping.",g:"Needs the live combat log; falls back to cast counts."},
+ {a:"Grinding",n:"Group meter",s:"live",f:"Grinding/Meter.lua",t:"Meter",c:["dps","hps","meter"],w:"Damage and healing per player for the current fight, last fight or session, pets credited to owners, personal spell breakdown. No cross-player sync; it sees what your client sees.",g:"Needs the live combat log."},
+ {a:"Grinding",n:"Farming efficiency",s:"ok",f:"Grinding/FarmingEfficiency.lua",t:"Map pins",c:["nodes","respawn","rares","competition"],w:"Herb and ore nodes with positions, respawn intervals (confirmed versus upper bound), rare sightings, and how many other players were around."},
+ {a:"Grinding",n:"Downtime analyzer",s:"ok",f:"Grinding/DowntimeAnalyzer.lua",c:["downtime","deaths","legs"],w:"Where non-fighting time goes: eating, travel, corpse runs, vendoring. Death cost in repairs and minutes. Travel legs between zones."},
+ {a:"Grinding",n:"Loot tracker",s:"ok",f:"Grinding/LootTracker.lua",c:["gold"],w:"Raw loot log with vendor value and auction snapshot per item, the source of unrealized loot value in the gold report."},
+ // Quest
+ {a:"Quest",n:"Quest tracker",s:"ok",f:"Quest/QuestTracker.lua",c:["quests","quest","autotrack"],w:"Records where you accepted each quest, where each objective ticked and where you turned it in. Those positions feed the route planner and the map."},
+ {a:"Quest",n:"Quest efficiency",s:"ok",f:"Quest/QuestEfficiency.lua",c:["drops","questxp"],w:"Drop odds per objective from your kills with a 95% Wilson interval, kills and minutes to finish, and quest XP per hour against reward size. Rates are kept per objective for alts and friends."},
+ {a:"Quest",n:"Route planner",s:"ok",f:"Quest/QuestRoutePlanner.lua",c:["next","route"],w:"Waypoint to the next known quest location and a nearest-neighbour route through every target on the map. Blizzard waypoint, then your recording, then the database."},
+ {a:"Quest",n:"Quest database adapter",s:"live",f:"Quest/QuestDatabase.lua",t:"Map pins",c:["nearby","questinfo","qdb"],w:"Reads QuestieDB live for quest facts, prerequisites, chains, race and class rules and spawn positions. Lists what you can pick up on this map, nearest first.",g:"Optional dependency; many Forever givers lack coordinates in the database."},
+ // Economy
+ {a:"Economy",n:"Auction scanner",s:"live",f:"Economy/AuctionHouseScanner.lua",t:"Economy buttons",c:["scan","autoscan","ahstats"],w:"Full scan when the auction house is open, on demand or automatically, feeding price history.",g:"Retail C_AuctionHouse API assumed from client docs."},
+ {a:"Economy",n:"Price history",s:"ok",f:"Economy/PriceHistory.lua",c:["price","movers","flips","watch","unwatch"],w:"Latest, 7-day and 30-day price per item, movers against their average, flips below vendor or far below average, and price watches that alert."},
+ {a:"Economy",n:"Gold per hour",s:"ok",f:"Economy/GoldPerHour.lua",t:"Economy",c:["gold","dungeons"],w:"Net gold per hour from the session ledger, effective rate with unrealized loot, repairs attributed to dungeon runs, dungeon versus open world."},
+ {a:"Economy",n:"Inventory optimizer",s:"ok",f:"Economy/InventoryOptimizer.lua",t:"Economy buttons",c:["bags","find","mats","bank"],w:"Classifies every bag slot as trash, auction, material, quest or keep by value per slot, sells trash on demand or automatically, and finds items and materials across all your characters and bank."},
+ {a:"Economy",n:"Profession profit",s:"live",f:"Economy/ProfessionProfit.lua",c:["craft"],w:"Craft margin per recipe from price history, cheapest skill-up path, and a sell-through factor.",g:"Needs C_TradeSkillUI on the live client; deposit fee not modelled."},
+ // Character
+ {a:"Character",n:"Gear evaluator",s:"part",f:"Character/GearEvaluator.lua",c:["gear","weights"],w:"Upgrade score against what you wear, as a tooltip line and a command, from editable stat weights per class.",g:"Linear weights only; no damage model, procs or sets."},
+ {a:"Character",n:"Training planner",s:"ok",f:"Character/TrainingPlanner.lua",t:"Character",c:["plan","skip","proftrain","goal"],w:"Training costs ahead by level, ranks that are cheap to skip, profession training not yet learned, and savings goals such as the mount."},
+ {a:"Character",n:"Consumable tracker",s:"ok",f:"Character/ConsumableTracker.lua",c:["consumables"],w:"Spend on food, drink, potions and buffs against the XP and kill rate while buffed versus not."},
+ {a:"Character",n:"Progression planner",s:"part",f:"Character/ProgressionPlanner.lua",t:"Character",c:["eta","rep","hearth"],w:"Time to level from your recent rate, reputation sources and kills to next standing, hearth and travel suggestions from recorded legs.",g:"No flight-path graph yet."},
+ {a:"Character",n:"Rotation optimizer",s:"ok",f:"Character/Rotation.lua, Data/Rotations.lua",t:"Character buttons",c:["rotation","build","spell"],w:"Leveling priority for all nine classes with damage per mana from the seed and your measured numbers, talent builds checked against your points level by level, spell lookup with ranks and costs.",g:"Rotations are first drafts to tune against real data."},
+ {a:"Character",n:"Rune discovery",s:"live",f:"Character/Runes.lua",c:["runes"],w:"Diffs every Engrave spell and rune ability for your class against the spellbook. A new one is announced, flashed, noted and saved with level, zone and position.",g:"Nobody knows yet how Forever hands runes out."},
+ // Classes
+ {a:"Classes",n:"Hunter",s:"part",f:"Classes/Hunter.lua",t:"Hunter",c:["hunter"],w:"Pet damage share and uptime, aspect, ammo remaining, happiness and food, Auto Shot clipping.",g:"Pet training points not read yet."},
+ {a:"Classes",n:"Warlock",s:"part",f:"Classes/Warlock.lua",t:"Warlock",c:["warlock"],w:"Shard count with low and high warnings, demon damage share, DoT efficiency, mana spent versus Life Tapped.",g:"Life Tap versus Drain Life trade-off math not built."},
+ {a:"Classes",n:"Priest",s:"part",f:"Classes/Priest.lua",t:"Priest",c:["priest"],w:"Wand versus spell share, drink share, heal per mana with overheal.",g:"No buff uptime or per-fight regen model."},
+ // Dashboard
+ {a:"Dashboard",n:"HUD",s:"ok",f:"Dashboard/Overview.lua",t:"Overview",c:["show","hide","toggle","lock","scale","tab","hud"],w:"Movable frame with tabs and a button row per tab. Every button drives a command, so macros and key binds can click them too."},
+ {a:"Dashboard",n:"Leveling, Economy, Character, History tabs",s:"ok",f:"Dashboard/*.lua",c:["history"],w:"Objective presets, quest or grind override, scan and autosell toggles, build switching, paged session history with comparison."},
+ {a:"Dashboard",n:"World map overlay",s:"live",f:"Dashboard/MapOverlay.lua",c:["map","coords"],w:"Player and cursor coordinates, pins for recorded nodes, rares, tracked spawn points with respawn estimate, available quests, objectives and turn-ins.",g:"Degrades to coordinates only if the client lacks the map data-provider API."},
+ {a:"Dashboard",n:"Help and manual",s:"ok",f:"Dashboard/Help.lua",t:"Help",c:["help","manual"],w:"Commands by area on a HUD tab and a scrollable manual window, both built from the live command registry so they cannot drift."},
+ // Tooling
+ {a:"Tooling",n:"Installers",s:"ok",f:"scripts/install.sh, scripts/install-windows.ps1",w:"One command on Mac or Windows finds the game folder, fetches the latest release and QuestieDB with checksum, and installs both."},
+ {a:"Tooling",n:"Collect and summarize",s:"ok",f:"scripts/collect.*, scripts/summarize.py",w:"After a session, zips the saved file and the game log; the Mac side converts to JSON and prints verify results, errors, sessions, notes, checklist and runes."},
+ {a:"Tooling",n:"SQLite export",s:"ok",f:"scripts/fo_sqlite.py, scripts/savedvars_to_json.py",w:"Loads the saved file into SQLite tables for offline analysis in any tool."},
+ {a:"Tooling",n:"Nightly backup",s:"ok",f:"scripts/backup.sh, scripts/backup-install.sh",w:"launchd agent copies the saved files nightly and at login, keeps 30 days."},
+ {a:"Tooling",n:"Test harness",s:"ok",f:"test/run.lua, test/wowstub.lua",w:"A fake WoW client in Lua: frames, events, combat log, spellbook, units, chat capture. Every module is loaded, every command smoke-run, 176 checks."},
+ {a:"Tooling",n:"CI, releases, seed updates",s:"ok",f:".github/workflows/*.yml",w:"Syntax check and harness on every push, zip release on tag, a daily job that rebuilds the item and spell seeds when the client build changes and opens an issue if validation fails."},
+ {a:"Tooling",n:"HUD mockup generator",s:"ok",f:"scripts/mock/",w:"Drives the harness, dumps every tab, button and command output, and renders the mockup page on GitHub Pages from real addon text."},
+ // Open slots
+ {a:"Open slots",n:"Leveling route",s:"open",w:"Import a Guidelime or RestedXP guide if one appears for Forever, or generate a 1 to 60 route from QuestieDB level bands, chains and giver positions, weighted by measured drop rates and kill times."},
+ {a:"Open slots",n:"Shared data pool",s:"open",w:"A watcher outside the game pushes the shareable parts of each player's file (nodes, rares, spawns, mob stats, prices) to a data repo; an Action merges them into Data/Shared.lua that the installer fetches and the addon merges on load."},
+ {a:"Open slots",n:"More class trackers",s:"open",w:"Rotations and builds exist for all nine classes; live trackers exist for three. Mage, Rogue, Warrior, Paladin, Shaman and Druid each need a status line and the class-specific numbers that matter when leveling."},
+ {a:"Open slots",n:"Minimap pins",s:"open",w:"The world map has pins; the minimap does not. Nodes, rares and quest targets within range on the minimap."},
+ {a:"Open slots",n:"Duo quest sync",s:"open",w:"Addon-to-addon messages between grouped players: who still needs which collection drop, whose turn-in is where, shared kill counts."},
+ {a:"Open slots",n:"Offline session report",s:"open",w:"A rendered HTML report from the saved file: sessions, zones, gold, deaths, with charts, for sharing after a night of play."},
+ {a:"Open slots",n:"Mob names from the database",s:"open",w:"Encounters are keyed by NPC id; QuestieDB has the names and levels. Fill them in so a mob is readable before you have fought it."},
+ {a:"Open slots",n:"Flight-path graph",s:"open",w:"Travel planner knows your recorded legs only. A flight-path graph with costs and times would let it answer where to hearth and when to fly."},
+ {a:"Open slots",n:"Damage-model gear evaluator",s:"open",w:"Replace linear stat weights with a per-class damage or healing model so upgrades are scored in DPS or HPS."},
+ {a:"Open slots",n:"Hunter pet training",s:"open",w:"Training points, learned skills, next rank available from the stable or wild pets, happiness and loyalty forecast."},
+ {a:"Open slots",n:"Buff and debuff uptime",s:"open",w:"Per-fight uptime of your own buffs, Hunter's Mark, curses and Power Word: Fortitude, from aura events in the combat log."},
+ {a:"Open slots",n:"Your idea",s:"open",w:"Anything that turns something you can observe in game into a number that changes how you play. Open a proposal with the button at the top."},
+];
+const SLABEL = { ok:"Ready", live:"Live check", part:"Partial", open:"Open slot" };
+const body = document.getElementById("catalogBody"), q = document.getElementById("q"), count = document.getElementById("count");
+let status = "all";
+function esc(s){ return String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+function render(){
+  const needle = q.value.trim().toLowerCase();
+  let shown = 0, html = "";
+  for (const area of AREAS){
+    const rows = ADDINS.filter(x => x.a === area && (status === "all" || x.s === status) && (!needle || [x.n, x.w, x.g, x.f, (x.c||[]).join(" ")].join(" ").toLowerCase().includes(needle)));
+    if (!rows.length) continue;
+    shown += rows.length;
+    html += `<div class="area-head"><h3>${esc(area)}</h3><span>${rows.length}</span></div><div class="grid">`;
+    for (const x of rows){
+      html += `<article class="card${x.s==="open"?" open":""}" style="--stripe:${STRIPE[area]}">
+        <div class="name"><b>${esc(x.n)}</b><span class="status s-${x.s}">${SLABEL[x.s]}</span></div>
+        <p class="what">${esc(x.w)}</p>
+        ${x.g ? `<p class="gap">${esc(x.g)}</p>` : ""}
+        ${x.c ? `<div class="cmds">${x.c.map(c => `<code>/fo ${esc(c)}</code>`).join("")}</div>` : ""}
+        ${(x.f || x.t) ? `<div class="meta">${x.f ? `<span>${esc(x.f)}</span>` : ""}${x.t ? `<span>HUD: ${esc(x.t)}</span>` : ""}</div>` : ""}
+      </article>`;
+    }
+    html += `</div>`;
+  }
+  body.innerHTML = html || `<p class="empty">Nothing matches. Clear the search or pick another filter.</p>`;
+  count.textContent = `${shown} of ${ADDINS.length}`;
+}
+document.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => {
+  status = b.dataset.status;
+  document.querySelectorAll(".chip").forEach(o => o.setAttribute("aria-pressed", String(o === b)));
+  render();
+}));
+q.addEventListener("input", render);
+render();
+</script>
+</body>
+</html>
