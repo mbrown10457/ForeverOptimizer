@@ -8,7 +8,7 @@ from the client seed (build 1.60.1.70707). Quest IDs 9xxxx are new in Forever an
 ## Before Wednesday
 
 - [ ] Install from PowerShell with the one line in [WINDOWS_README](https://github.com/mbrown10457/ForeverOptimizer/blob/main/WINDOWS_README.md). Run it today, not Wednesday, so any error is fixed in time.
-- [ ] Same realm as the hunter, both Horde.
+- [ ] Same ruleset as the hunter (Forever has no realms: one mega-server per ruleset, Normal, PvP or RP, and no transfers between them), both Horde. Characters need a first and last name, unique as a pair.
 - [ ] Both take First Aid. Decide who takes Skinning and who takes Mining for early cash.
 
 ## Character creation

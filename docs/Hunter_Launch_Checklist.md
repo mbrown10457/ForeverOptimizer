@@ -9,7 +9,7 @@ Quest IDs 9xxxx are new in Forever and were not in Classic, so expect those to d
 
 - [ ] `ForeverOptimizer` (symlink) and `QuestieDB` sit in `_forever_/Interface/AddOns`. Already done on this Mac.
 - [ ] Friend installs from the v0.9.0 release zip with `scripts/install.ps1`, plus QuestieDB.
-- [ ] Agree realm and names. Same realm, both Horde.
+- [ ] Agree ruleset and names. Forever has no realms: one mega-server per ruleset (Normal, PvP or RP) and no transfers between them, so pick the same one. Characters need a first and last name, unique as a pair. Creation is open before launch for pack owners: make the characters now and check the AddOns button at character select.
 - [ ] Decide who handles First Aid (both should) and who takes Skinning + Leather/Mining for cash.
 
 ## Character creation
