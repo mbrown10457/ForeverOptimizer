@@ -19,7 +19,7 @@ local print = FO:Printer("Core")
 local CL = FO:NewModule("Core.CombatLog", {})
 FO.CombatLog = CL
 CL.registered, CL.available, CL.amountsHidden = false, false, false
-CL.count, CL.secretEvents, CL.firstAt, CL.lastAt = 0, 0, nil, nil
+CL.count, CL.amountEvents, CL.secretEvents, CL.firstAt, CL.lastAt = 0, 0, 0, nil, nil
 CL.kinds = {}
 
 local band = (bit and bit.band) or function(a, b)
@@ -51,7 +51,9 @@ local function Amt(v)
     return U.Num(v)
 end
 
-local SUFFIX_PREFIXES = { "SPELL_PERIODIC_", "SPELL_BUILDING_", "SWING_", "RANGE_", "SPELL_", "ENVIRONMENTAL_" }
+local AMOUNT_KINDS = { DAMAGE = true, HEAL = true, ENERGIZE = true }
+local WINDOW = 50                      -- last N amount-bearing events decide whether amounts are hidden
+local recent, recentPos, recentFill, recentSecret = {}, 0, 0, 0
 
 function CL:Handle(...)
     local t, sub, _, sGUID, sName, sFlags, _, dGUID, dName, dFlags = ...
@@ -113,9 +115,16 @@ function CL:Handle(...)
     self.count = self.count + 1
     self.lastAt = GetTime()
     if not self.firstAt then self.firstAt = self.lastAt end
-    if ev.secret then
-        self.secretEvents = self.secretEvents + 1
-        if self.secretEvents >= 20 and self.secretEvents == self.count then self.amountsHidden = true end
+    -- amounts are "hidden" when nearly every event that carries an amount came back secret;
+    -- casts and deaths carry none, so they must not dilute the ratio
+    if AMOUNT_KINDS[kind] then
+        self.amountEvents = self.amountEvents + 1
+        if ev.secret then self.secretEvents = self.secretEvents + 1 end
+        recentPos = recentPos % WINDOW + 1
+        if recentFill < WINDOW then recentFill = recentFill + 1 elseif recent[recentPos] then recentSecret = recentSecret - 1 end
+        recent[recentPos] = ev.secret == true
+        if ev.secret then recentSecret = recentSecret + 1 end
+        if recentFill >= 20 then self.amountsHidden = recentSecret >= recentFill * 0.9 end
     end
     self.kinds[kind] = (self.kinds[kind] or 0) + 1
     FO:Fire("FO_CL_" .. kind, ev)
@@ -133,7 +142,9 @@ function CL:OnEnable()
     self.reason = ok and nil or tostring(err)
     if ok and type(CombatLogGetCurrentEventInfo) == "function" then
         self.available = true
-        f:SetScript("OnEvent", function() FO.Try("combat log", CL.Handle, CL, CombatLogGetCurrentEventInfo()) end)
+        -- one fixed closure, no per-event argument packing: the hottest path in the addon
+        local function HandleCurrent() return CL:Handle(CombatLogGetCurrentEventInfo()) end
+        f:SetScript("OnEvent", function() FO.TryCall("combat log", HandleCurrent) end)
     elseif ok then
         self.reason = "CombatLogGetCurrentEventInfo missing"
     end
@@ -167,7 +178,7 @@ CL.commands = {
             if r ~= nil then print("  C_CombatLog.IsCombatLogRestricted(): %s", tostring(r)) end
             if self.count > 0 then
                 local span = math.max(1, (self.lastAt or 0) - (self.firstAt or 0))
-                print("  %d events (%.1f/s while active), %d with secret amounts", self.count, self.count / span, self.secretEvents)
+                print("  %d events (%.1f/s while active), %d of %d amount-bearing events secret", self.count, self.count / span, self.secretEvents, self.amountEvents)
                 local parts = {}
                 for k, n in pairs(self.kinds) do parts[#parts + 1] = string.format("%s %d", k:lower(), n) end
                 table.sort(parts)

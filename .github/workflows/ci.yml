@@ -9,14 +9,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install Lua
-        run: sudo apt-get update -q && sudo apt-get install -y -q lua5.4
-      - name: Syntax check every Lua file
-        run: find ForeverOptimizer -name '*.lua' -print0 | xargs -0 -n 50 luac5.4 -p
-      - name: Harness
-        run: lua5.4 test/run.lua
-      - name: Rotation data vs seed
-        run: lua5.4 test/validate_data.lua
+      - name: Install Lua 5.1 (the game's Lua) and 5.4
+        run: sudo apt-get update -q && sudo apt-get install -y -q lua5.1 lua5.4
+      - name: Syntax check every Lua file (5.1)
+        run: find ForeverOptimizer -name '*.lua' -print0 | xargs -0 -n 50 luac5.1 -p
+      - name: Harness on Lua 5.1
+        run: lua5.1 test/run.lua
+      - name: Rotation data vs seed on Lua 5.1
+        run: lua5.1 test/validate_data.lua
+      - name: Harness on Lua 5.4
+        run: lua5.4 test/run.lua && lua5.4 test/validate_data.lua
       - name: Package
         run: sudo apt-get install -y -q zip rsync && bash scripts/package.sh
       - uses: actions/upload-artifact@v4

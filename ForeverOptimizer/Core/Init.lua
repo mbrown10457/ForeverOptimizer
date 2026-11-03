@@ -4,7 +4,7 @@ local ADDON, FO = ...
 _G.ForeverOptimizer = FO
 
 FO.NAME = ADDON
-FO.VERSION = "0.9.6"
+FO.VERSION = "0.9.7"
 FO.modules = {}        -- ordered list of module defs
 FO.moduleIndex = {}    -- name -> def
 FO.commands = {}       -- subcommand -> { fn=, help=, module= }
@@ -107,6 +107,16 @@ local function Handler(err) return { err = err, stack = Stack() } end
 function FO.Try(where, fn, ...)
     local n, args = select("#", ...), { ... }
     local ok, res = xpcall(function() return fn(unpack(args, 1, n)) end, Handler)
+    if not ok then
+        FO:Error(where, res.err, res.stack)
+        return false
+    end
+    return true, res
+end
+
+-- Protected call of a no-argument function: no argument table, no closure per call.
+function FO.TryCall(where, fn)
+    local ok, res = xpcall(fn, Handler)
     if not ok then
         FO:Error(where, res.err, res.stack)
         return false

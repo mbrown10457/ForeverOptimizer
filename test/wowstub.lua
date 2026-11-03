@@ -94,7 +94,35 @@ function S.cl(sub, src, dst, ...)
     S.clArgs = a
     S.fire("COMBAT_LOG_EVENT_UNFILTERED")
 end
-bit = bit or { band = load("return function(a, b) return a & b end")() }
+if not bit then
+    local ok, f = pcall(load or loadstring, "return function(a, b) return a & b end")
+    local band = ok and type(f) == "function" and f()
+    if not band then
+        band = function(a, b)     -- Lua 5.1 has no bit library and no & operator
+            local r, p = 0, 1
+            while a > 0 and b > 0 do
+                if a % 2 == 1 and b % 2 == 1 then r = r + p end
+                a, b, p = math.floor(a / 2), math.floor(b / 2), p * 2
+            end
+            return r
+        end
+    end
+    bit = { band = band }
+end
+debugprofilestop = debugprofilestop or function() return S.clock * 1000 end
+-- secret values (12.x combat log restriction): the stub treats the string "SECRET" as one
+issecretvalue = issecretvalue or function(v) return v == "SECRET" end
+-- Retail-style replicate scan: S.ahItems = { { name=, count=, buyout=, itemID= }, ... }
+S.ahItems = {}
+C_AuctionHouse = C_AuctionHouse or {
+    ReplicateItems = function() end,
+    GetNumReplicateItems = function() return #S.ahItems end,
+    GetReplicateItemInfo = function(i)
+        local r = S.ahItems[i + 1]
+        if not r then return nil end
+        return r.name, nil, r.count, 1, true, 1, "", 0, 0, r.buyout, 0, false, nil, nil, nil, 0, r.itemID, true
+    end,
+}
 COMBATLOG_OBJECT_AFFILIATION_MINE, COMBATLOG_OBJECT_TYPE_PLAYER, COMBATLOG_OBJECT_TYPE_PET, COMBATLOG_OBJECT_TYPE_GUARDIAN = 0x1, 0x400, 0x1000, 0x2000
 function UnitRangedDamage() return 2.0, 50, 70 end
 S.spellCost = {}

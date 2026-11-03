@@ -25,13 +25,14 @@ end
 
 local function OnReplicateDone()
     local PH = FO:GetModule("Economy.PriceHistory")
-    if not AH.GetNumReplicateItems then return end
+    if not AH or not AH.GetNumReplicateItems or not AH.GetReplicateItemInfo then return end
     local n = U.Num(AH.GetNumReplicateItems()) or 0
     local acc, missing = {}, 0
     for i = 0, n - 1 do
         local name, _, count, _, _, _, _, _, _, buyout, _, _, _, _, _, _, itemID = AH.GetReplicateItemInfo(i)
         itemID = U.Num(itemID) or U.ItemIDFromLink(AH.GetReplicateItemLink and AH.GetReplicateItemLink(i))
         count, buyout = U.Num(count) or 1, U.Num(buyout) or 0
+        if count < 1 then count = 1 end   -- a zero stack would make the unit price infinite
         if itemID and buyout > 0 then
             local unit = buyout / count
             local a = acc[itemID]
@@ -51,7 +52,7 @@ end
 local function OnCommodityResults(itemID)
     local PH = FO:GetModule("Economy.PriceHistory")
     itemID = U.Num(itemID)
-    if not itemID or not AH.GetNumCommoditySearchResults then return end
+    if not AH or not itemID or not AH.GetNumCommoditySearchResults then return end
     local n = U.Num(AH.GetNumCommoditySearchResults(itemID)) or 0
     if n == 0 then return end
     local min, qty = nil, 0

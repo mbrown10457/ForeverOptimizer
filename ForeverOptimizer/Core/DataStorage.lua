@@ -66,21 +66,54 @@ function FO:FlushErrors()
     end
 end
 
+local function DeepCopy(t, seen)
+    if type(t) ~= "table" then return t end
+    seen = seen or {}
+    if seen[t] then return seen[t] end
+    local c = {}
+    seen[t] = c
+    for k, v in pairs(t) do c[DeepCopy(k, seen)] = DeepCopy(v, seen) end
+    return c
+end
+FO.DeepCopy = DeepCopy
+
+-- Migrations run on a staged copy. If one throws, the saved table is left exactly as it was,
+-- FO.migrationFailed records what happened (also under db.migrationFailed so it is visible in
+-- the file), and the session runs on the old layout; the next login tries again.
 function FO:InitStorage()
     if type(ForeverOptimizerDB) ~= "table" then ForeverOptimizerDB = {} end
     local db = ForeverOptimizerDB
     db.account = db.account or {}
     db.chars = db.chars or {}
     db.version = db.version or 1
-    while db.version < DB_VERSION do
-        local nextV = db.version + 1
-        local fn = self.migrations[nextV]
-        if fn then
-            local ok, err = pcall(fn, db)
-            if not ok then self:Print("Core", "|cffff6060migration to v%d failed:|r %s", nextV, tostring(err)) break end
+    self.migrationFailed = nil
+    if db.version > DB_VERSION then
+        self.dbNewer = db.version
+        self:Print("Core", "|cffff6060saved data is from a newer addon version|r (schema v%d, this build knows v%d). Update the addon, or expect missing data until you do.", db.version, DB_VERSION)
+    end
+    if db.version < DB_VERSION then
+        local staged = DeepCopy(db)
+        local failed
+        while staged.version < DB_VERSION do
+            local nextV = staged.version + 1
+            local fn = self.migrations[nextV]
+            if fn then
+                local ok, err = pcall(fn, staged)
+                if not ok then failed = { version = nextV, err = tostring(err), at = time() } break end
+            end
+            staged.version = nextV
+            staged.migratedAt = time()
         end
-        db.version = nextV
-        db.migratedAt = time()
+        if failed then
+            self.migrationFailed = failed
+            db.migrationFailed = failed
+            self:Print("Core", "|cffff6060migration to v%d failed:|r %s. Saved data left at v%d; nothing was changed. /fo errors has the detail.", failed.version, failed.err, db.version)
+            if self.Error then self:Error("migration v" .. failed.version, failed.err, "") end
+        else
+            for k in pairs(db) do db[k] = nil end
+            for k, v in pairs(staged) do db[k] = v end
+            db.migrationFailed = nil
+        end
     end
     self.charKey = U.CharKey()
     db.chars[self.charKey] = db.chars[self.charKey] or {}

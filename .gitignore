@@ -4,3 +4,4 @@ scratch/
 dist/
 *.sqlite
 .seedcache/
+.tools/

@@ -474,6 +474,52 @@ do
 end
 noErrors("dashboard tabs")
 
+-- Review fixes: amounts-hidden ratio, zero-stack auctions, staged migrations
+do
+    local CLx = FO.CombatLog
+    local c0, a0 = CLx.count, CLx.amountEvents
+    local m3 = { guid = "Creature-0-1-2-3-595-0000CL03", name = "Durotar Tiger", flags = 0xA48 }
+    for _ = 1, 50 do
+        S.cl("SPELL_CAST_SUCCESS", me, m3, 75, "Auto Shot", 1)                  -- no amount: must not dilute the ratio
+        S.cl("RANGE_DAMAGE", me, m3, 75, "Auto Shot", 1, "SECRET", 0, 1, 0, 0, 0, false)
+    end
+    check(CLx.amountsHidden == true, "combat log reports amounts hidden when amount-bearing events are secret, casts in between")
+    check(not CSm:Available(), "combat stats fall back once amounts are hidden")
+    for _ = 1, 400 do S.cl("RANGE_DAMAGE", me, m3, 75, "Auto Shot", 1, 90, 0, 1, 0, 0, 0, false) end
+    check(CLx.amountsHidden == false, "amounts-hidden flag clears when readable amounts dominate again")
+    check(CLx.count - c0 == 500 and CLx.amountEvents - a0 == 450, "event and amount-event counters (" .. (CLx.count - c0) .. "/" .. (CLx.amountEvents - a0) .. ")")
+
+    local AS, PH = FO:GetModule("Economy.AuctionHouseScanner"), FO:GetModule("Economy.PriceHistory")
+    S.ahItems = { { name = "Linen Cloth", count = 0, buyout = 500, itemID = 2589 }, { name = "Linen Cloth", count = 20, buyout = 8000, itemID = 2589 } }
+    FO.state.frames.auction = true
+    AS:StartFullScan()
+    S.fire("REPLICATE_ITEM_LIST_UPDATE")
+    local latest = PH:Latest(2589)
+    check(latest and latest.min == 400, "zero-stack auction counts as one item, no infinite unit price (min " .. tostring(latest and latest.min) .. ")")
+    check(outHas("scan done: 2 auctions"), "replicate scan completes on the stubbed auction house")
+    FO.state.frames.auction = false
+    S.ahItems = {}
+
+    local keepDB, keepMig = ForeverOptimizerDB, FO.migrations[2]
+    FO.migrations[2] = function(root) root.account.modules = { disabled = {} } error("boom") end
+    ForeverOptimizerDB = { version = 1, account = { loot = { log = { "x" } } }, chars = {} }
+    FO:InitStorage()
+    check(ForeverOptimizerDB.version == 1 and ForeverOptimizerDB.account.modules == nil, "failed migration leaves the saved table untouched")
+    check(FO.migrationFailed and FO.migrationFailed.version == 2 and ForeverOptimizerDB.migrationFailed, "failed migration recorded in memory and in the file")
+    check(outHas("migration to v2 failed"), "failed migration announced")
+    S.errors = {}   -- the migration error above was intentional
+    FO.migrations[2] = keepMig
+    ForeverOptimizerDB = { version = 1, account = {}, chars = {} }
+    FO:InitStorage()
+    check(ForeverOptimizerDB.version == 3 and ForeverOptimizerDB.account.modules and ForeverOptimizerDB.migrationFailed == nil and FO.migrationFailed == nil, "clean migration v1 -> v3 on a fresh file")
+    ForeverOptimizerDB = { version = 99, account = {}, chars = {} }
+    FO:InitStorage()
+    check(outHas("newer addon version") and FO.dbNewer == 99, "file from a newer addon version is announced, not migrated")
+    FO.dbNewer = nil
+    ForeverOptimizerDB = keepDB
+    FO:InitStorage()
+end
+
 -- Logout archives
 S.fire("PLAYER_LOGOUT")
 check(#FO.Session.db.list == 1 and FO.Session.db.list[1].kills >= 8, "session archived on logout")
