@@ -137,16 +137,22 @@ function CL:OnEnable()
     FO:RegisterEvent("PLAYER_ENTERING_WORLD", function() playerGUID = U.Str(UnitGUID("player")) or playerGUID end)
 
     local f = CreateFrame("Frame")
-    local ok, err = pcall(f.RegisterEvent, f, "COMBAT_LOG_EVENT_UNFILTERED")
-    self.registered = ok and true or false
-    self.reason = ok and nil or tostring(err)
-    if ok and type(CombatLogGetCurrentEventInfo) == "function" then
-        self.available = true
-        -- one fixed closure, no per-event argument packing: the hottest path in the addon
-        local function HandleCurrent() return CL:Handle(CombatLogGetCurrentEventInfo()) end
-        f:SetScript("OnEvent", function() FO.TryCall("combat log", HandleCurrent) end)
-    elseif ok then
-        self.reason = "CombatLogGetCurrentEventInfo missing"
+    -- Forever's client has no CombatLogGetCurrentEventInfo, and registering
+    -- COMBAT_LOG_EVENT_UNFILTERED there is a forbidden action (the "blocked from an
+    -- action only available to the Blizzard UI" dialog at every login). Check the
+    -- API first and never register the event without it.
+    if type(CombatLogGetCurrentEventInfo) ~= "function" then
+        self.registered, self.reason = false, "CombatLogGetCurrentEventInfo missing"
+    else
+        local ok, err = pcall(f.RegisterEvent, f, "COMBAT_LOG_EVENT_UNFILTERED")
+        self.registered = ok and true or false
+        self.reason = ok and nil or tostring(err)
+        if ok then
+            self.available = true
+            -- one fixed closure, no per-event argument packing: the hottest path in the addon
+            local function HandleCurrent() return CL:Handle(CombatLogGetCurrentEventInfo()) end
+            f:SetScript("OnEvent", function() FO.TryCall("combat log", HandleCurrent) end)
+        end
     end
     self.frame = f
     if not self.available then print("combat log not available (%s); class analytics use chat/loot paths.", tostring(self.reason)) end

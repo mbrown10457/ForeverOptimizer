@@ -54,9 +54,12 @@ function V:Run()
     else
         add("C_RestrictedActions", nil, "absent")
     end
-    local f = CreateFrame("Frame")
-    local clOk = pcall(f.RegisterEvent, f, "COMBAT_LOG_EVENT_UNFILTERED")
-    add("combat log registrable", nil, clOk and "registered: CombatStats, class analytics and FO_FIGHT timing can run" or "refused: chat/loot paths in use")
+    -- Do not probe by registering COMBAT_LOG_EVENT_UNFILTERED: on Forever that is a
+    -- forbidden action. Report what the combat log module found at enable time.
+    local CLm = FO:GetModule("Core.CombatLog")
+    local clOk = CLm and CLm.available
+    add("combat log", nil, clOk and "registered: CombatStats, class analytics and FO_FIGHT timing can run"
+        or ("unavailable (" .. tostring(CLm and CLm.reason or "module missing") .. "): chat/loot paths in use"))
     if C_CombatLog and C_CombatLog.IsCombatLogRestricted then
         local okR, restricted = pcall(C_CombatLog.IsCombatLogRestricted)
         add("C_CombatLog.IsCombatLogRestricted()", nil, okR and ("restricted=" .. tostring(restricted) .. " (checked out of combat; may differ in instances)") or "errored")
@@ -74,6 +77,7 @@ function V:Run()
     else
         add("C_Secrets", nil, "absent (no secret-value system)")
     end
+    local f = CreateFrame("Frame")
     local npOk = pcall(f.RegisterEvent, f, "NAME_PLATE_UNIT_ADDED")
     add("NAME_PLATE_UNIT_ADDED registrable", npOk, "needed for respawn confirmation")
 
