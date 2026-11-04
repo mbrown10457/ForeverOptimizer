@@ -373,15 +373,20 @@ function U.Signed(copper)
     return U.Color(c >= 0 and U.GREEN or U.RED, (c >= 0 and "+" or "") .. U.FormatMoney(c))
 end
 
--- Player helpful-aura names (empty in restricted contexts)
+-- Player helpful-aura names. On 12.x auras are secret in combat and reading one
+-- from addon code raises ("Auras cannot be accessed when secret while tainted"),
+-- so the read is guarded and the last good list is returned until it clears.
+local lastBuffs = {}
 function U.PlayerBuffNames()
+    if not C_UnitAuras or not C_UnitAuras.GetAuraDataByIndex then return lastBuffs end
     local names = {}
-    if not C_UnitAuras or not C_UnitAuras.GetAuraDataByIndex then return names end
     for i = 1, 40 do
-        local a = C_UnitAuras.GetAuraDataByIndex("player", i, "HELPFUL")
-        if not a then break end
-        local n = U.Str(a.name)
-        if n then names[#names + 1] = n end
+        local ok, a = pcall(C_UnitAuras.GetAuraDataByIndex, "player", i, "HELPFUL")
+        if not ok then return lastBuffs end
+        if type(a) ~= "table" then break end
+        local okN, n = pcall(function() return U.Str(a.name) end)
+        if okN and n then names[#names + 1] = n end
     end
+    lastBuffs = names
     return names
 end
