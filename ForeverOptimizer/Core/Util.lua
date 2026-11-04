@@ -379,6 +379,7 @@ end
 local lastBuffs = {}
 function U.PlayerBuffNames()
     if not C_UnitAuras or not C_UnitAuras.GetAuraDataByIndex then return lastBuffs end
+    if (UnitAffectingCombat and UnitAffectingCombat("player")) or (InCombatLockdown and InCombatLockdown()) then return lastBuffs end
     local names = {}
     for i = 1, 40 do
         local ok, a = pcall(C_UnitAuras.GetAuraDataByIndex, "player", i, "HELPFUL")
