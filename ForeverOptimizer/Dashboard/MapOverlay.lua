@@ -43,8 +43,16 @@ function FOMapPinMixin:OnLoad()
     if self.UseFrameLevelType then self:UseFrameLevelType("PIN_FRAME_LEVEL_AREA_POI") end
 end
 
+-- MapCanvasMixin:AcquirePin ends with pin:CheckMouseButtonPassthrough("RightButton"),
+-- which calls the protected SetPassThroughButtons twice. Reached through addon code
+-- the live client refuses it (ADDON_ACTION_FORBIDDEN "UNKNOWN()" x2 and the "blocked
+-- from an action" dialog). Our pins never take clicks, so there is nothing to pass.
+function FOMapPinMixin:CheckMouseButtonPassthrough() end
+
 function FOMapPinMixin:OnAcquired(data)
     self.data = data
+    -- hover for the tooltip, but let clicks (right-click zoom out) fall through to the map
+    if self.SetMouseClickEnabled then pcall(self.SetMouseClickEnabled, self, false) end
     local style = STYLE[data.kind] or STYLE.node
     if self.Icon and self.Icon.SetTexture then self.Icon:SetTexture(style.tex) end
     local size = 10 + math.min(6, (data.n or 1) - 1)   -- seen more often = slightly bigger
@@ -182,6 +190,7 @@ function FOMapRevealPinMixin:OnLoad()
 end
 
 function FOMapRevealPinMixin:OnAcquired() end
+function FOMapRevealPinMixin:CheckMouseButtonPassthrough() end   -- see FOMapPinMixin
 
 function FOMapRevealPinMixin:OnCanvasSizeChanged()
     local map = self.GetMap and self:GetMap()
