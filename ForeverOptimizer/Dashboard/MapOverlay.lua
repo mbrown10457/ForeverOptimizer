@@ -216,23 +216,30 @@ function FOMapRevealPinMixin:Refresh()
     self:ReleaseAll()
     M.revealCount = 0
     local map = self.GetMap and self:GetMap()
-    local mapID = map and U.Num(map:GetMapID())
+    local okID, mapID = pcall(function() return U.Num(map:GetMapID()) end)
+    if not okID then mapID = nil end
     local s = M.db and M.db.settings
     if not (mapID and s and s.reveal) then return end
     local list = FO.Seed and FO.Seed.mapOverlays and FO.Seed.mapOverlays[mapID]
     if not list then return end
     self:OnCanvasSizeChanged()
-    -- tile size of the art layer on screen (zone maps: 256x256)
+    -- tile size of the art layer on screen (zone maps: 256x256). Every call into the
+    -- map canvas or the exploration API is guarded: the live client errored inside
+    -- MapCanvas_ScrollContainerMixin on the first map open, and a failure here should
+    -- cost the layer lookup, not the whole draw.
     local tw, th = 256, 256
     local layerIndex = 1
-    local cc = map.GetCanvasContainer and map:GetCanvasContainer()
-    if cc and cc.GetCurrentLayerIndex then layerIndex = U.Num(cc:GetCurrentLayerIndex()) or 1 end
-    local layers = C_Map and C_Map.GetMapArtLayers and C_Map.GetMapArtLayers(mapID)
-    local li = type(layers) == "table" and (layers[layerIndex] or layers[1])
+    pcall(function()
+        local cc = map.GetCanvasContainer and map:GetCanvasContainer()
+        if cc and cc.GetCurrentLayerIndex then layerIndex = U.Num(cc:GetCurrentLayerIndex()) or 1 end
+    end)
+    local okL, layers = pcall(function() return C_Map and C_Map.GetMapArtLayers and C_Map.GetMapArtLayers(mapID) end)
+    local li = okL and type(layers) == "table" and (layers[layerIndex] or layers[1])
     if type(li) == "table" then tw, th = U.Num(li.tileWidth) or tw, U.Num(li.tileHeight) or th end
     -- what the client already shows, keyed the same way as the seed rows
     local explored = {}
-    local ex = C_MapExplorationInfo and C_MapExplorationInfo.GetExploredMapTextures and C_MapExplorationInfo.GetExploredMapTextures(mapID)
+    local okE, ex = pcall(function() return C_MapExplorationInfo and C_MapExplorationInfo.GetExploredMapTextures and C_MapExplorationInfo.GetExploredMapTextures(mapID) end)
+    if not okE then ex = nil end
     for _, e in ipairs(type(ex) == "table" and ex or {}) do
         local w, h, x, y = U.Num(e.textureWidth), U.Num(e.textureHeight), U.Num(e.offsetX), U.Num(e.offsetY)
         if w and h and x and y then explored[string.format("%d:%d:%d:%d", w, h, x, y)] = true end
@@ -318,8 +325,8 @@ function M:UpdateCoords()
     local sc = WorldMapFrame.ScrollContainer
     local getter = (sc and sc.GetNormalizedCursorPosition and sc) or (WorldMapFrame.GetNormalizedCursorPosition and WorldMapFrame)
     if getter then
-        local cx, cy = getter:GetNormalizedCursorPosition()
-        cx, cy = U.Num(cx), U.Num(cy)
+        local okC, cx, cy = pcall(getter.GetNormalizedCursorPosition, getter)
+        cx, cy = okC and U.Num(cx), okC and U.Num(cy)
         if cx and cy and cx >= 0 and cx <= 1 and cy >= 0 and cy <= 1 then cursor = string.format("%.1f, %.1f", cx * 100, cy * 100) end
     end
     fs:SetText(string.format("|cffffd100Player|r %s   |cffffd100Cursor|r %s%s", player, cursor,

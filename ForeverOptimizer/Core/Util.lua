@@ -29,8 +29,16 @@ end
 function U.Restricted()
     local R = _G.C_RestrictedActions
     if R and R.IsAddOnRestrictionActive then
-        local ok, res = pcall(R.IsAddOnRestrictionActive)
-        return ok and res == true
+        local types = Enum and Enum.AddOnRestrictionType
+        if type(types) == "table" then
+            for _, v in pairs(types) do
+                local ok, res = pcall(R.IsAddOnRestrictionActive, v)
+                if ok and res == true then return true end
+            end
+        else
+            local ok, res = pcall(R.IsAddOnRestrictionActive)
+            if ok then return res == true end
+        end
     end
     return InCombatLockdown()
 end

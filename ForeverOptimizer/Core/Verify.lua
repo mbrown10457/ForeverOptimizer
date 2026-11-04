@@ -37,8 +37,23 @@ function V:Run()
         local okX, secretXP = pcall(function() return issecretvalue(UnitXP("player")) end)
         add("UnitXP readable", okX and secretXP == false, okX and ("secret=" .. tostring(secretXP)) or "errored")
     end
-    add("C_RestrictedActions", nil,
-        has("C_RestrictedActions.IsAddOnRestrictionActive") and ("active=" .. tostring(C_RestrictedActions.IsAddOnRestrictionActive())) or "absent")
+    -- 12.x: IsAddOnRestrictionActive(type) needs an Enum.AddOnRestrictionType value; query each one
+    if has("C_RestrictedActions.IsAddOnRestrictionActive") then
+        local types, out = Enum and Enum.AddOnRestrictionType, {}
+        if type(types) == "table" then
+            for name, v in pairs(types) do
+                local ok, res = pcall(C_RestrictedActions.IsAddOnRestrictionActive, v)
+                out[#out + 1] = name .. "=" .. (ok and tostring(res) or "err")
+            end
+            table.sort(out)
+        else
+            local ok, res = pcall(C_RestrictedActions.IsAddOnRestrictionActive)
+            out[1] = ok and ("active=" .. tostring(res)) or "needs a type and Enum.AddOnRestrictionType is absent"
+        end
+        add("C_RestrictedActions", nil, table.concat(out, " "))
+    else
+        add("C_RestrictedActions", nil, "absent")
+    end
     local f = CreateFrame("Frame")
     local clOk = pcall(f.RegisterEvent, f, "COMBAT_LOG_EVENT_UNFILTERED")
     add("combat log registrable", nil, clOk and "registered: CombatStats, class analytics and FO_FIGHT timing can run" or "refused: chat/loot paths in use")
