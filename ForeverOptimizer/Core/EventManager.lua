@@ -186,3 +186,32 @@ FO:RegisterCommand("help", function(arg)
         end
     end
 end, "this list")
+
+-- ===========================================================================
+-- Blocked actions and uncaught errors. A protected call from addon code does
+-- not raise; the client fires ADDON_ACTION_BLOCKED (or FORBIDDEN) with the
+-- function name and shows the "blocked from an action" dialog. Record it with
+-- the call stack so /fo errors and the SavedVariables name the function.
+-- Lua errors that escape FO.Try (handlers the client calls directly, such as
+-- map data providers and tooltip hooks) go through the global error handler.
+-- ===========================================================================
+local function Blocked(kind)
+    return function(addon, func)
+        if addon ~= ADDON then return end
+        local stack = debugstack and debugstack(2, 12, 0) or ""
+        FO:Error(kind, (func or "?") .. "() is reserved for the Blizzard UI", stack)
+    end
+end
+FO:RegisterEvent("ADDON_ACTION_BLOCKED", Blocked("blocked"))
+FO:RegisterEvent("ADDON_ACTION_FORBIDDEN", Blocked("forbidden"))
+
+if seterrorhandler and geterrorhandler then
+    local prev = geterrorhandler()
+    seterrorhandler(function(msg)
+        local s = tostring(msg)
+        if s:find("ForeverOptimizer", 1, true) and not s:find("^FO:Error") then
+            FO:Error("lua", s, debugstack and debugstack(3, 12, 0) or "")
+        end
+        if prev then return prev(msg) end
+    end)
+end
