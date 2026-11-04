@@ -32,8 +32,14 @@ function G:State()
     return s
 end
 
+-- Does this step apply to this character? class = "HUNTER,WARLOCK" or "-WARLOCK"; race = "Orc,Troll".
 local function ClassOK(step)
-    local c = step.class
+    local c, r = step.class, step.race
+    if r then
+        local me, ok = FO.Player.race or "", false
+        for tok in r:gmatch("[^,]+") do if tok == me then ok = true end end
+        if not ok then return false end
+    end
     if not c then return true end
     local me = FO.Player.class or ""
     if c:sub(1, 1) == "-" then return not c:sub(2):find(me, 1, true) end

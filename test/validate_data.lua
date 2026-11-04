@@ -13,6 +13,7 @@ for _, r in ipairs(report) do
 end
 -- Leveling routes (Data/Routes.lua): every step well formed, class tags valid, quest steps placed
 local KINDS = { A = true, C = true, T = true, GOTO = true, HEARTH = true, TRAIN = true, LEVEL = true, NOTE = true }
+local RACES = { Orc = true, Troll = true, Tauren = true, Scourge = true, Human = true, Dwarf = true, Gnome = true, NightElf = true }
 local CLASSES = { WARRIOR = true, PALADIN = true, HUNTER = true, ROGUE = true, PRIEST = true, SHAMAN = true, MAGE = true, WARLOCK = true, DRUID = true }
 local warns = #report - errs
 local nsteps = 0
@@ -27,6 +28,11 @@ for _, r in ipairs(FO.Routes or {}) do
         if st.class then
             for tok in st.class:gsub("^%-", ""):gmatch("[^,]+") do
                 if not CLASSES[tok] then errs = errs + 1 print("ERROR " .. where .. ": unknown class " .. tok) end
+            end
+        end
+        if st.race then
+            for tok in st.race:gmatch("[^,]+") do
+                if not RACES[tok] then errs = errs + 1 print("ERROR " .. where .. ": unknown race " .. tok) end
             end
         end
         if st[1] == "C" or st[1] == "T" then

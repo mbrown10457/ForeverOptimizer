@@ -23,9 +23,14 @@ Bearings use the client's world-space conversion when it exists, so a target on 
 
 | Route | Faction | Races | Levels | Steps |
 |---|---|---|---|---|
-| Orc & Troll 1-20 | Horde | Orc, Troll | 1 to 20 | 382 |
+| Orc & Troll 1-20 | Horde | Orc, Troll | 1 to 20 | 438 |
+| Tauren 1-20 | Horde | Tauren | 1 to 20 | 408 |
 
-Orc & Troll 1-20: Valley of Trials, Razor Hill, Sen'jin and the Echo Isles, the northern Durotar loop, Orgrimmar at 10 with the hunter, warlock and shaman class quests (pet, Voidwalker, fire totem), the Skull Rock loop at 11, then the Barrens from Far Watch and the Crossroads through Ratchet, the Sludge Fen, Regthar's bunker and Camp Taurajo. It takes the Forever-only quests (IDs above 90000) where they sit on the way; their objective text comes from your log since nobody has mapped them yet. Group quests (Zalazane, Counterattack, Northwatch) are marked so a solo player skips them.
+Orc & Troll 1-20: Valley of Trials, Razor Hill, Sen'jin and the Echo Isles, the northern Durotar loop, Orgrimmar at 10 with the class quests (hunter pet, warlock Voidwalker, shaman fire totem, priest Hex of Weakness), the Skull Rock loop at 11 with the warrior's Path of Defense, then the Barrens from Far Watch and the Crossroads through Ratchet, the Sludge Fen, Regthar's bunker and Camp Taurajo.
+
+Tauren 1-20: Red Cloud Mesa, Bloodhoof Village with the well-cleansing and Rite of Vision chains, the eastern and northern loops (Venture Co., Red Rocks, the Wildmane well), Thunder Bluff at 10 with the class quests (hunter tames, druid Bear Form through Moonglade, shaman Call of Earth earlier on the mesa), the Barrens from Camp Taurajo to the Crossroads with Devrak's free flight back to Thunder Bluff, the warrior and shaman detour to Far Watch and Durotar, then the same Barrens section as the Orc route.
+
+Both routes share the Barrens from the Crossroads quest board to Camp Taurajo (`scripts/routes/barrens-crossroads-12-20.inc`, spliced in with `INCLUDE`). The druid's Cure Poison chain sits there at 14, and the level 20 notes point warriors, priests and druids at their next class quest. It takes the Forever-only quests (IDs above 90000) where they sit on the way; their objective text comes from your log since nobody has mapped them yet. Group quests (Zalazane, Counterattack, Northwatch) are marked so a solo player skips them.
 
 The step order is a first draft written from the quest database, not from a measured run. Expect to reorder a few things; `/fo guide goto` and Skip get you past anything wrong, and the route file is easy to fix.
 
@@ -39,6 +44,8 @@ A 4641 | Kaltunk stands right where you spawn.          accept quest 4641, with 
 C 788  | Mottled Boars all over the valley floor.        complete its objectives
 T 788                                                     turn it in
 @HUNTER A 3087                                            hunter only (@-WARLOCK = everyone but warlocks)
+@HUNTER,Troll A 3082                                      hunter and Troll only (a race token limits a step to that race)
+INCLUDE barrens-crossroads-12-20.inc                      splice a shared file in here
 GOTO Razor Hill | 1411 52.0 43.5 | Follow the road north.
 HEARTH Razor Hill | 1411 51.5 41.6
 @HUNTER TRAIN 6 | Thotar | 1411 51.9 43.5 | Arcane Shot, Hunter's Mark.
@@ -48,4 +55,6 @@ NOTE Buy a bag.
 
 `scripts/build_routes.py <QuestieDB_Forever.toc>` turns them into `ForeverOptimizer/Data/Routes.lua`, looking up every quest's title, giver, finisher and first objective position in QuestieDB so the guide works for people who do not install QuestieDB. With QuestieDB installed the guide prefers its live nearest-spawn data, and your own recorded quest positions win over both. `lua test/validate_data.lua` checks every step (known kinds, class tags, coordinates on accept, turn-in and travel steps, turn-ins without an accept).
 
-Coordinates are `map x y` with the uiMap id (Durotar 1411, Orgrimmar 1454, the Barrens 1413) and 0 to 100 map percentages.
+Coordinates are `map x y` with the uiMap id (Durotar 1411, Orgrimmar 1454, Mulgore 1412, Thunder Bluff 1456, the Barrens 1413, Moonglade 1450) and 0 to 100 map percentages.
+
+Class quest IDs differ by race in the starting zones (Orc hunters read Etched Parchment, Troll hunters Etched Tablet), so those steps carry both a class and a race tag. Steps with no race tag show to every race on the route.

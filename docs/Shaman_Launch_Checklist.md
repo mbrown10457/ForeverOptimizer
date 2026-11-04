@@ -28,7 +28,7 @@ named here are what you have; the addon records every giver the first time you t
 - [ ] `/fo build use 1` selects "Enhancement leveling". `/fo build` shows the next points at every level.
 - [ ] `/fo rotation` prints the shaman priority with estimated damage per mana.
 - [ ] `/fo shaman` is your status line: shield charges, weapon imbue time left, totems down, mana. It also warns when a fight starts without a shield or an imbue, and when the imbue has two minutes left.
-- [ ] `/fo guide` opens the leveling route (Orc & Troll 1 to 20): accept, do, turn in, go here, with the arrow at the top of the screen pointing at the current step. It advances from your quest log; Skip moves past anything you would rather not do, Back returns.
+- [ ] `/fo guide` opens the leveling route (Orc & Troll 1 to 20; a Tauren alt gets Tauren 1 to 20): accept, do, turn in, go here, with the arrow at the top of the screen pointing at the current step. It advances from your quest log; Skip moves past anything you would rather not do, Back returns.
 - [ ] Bind Toggle HUD, Next waypoint and the guide keys: Esc, Key Bindings, ForeverOptimizer.
 - [ ] `/fo manual` if you want the whole command list in game.
 

@@ -1,0 +1,250 @@
+ROUTE tauren-1-20 | Tauren 1-20 | Horde | Tauren | 1 | 20
+
+# ---------------------------------------------------------------- Red Cloud Mesa, 1-5
+A 747 | Grull Hawkwind stands right where you spawn.
+A 752 | Chief Hawkwind, at the big tent.
+@WARRIOR A 3091
+@HUNTER A 3092
+@SHAMAN A 3093
+@DRUID A 3094
+@WARRIOR T 3091 | Harutt Thunderhorn, beside the Chief. Nothing new to train yet; Battle Shout before every pull.
+@HUNTER T 3092 | Lanka Farshot, beside the Chief. Nothing new to train yet.
+@SHAMAN T 3093 | Meela Dawnstrider. Train Rockbiter Weapon and put it on your weapon.
+@DRUID T 3094 | Gart Mistrunner. Nothing new to train yet; Wrath and Healing Touch carry you to 4.
+T 5844 | Vorn Skyseer | 1412 44.0 77.4 | The gift voucher is in your bag; Vorn trades it for a bag.
+C 747 | Plainstriders on the mesa south and east of camp.
+C 752 | Greatmother Hawkwind's spirit waits by the water well south-east of camp.
+T 752
+A 753
+C 753 | Take a Water Pitcher from the well beside her.
+T 753 | Back to Chief Hawkwind.
+A 755 | Seer Graytongue lives in the hills due south of camp.
+T 747
+A 750 | Mountain Cougar pelts, from the southern hills.
+A 780 | Battleboar snouts and flanks, for Brambleblade Ravine later.
+C 750 | Mountain Cougars in the southern hills, around Seer Graytongue.
+T 755 | Seer Graytongue.
+A 757
+A 95805 | New in Forever. The incense burns out in ten minutes: run to the shrine in the south-east hills straight away.
+T 95805 | Ritual Fire | 1412 56.6 88.7 | The shrine of An'she and Mu'sha. Turn in at the fire.
+LEVEL 3 | Cougars and plainstriders until 3; Break Sharptusk! needs it.
+A 3376 | Brave Windfeather, Camp Narache.
+@SHAMAN A 1519 | Seer Ravenfeather, Camp Narache. Ritual Salve drops from Bristleback Shamans in Brambleblade Ravine.
+C 757 | Brambleblade Ravine, the quilboar camp in the south-east of the mesa. Belts drop from every Bristleback.
+C 780 | Battleboars in the same ravine.
+C 3376 | Chief Sharptusk Thornmantle is at the back of the ravine, in the eastern tent.
+@SHAMAN C 1519 | Bristleback Shamans, same ravine.
+T 781 | Chief Hawkwind. The attack plans dropped in the ravine; the quest is in your log once you read them.
+T 757 | Chief Hawkwind.
+A 763 | The Totem of Hawkwind goes to Baine Bloodhoof in Bloodhoof Village. Hold it.
+A 96659 | New in Forever (Chief Hawkwind). The supply bundle goes to Kaga Wildhoof outside Bloodhoof Village.
+T 780
+T 750
+T 3376
+@SHAMAN T 1519
+@SHAMAN A 1520
+@SHAMAN T 1520 | Minor Manifestation of Earth | 1412 52.0 80.4 | Kodo Rock is the big rock east of the water well. Drink the Earth Sapta there and speak with the manifestation.
+@SHAMAN A 1521
+@SHAMAN T 1521 | Seer Ravenfeather. Reward: Earth Totem. Train Stoneskin Totem from Meela.
+@WARRIOR TRAIN 4 | Harutt Thunderhorn | 1412 43.8 76.7 | Charge, Rend.
+@HUNTER TRAIN 4 | Lanka Farshot | 1412 44.0 76.3 | Serpent Sting, Aspect of the Monkey.
+@SHAMAN TRAIN 4 | Meela Dawnstrider | 1412 44.6 76.6 | Earth Shock, Stoneskin Totem.
+@DRUID TRAIN 4 | Gart Mistrunner | 1412 44.6 76.5 | Moonfire, Rejuvenation.
+A 1656 | Antur Fallow waits at the path down from the mesa, west of camp. The furs go to Innkeeper Kauth.
+LEVEL 5 | Finish the mesa at 5. Palemane gnolls and the Bloodhoof quests want it.
+
+# ---------------------------------------------------------------- Bloodhoof Village, 5-7
+GOTO Bloodhoof Village | 1412 47.0 61.5 | Down the path and north along the road.
+T 1656 | Innkeeper Kauth.
+HEARTH Bloodhoof Village | 1412 45.9 64.2 | Talk to Innkeeper Kauth and make this your home.
+T 763 | Baine Bloodhoof, at the big tent.
+A 767 | Rite of Vision: Zarlman Two-Moons, north of Baine.
+A 745 | Palemane gnolls south-west of the village.
+T 767 | Zarlman Two-Moons.
+A 771
+T 96659 | Kaga Wildhoof, at the camp just south of the village.
+A 96605 | New in Forever. Sit at Kaga's campfire (/sit) until the Boosted Rest buff appears.
+C 96605 | Basic Campfire | 1412 46.2 67.3 | Kaga's campfire.
+T 96605
+A 97931 | New in Forever: Camping 101: First Aid. Kaga offers one for every profession; take the ones you want.
+T 97931 | Vira Younghoof, in the village. Learn First Aid while you are there.
+A 748 | Mull Thunderhorn, by the totems: Poison Water. Prairie wolves and plainstriders.
+A 761 | Harken Windtotem: Swoop Hunting.
+A 766 | Maur Raincaller: Mazzranache, one part from each animal.
+A 96130 | New in Forever (Yaw Sharpmane). Chakuyak is a named cougar west of the village.
+A 99108 | New in Forever (Krang Stonehoof). Three Novice Warriors beside him, or three duels.
+A 99411 | Ahab Wheathoof, north of the village: Kyle's Gone Missing!. Follow the objective text in your log.
+A 99079 | New in Forever (Brave Wildrunner). Malah Longwind is east of the village near the Barrens road; hold it for the eastern loop.
+C 99108 | Novice Warriors stand beside Krang.
+T 99108
+C 771 | Well Stone | 1412 51.8 68.4 | Well Stones sit at the Winterhoof Water Well south-east of the village; Ambercorn lie under the trees around the village.
+T 771
+A 772
+C 772 | Drink the Water of the Seers at the tribal fire in the village and follow the wolf. It walks west, past Palemane Rock, to Seer Wiserunner.
+C 745 | Palemane gnolls between the village and Palemane Rock, south-west.
+C 96130 | Chakuyak hunts west of the village.
+A 98430 | New in Forever (Perith Stormhoof, inside Palemane Rock). Escort him out; turns in to Cairne in Thunder Bluff later.
+C 98430
+C 748 | Prairie wolves west and south of the village; plainstriders everywhere.
+C 761 | Wiry Swoops south-west of the village, towards the mesa.
+C 766 | Prairie Wolf Heart, Flatland Cougar Femur, Plainstrider Scale and Swoop Gizzard. Flatland Cougars are north and west of the village.
+T 772 | Seer Wiserunner | 1412 34.3 43.3 | At the foot of the hills in the north-west, the far side of Thunder Bluff. Follow the wolf.
+A 773 | Rite of Wisdom: the Ancestral Spirit at Red Rocks, far north-east. Hold it for the northern loop.
+T 745 | Baine.
+A 746 | Dwarven Digging, needs 6: the Bael'dun digsite in the far south-west.
+T 748
+A 754 | Winterhoof Cleansing: the water well south-east of the village.
+T 761
+T 766 | If a part is missing: swoops south-west, cougars north, wolves west.
+T 96130
+T 99411
+LEVEL 6 | Gnolls and the plain until 6; Dwarven Digging needs it.
+@WARRIOR TRAIN 6 | Krang Stonehoof | 1412 48.4 63.7 | Thunder Clap.
+@HUNTER TRAIN 6 | Yaw Sharpmane | 1412 46.9 59.6 | Arcane Shot, Hunter's Mark.
+@SHAMAN TRAIN 6 | Narm Skychaser | 1412 47.4 62.5 | New ranks. Keep Rockbiter on the weapon.
+@DRUID TRAIN 6 | Gennia Runetotem | 1412 47.5 63.0 | Thorns, Wrath II.
+
+# ---------------------------------------------------------------- East and south, 6-8
+C 754 | Winterhoof Water Well, south-east of the village. Use the totem at the water.
+T 754
+A 756 | Thunderhorn Totem: Prairie Stalker claws and cougar claws, all over the plain.
+C 99079 | Malah Longwind | 1412 57.6 63.2 | East along the road towards the Barrens.
+A 99081
+T 99081 | Brave Wildrunner, in the village.
+A 99101
+T 99101 | Baine.
+A 99080 | Galak centaurs at their camp in the east, beside the Barrens road. Herak the Pillager is in the camp.
+A 749 | Morin Cloudstalker, on the road east of the village.
+A 764 | The Venture Co. mine in the north-east. Workers and supervisors are level 8-10; do it with the northern loop.
+A 765
+C 99080 | Galak centaurs | 1412 62.9 60.8 | The camp in the east by the road into the Barrens.
+T 99080
+A 99082 | The High Chieftain: Cairne in Thunder Bluff. Hold it.
+C 749 | The Ravaged Caravan is on the road north of Morin; the crate is beside the wagons.
+A 751 | The documents inside the crate start the return trip.
+T 751 | Morin Cloudstalker.
+C 756 | Prairie Stalkers and Flatland Cougars all over the plain around the village.
+T 756
+A 758 | Thunderhorn Cleansing: the well north-west of the village.
+C 746 | Broken Tools | 1412 33.1 54.8 | The Bael'dun digsite, far south-west. Prospector's Picks lie around the dig; the dwarves are level 6-8.
+T 746
+C 758 | Thunderhorn Water Well, north-west of the village.
+T 758
+A 759 | Wildmane Totem: Prairie Wolf Alpha teeth from the northern plain.
+LEVEL 7 | A Sacred Burial and the harpies want 7.
+A 743 | Ruul Eagletalon: Windfury harpies, level 7-9, on the ridge north-west.
+
+# ---------------------------------------------------------------- The north, 7-10
+C 743 | Windfury Harpies | 1412 35.6 48.3 | Windfury Ridge, north-west of the village and west of the Thunder Bluff lifts.
+C 759 | Prairie Wolf Alphas across the northern plain.
+T 743
+T 759
+A 760 | Wildmane Cleansing: the well in the far north.
+C 760 | Cleanse the Wildmane Well | 1412 42.7 25.0 | The Wildmane Water Well, north past Thunder Bluff.
+A 833 | Lorekeeper Raintotem | 1412 57.0 34.5 | Red Rocks, in the north-east.
+C 833 | Bristleback Interlopers around Red Rocks.
+T 833
+T 773 | Ancestral Spirit | 1412 58.3 30.7 | The spirit at the top of Red Rocks.
+A 775 | Journey into Thunder Bluff. Hold it.
+C 764 | The Venture Co. mine, south-east of Red Rocks.
+C 765 | Supervisor Fizsprocket is at the back of the mine.
+C 98424 | New in Forever. Fizsprocket's pages are inside the mine; the quest starts from the clipboard.
+T 764 | Morin Cloudstalker.
+T 765
+T 98424
+A 98427
+C 98427 | New in Forever; the Clearcutter is at the Venture Co. camp north of Morin.
+T 98427
+LEVEL 10 | Venture Co. and Red Rocks mobs are 8-10. Hit 10 before Thunder Bluff.
+T 760 | Mull Thunderhorn.
+A 98435 | New in Forever. Thunderhorn's Report goes to Arch Druid Hamuul Runetotem in Thunder Bluff.
+A 861 | Skorn Whitecloud, by the fire in the village: The Hunter's Way. Flatland Prowler claws, north of the village.
+@WARRIOR A 1505 | Krang sends you to Uzzek at Far Watch Post in the northern Barrens. Hold it.
+@SHAMAN A 2984 | Narm starts Call of Fire; Kranal Fiss is at the Barrens gate into Durotar. Hold it.
+@DRUID A 5928 | Gennia sends you to Turak Runetotem in Thunder Bluff.
+@WARRIOR TRAIN 10 | Krang Stonehoof | 1412 48.4 63.7 | Bloodrage, Sunder Armor, Taunt, Rend II. Defensive Stance comes from the class quest. First talent: Improved Heroic Strike (Arms) or Cruelty (Fury), /fo build.
+@HUNTER TRAIN 10 | Yaw Sharpmane | 1412 46.9 59.6 | Aspect of the Hawk, Serpent Sting II, Track Humanoids. First talent: Endurance Training.
+@SHAMAN TRAIN 10 | Narm Skychaser | 1412 47.4 62.5 | New ranks. First talent: Ancestral Knowledge.
+@DRUID TRAIN 10 | Gennia Runetotem | 1412 47.5 63.0 | Teleport: Moonglade, Nature's Grasp, Moonfire II, Rejuvenation II, Mark of the Wild II. Bear Form comes from the class quest. First talent: Ferocity.
+C 861 | Flatland Prowlers | 1412 49.8 36.9 | North of the village, on the way to the lifts.
+
+# ---------------------------------------------------------------- Thunder Bluff, 10
+GOTO Thunder Bluff lifts | 1412 45.5 43.0 | North along the road. The lifts are on the east side of the mesa; ride one up.
+T 775 | Cairne Bloodhoof, on the high rise in the middle of the city.
+A 776 | Rites of the Earthmother: Arra'chea roams northern Mulgore near Red Rocks. Optional; turn in on the free wind rider trip from the Crossroads.
+T 99082 | Cairne.
+T 98430 | Cairne.
+T 98435 | Arch Druid Hamuul Runetotem, Elder Rise (north-east, over the bridge).
+A 886 | The Barrens Oases goes to Tonga Runetotem at the Crossroads.
+T 861 | Melor Stonehoof, Hunter Rise (south, over the bridge).
+A 860 | Sergra Darkthorn at the Crossroads.
+A 769 | Veren Tallstrider, the leatherworker on the middle rise: Kodo Hide Bag. One Kodo Hide from any kodo in Mulgore; the reward is a 10-slot bag.
+A 97485 | New in Forever (Eylah Sunhorn, lower rise). Buy the three items from the vendors named in your log and burn them at the incense burner.
+C 97485
+T 97485
+@HUNTER A 6065 | Kary Thunderhorn, Hunter Rise. Sends you back to Yaw Sharpmane for the three tames.
+@DRUID T 5928 | Turak Runetotem, Elder Rise.
+@DRUID A 5922
+@DRUID T 5922 | Dendrite Starblaze | 1450 56.2 30.6 | Cast Teleport: Moonglade. Dendrite stands in Nighthaven, the village in the middle of Moonglade.
+@DRUID A 5930
+@DRUID C 5930 | The Great Bear Spirit is in the north-west of Moonglade. Talk to it until it is satisfied.
+@DRUID T 5930
+@DRUID A 5932 | Bunthen Plainswind, the wind rider master in Nighthaven, flies druids straight to Thunder Bluff.
+@DRUID T 5932 | Turak Runetotem.
+@DRUID A 6002 | The Moonkin Stone is in the Barrens just west of Camp Taurajo, on your way out of Mulgore. Lunaclaw is level 12.
+NOTE Bulrug on the lower rise sells bags. Set your hearth back to Bloodhoof if you moved it; the Crossroads gets it at 11.
+
+# ---------------------------------------------------------------- Back down: tames, kodos and the road east, 10-11
+GOTO Bloodhoof Village | 1412 47.0 61.5 | Down the lifts and south along the road.
+@HUNTER T 6065 | Yaw Sharpmane.
+@HUNTER A 6061
+@HUNTER C 6061 | Adult Plainstriders are all over the plain north and west of the village. Use the Taming Rod and survive 20 seconds.
+@HUNTER T 6061
+@HUNTER A 6087
+@HUNTER C 6087 | Prairie Stalkers, the wolves around the village.
+@HUNTER T 6087
+@HUNTER A 6088
+@HUNTER C 6088 | Swoops, the birds on the plain north and east of the village.
+@HUNTER T 6088
+@HUNTER A 6089 | Holt Thunderhorn on Hunter Rise teaches the pet spells. Turn in on the free wind rider trip from the Crossroads, then tame your keeper.
+C 769 | Kodo Bull | 1412 42.0 41.4 | Kodos graze on the western and northern plain.
+C 776 | Arra'chea | 1412 51.2 24.8 | Optional: Arra'chea roams the far north near Red Rocks. Skip it if you are already heading east.
+LEVEL 11 | The Gold Road mobs are 11-13; be 11 before the Barrens.
+GOTO Barrens road | 1412 61.5 51.5 | East past Morin Cloudstalker and the Venture Co. mine; the road into the Barrens is beyond the centaur camp.
+GOTO Camp Taurajo | 1413 44.9 59.1 | The first camp in the Barrens. Speak to Omusa Thunderhorn for the wind rider.
+@DRUID C 6002 | Moonkin Stone | 1413 42.0 60.9 | Use the Cenarion Lunardust at the stone just west of the camp. Lunaclaw is level 12: pull it alone, Moonfire, Wrath, Healing Touch.
+GOTO The Crossroads | 1413 52.2 31.0 | North along the Gold Road. The mobs beside it are 11-13; stay on the road.
+T 860 | Sergra Darkthorn.
+T 886 | Tonga Runetotem, by the hut north of the inn.
+HEARTH The Crossroads | 1413 51.6 30.0 | Innkeeper Boorand Plainswind. Home for the next eight levels.
+A 6362 | Devrak, the wind rider master: a free flight to Thunder Bluff and back. Take it; it unlocks both flight points.
+T 6362 | Ahanu, Thunder Bluff.
+A 6363
+T 6363 | Tal, the wind rider master.
+A 6364
+T 776 | Cairne, if you killed Arra'chea.
+T 769 | Veren Tallstrider, middle rise.
+@HUNTER T 6089 | Holt Thunderhorn, Hunter Rise. Learn the pet spells, then tame your keeper.
+@DRUID T 6002 | Turak Runetotem, Elder Rise. Reward: Bear Form. Train Growl, Maul and Demoralizing Roar.
+T 6364 | Jahan Hawkwing, back at the Crossroads.
+
+# ---------------------------------------------------------------- Warrior and shaman detour to Far Watch and Durotar, 11-12
+@WARRIOR T 1505 | Uzzek | 1413 61.4 21.1 | Far Watch Post, east along the road to the Durotar gate.
+@WARRIOR A 1498 | Singed Scales from Thunder Lizards on Thunder Ridge in north-west Durotar: through the gate, north past Razor Hill, west at Drygulch Ravine.
+@SHAMAN T 2984 | Kranal Fiss | 1413 56.0 19.9 | At the gate into Durotar, north of Far Watch Post.
+@SHAMAN A 1524 | Telf Joolam is in west-central Durotar, south-west of Razor Hill, at the Shrine of Eternal Flame.
+@SHAMAN T 1524
+@SHAMAN A 1525 | Fire Tar and a Reagent Pouch, both from the Burning Blade at Skull Rock in the north-east of Durotar.
+@WARRIOR C 1498 | Thunder Lizards | 1411 39.7 29.2 | Thunder Ridge, the plateau in north-west Durotar. Lizards are level 9-11.
+@SHAMAN C 1525 | Skull Rock, the cave at the north-eastern edge of Durotar. Searing Blade cultists come in pairs.
+@SHAMAN T 1525 | Telf Joolam.
+@SHAMAN A 1526
+@SHAMAN C 1526 | Summon the Minor Manifestation of Fire at the shrine beside Telf, kill it, put the Glowing Ember in the brazier.
+@SHAMAN T 1527 | Kranal Fiss | 1413 56.0 19.9 | Reward: Fire Totem.
+@WARRIOR T 1498 | Uzzek | 1413 61.4 21.1 | Far Watch Post.
+@WARRIOR A 1502
+@WARRIOR T 1502 | Thun'grim Firegaze | 1413 57.2 30.3 | On the hill north-east of the Crossroads, beside the Far Watch road.
+@WARRIOR A 1503
+@WARRIOR C 1503 | Follow the objective text; the bars are a short way north-west of Thun'grim.
+@WARRIOR T 1503 | Reward: Defensive Stance and Taunt.
+INCLUDE barrens-crossroads-12-20.inc

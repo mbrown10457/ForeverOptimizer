@@ -1,4 +1,4 @@
-# ForeverOptimizer add-ins (v0.10.0)
+# ForeverOptimizer add-ins (v0.11.0)
 
 Generated from `docs/addins.html` by `scripts/build_features.js`. The browsable version with filters and the architecture diagram is at https://mbrown10457.github.io/ForeverOptimizer/addins.html.
 
@@ -39,7 +39,7 @@ Status: **ready** = built and exercised by the offline harness; **live check** =
 | Quest efficiency | ready | Drop odds per objective from your kills with a 95% Wilson interval, kills and minutes to finish, and quest XP per hour against reward size. Rates are kept per objective for alts and friends. | `/fo drops`, `/fo questxp` | `Quest/QuestEfficiency.lua` |
 | Route planner | ready | Waypoint to the next known quest location and a nearest-neighbour route through every target on the map. Blizzard waypoint, then your recording, then the database. | `/fo next`, `/fo route` | `Quest/QuestRoutePlanner.lua` |
 | Quest database adapter | live check | Reads QuestieDB live for quest facts, prerequisites, chains, race and class rules and spawn positions. Lists what you can pick up on this map, nearest first. *Gap: Optional dependency; without it the quest modules use recorded positions and the baked route data.* | `/fo nearby`, `/fo questinfo`, `/fo qdb` | `Quest/QuestDatabase.lua`; HUD: Map pins |
-| Leveling guide | ready | Step-by-step route window: accept, do and turn in this quest, go here, set hearth, train, reach a level. Advances from the quest log and the arrow's arrival, hides other classes' steps, saves progress per character. Routes are text specs baked with QuestieDB names and coordinates (scripts/build_routes.py). Ships Orc & Troll 1-20. *Gap: Step order is a first draft from the database, not a measured run.* | `/fo guide` | `Quest/Guide.lua`; HUD: Guide |
+| Leveling guide | ready | Step-by-step route window: accept, do and turn in this quest, go here, set hearth, train, reach a level. Advances from the quest log and the arrow's arrival, hides other classes' and races' steps, saves progress per character. Routes are text specs baked with QuestieDB names and coordinates (scripts/build_routes.py), with a shared Barrens section spliced in. Ships Orc & Troll 1-20 and Tauren 1-20 with the class quests for all six Horde classes: hunter pet, warlock Voidwalker, shaman totems, warrior Defensive Stance, priest Hex of Weakness, druid Bear Form and Cure Poison. *Gap: Step order is a first draft from the database, not a measured run.* | `/fo guide` | `Quest/Guide.lua`; HUD: Guide |
 
 ## Economy
 
@@ -97,7 +97,7 @@ Status: **ready** = built and exercised by the offline harness; **live check** =
 
 | Add-in | Status | What it does | Commands | Where |
 |---|---|---|---|---|
-| Routes 20 to 60 | open slot | The guide covers Orc & Troll 1 to 20. Next: Stonetalon and Ashenvale 20 to 30, Tauren and Undead starts, and a generated route from QuestieDB level bands and chains weighted by measured drop rates and kill times. |  |  |
+| Routes 20 to 60 | open slot | The guide covers Orc, Troll and Tauren 1 to 20. Next: Stonetalon and Ashenvale 20 to 30, the Undead start in Tirisfal, and a generated route from QuestieDB level bands and chains weighted by measured drop rates and kill times. |  |  |
 | Shared data pool | open slot | A watcher outside the game pushes the shareable parts of each player's file (nodes, rares, spawns, mob stats, prices) to a data repo; an Action merges them into Data/Shared.lua that the installer fetches and the addon merges on load. |  |  |
 | More class trackers | open slot | Rotations and builds exist for all nine classes; live trackers exist for four. Mage, Rogue, Warrior, Paladin and Druid each need a status line and the class-specific numbers that matter when leveling. |  |  |
 | Minimap pins | open slot | The world map has pins; the minimap does not. Nodes, rares and quest targets within range on the minimap. |  |  |

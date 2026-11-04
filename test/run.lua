@@ -603,18 +603,27 @@ check(GD.index == 4, "skip moves on (" .. GD.index .. ")")
 SlashCmdList.FOREVEROPTIMIZER("guide skip")
 check(GD.index == 5 and GD.current.class == "HUNTER", "hunter-only step shown to a hunter (" .. GD.index .. ")")
 SlashCmdList.FOREVEROPTIMIZER("guide skip")
-check(GD.index == 8 and GD.current[1] == "T", "warlock and shaman steps skipped for a hunter (" .. GD.index .. ")")
+check(GD.index == 14 and GD.current[1] == "T", "Troll, warlock, shaman, warrior and priest steps skipped for an Orc hunter (" .. GD.index .. ")")
 SlashCmdList.FOREVEROPTIMIZER("guide")
 check(outHas("not in your log"), "a turn-in you never accepted is flagged, not auto-skipped")
 SlashCmdList.FOREVEROPTIMIZER("guide back")
 check(GD.index == 5, "back returns to the previous applicable step (" .. GD.index .. ")")
-SlashCmdList.FOREVEROPTIMIZER("guide goto 22")
-check(GD.index == 23 and GD.current[1] == "A", "a level step already met is passed automatically (" .. GD.index .. ")")
-SlashCmdList.FOREVEROPTIMIZER("guide goto 56")
+FO.Player.race = "Troll"
+SlashCmdList.FOREVEROPTIMIZER("guide goto 5")
+check(GD.index == 6 and GD.current[2] == 3082, "a Troll hunter gets the Troll class quest, not the Orc one (" .. GD.index .. ")")
+FO.Player.race = "Tauren" P.level = 1
+check(GD:PickRoute() and GD:PickRoute().key == "tauren-1-20", "a level 1 Tauren gets the Tauren route")
+FO.Player.race = "Orc" P.level = 23
+local shared = 0
+for _, r in ipairs(FO.Routes) do for _, st in ipairs(r.steps) do if st[1] == "A" and st[2] == 844 then shared = shared + 1 end end end
+check(#FO.Routes == 2 and shared == 2, "both routes include the shared Barrens section (" .. shared .. ")")
+SlashCmdList.FOREVEROPTIMIZER("guide goto 34")
+check(GD.index == 35 and GD.current[1] == "A", "a level step already met is passed automatically (" .. GD.index .. ")")
+SlashCmdList.FOREVEROPTIMIZER("guide goto 71")
 check(GD.current[1] == "GOTO" and AR.target and AR.target.label == "Go to: Razor Hill", "travel step points the arrow (" .. tostring(AR.target and AR.target.label) .. ")")
 S.pos.map, S.pos.x, S.pos.y = 1411, 0.520, 0.435
 S.mapUpdate()
-check(GD.index == 57, "arriving completes the travel step (" .. GD.index .. ")")
+check(GD.index == 72, "arriving completes the travel step (" .. GD.index .. ")")
 S.pos.map, S.pos.x, S.pos.y = 1434, 0.40, 0.50
 SlashCmdList.FOREVEROPTIMIZER("guide list") check(outHas("Orc & Troll 1-20") and outHas("(active)"), "/fo guide list names the active route")
 SlashCmdList.FOREVEROPTIMIZER("tab Guide")
@@ -668,7 +677,7 @@ check(#FO4.Classes.SHAMAN:Lines() >= 4, "shaman tab renders")
 SlashCmdList.FOREVEROPTIMIZER("rotation") check(outHas("Rockbiter Weapon") and outHas("Stormstrike"), "/fo rotation prints the shaman priority with Stormstrike optional")
 SlashCmdList.FOREVEROPTIMIZER("build") check(outHas("Enhancement leveling"), "/fo build picks the shaman build")
 SlashCmdList.FOREVEROPTIMIZER("guide goto 5")
-check(FO4.Guide.index == 7 and FO4.Guide.current.class == "SHAMAN", "shaman sees the shaman class step (" .. FO4.Guide.index .. ")")
+check(FO4.Guide.index == 9 and FO4.Guide.current.class == "SHAMAN" and FO4.Guide.current.race == "Orc", "an Orc shaman sees the Orc shaman class step (" .. FO4.Guide.index .. ")")
 noErrors("fourth load (shaman)")
 
 print(string.format("\n%d failures, %d chat lines", failures, #S.out))
