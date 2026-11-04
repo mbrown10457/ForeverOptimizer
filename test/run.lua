@@ -9,7 +9,7 @@ local function outHas(pat) for i = #S.out, 1, -1 do if S.out[i]:find(pat, 1, tru
 local function noErrors(label) check(#S.errors == 0, label .. " (no handler errors)") if #S.errors > 0 then for _, e in ipairs(S.errors) do print("   " .. e) end S.errors = {} end end
 
 local FO, order = S.loadAddon("ForeverOptimizer")
-check(#order == 50, "loaded " .. #order .. " files from TOC")
+check(#order == 53, "loaded " .. #order .. " files from TOC")
 check(#FO.modules >= 26, #FO.modules .. " modules registered")
 check(ForeverOptimizerDB == nil or true, "pre-login")
 
@@ -558,6 +558,71 @@ check(#FO.Session.db.list == 1 and FO.Session.db.list[1].kills >= 8, "session ar
 noErrors("logout")
 
 
+-- Direction arrow: bearing, distance, colour band, arrival; the route planner feeds it
+local AR = FO.Arrow
+SlashCmdList.FOREVEROPTIMIZER("arrow 50 50 test target")
+check(AR.target and AR.target.label == "test target" and math.abs(AR.target.x - 0.5) < 0.001, "/fo arrow sets a target on the current map")
+S.facing = 0
+S.mapUpdate()
+check(AR.yards and math.abs(AR.yards - 600) < 1, "arrow distance in yards from the map's world size (" .. tostring(AR.yards) .. ")")
+check(AR.heading and math.abs(AR.heading + math.pi / 2) < 0.01, "target due east, facing north: arrow points right (" .. tostring(AR.heading) .. ")")
+S.facing = -math.pi / 2
+S.mapUpdate()
+check(AR.heading and math.abs(AR.heading) < 0.01, "facing the target: arrow points straight up")
+S.pos.x = 0.499
+S.mapUpdate()
+check(AR.target == nil and outHas("arrived: test target"), "arrival inside the radius clears the arrow and says so")
+S.pos.x = 0.40
+SlashCmdList.FOREVEROPTIMIZER("next 102")
+check(AR.target ~= nil, "/fo next drives the arrow too (" .. tostring(AR.target and AR.target.label) .. ")")
+SlashCmdList.FOREVEROPTIMIZER("arrow off") check(AR.target ~= nil, "arrow off keeps the target")
+SlashCmdList.FOREVEROPTIMIZER("arrow on")
+noErrors("arrow")
+
+-- Leveling guide: route pick, auto-advance from the quest log, class filter, skip/back/goto, travel steps via the arrow
+local GD = FO.Guide
+check(GD.route == nil, "no route auto-picked for a level 23 character (routes end at 20)")
+P.level = 1
+check(GD:PickRoute() and GD:PickRoute().key == "orc-troll-1-20", "a level 1 Orc gets the Orc & Troll route")
+P.level = 23
+SlashCmdList.FOREVEROPTIMIZER("guide use 1")
+check(GD.route and GD.route.key == "orc-troll-1-20", "/fo guide use 1 activates the route (" .. tostring(GD.route and GD.route.key) .. ")")
+check(GD.index == 1 and GD.current and GD.current[1] == "A" and GD.current[2] == 4641, "guide starts at step 1: accept Your Place In The World")
+GD:PointArrow(true)
+check(AR.target and AR.target.label == "Accept: Kaltunk", "guide arrow points at the quest giver (" .. tostring(AR.target and AR.target.label) .. ")")
+S.quests[#S.quests + 1] = { questID = 4641, title = "Your Place In The World", level = 1, objectives = {} }
+S.fire("QUEST_ACCEPTED", 4641) S.advance(1)
+check(GD.index == 2 and GD.current[1] == "T", "accepting the quest advances to its turn-in step (" .. GD.index .. ")")
+check(AR.target and AR.target.label == "Turn in: Gornek", "arrow moves to the turn-in NPC (" .. tostring(AR.target and AR.target.label) .. ")")
+S.qdb.completed[4641] = true
+table.remove(S.quests)
+S.fire("QUEST_TURNED_IN", 4641, 100, 0) S.advance(1)
+check(GD.index == 3 and GD.current[2] == 788, "turning in advances to the next accept (step " .. GD.index .. ")")
+SlashCmdList.FOREVEROPTIMIZER("guide skip")
+check(GD.index == 4, "skip moves on (" .. GD.index .. ")")
+SlashCmdList.FOREVEROPTIMIZER("guide skip")
+check(GD.index == 5 and GD.current.class == "HUNTER", "hunter-only step shown to a hunter (" .. GD.index .. ")")
+SlashCmdList.FOREVEROPTIMIZER("guide skip")
+check(GD.index == 8 and GD.current[1] == "T", "warlock and shaman steps skipped for a hunter (" .. GD.index .. ")")
+SlashCmdList.FOREVEROPTIMIZER("guide")
+check(outHas("not in your log"), "a turn-in you never accepted is flagged, not auto-skipped")
+SlashCmdList.FOREVEROPTIMIZER("guide back")
+check(GD.index == 5, "back returns to the previous applicable step (" .. GD.index .. ")")
+SlashCmdList.FOREVEROPTIMIZER("guide goto 22")
+check(GD.index == 23 and GD.current[1] == "A", "a level step already met is passed automatically (" .. GD.index .. ")")
+SlashCmdList.FOREVEROPTIMIZER("guide goto 56")
+check(GD.current[1] == "GOTO" and AR.target and AR.target.label == "Go to: Razor Hill", "travel step points the arrow (" .. tostring(AR.target and AR.target.label) .. ")")
+S.pos.map, S.pos.x, S.pos.y = 1411, 0.520, 0.435
+S.mapUpdate()
+check(GD.index == 57, "arriving completes the travel step (" .. GD.index .. ")")
+S.pos.map, S.pos.x, S.pos.y = 1434, 0.40, 0.50
+SlashCmdList.FOREVEROPTIMIZER("guide list") check(outHas("Orc & Troll 1-20") and outHas("(active)"), "/fo guide list names the active route")
+SlashCmdList.FOREVEROPTIMIZER("tab Guide")
+SlashCmdList.FOREVEROPTIMIZER("hud click Arrow")
+check(AR.target ~= nil, "HUD Guide tab buttons work")
+SlashCmdList.FOREVEROPTIMIZER("tab Overview")
+noErrors("leveling guide")
+
 -- Module disable is honoured on the next load
 ForeverOptimizerDB.account.modules.disabled["Classes.Warlock"] = true
 S.frames, S.registered, S.tickers, S.timers = nil, {}, {}, {}
@@ -602,6 +667,8 @@ check(outHas("Totems Searing 01:00, Strength of Earth 02:00"), "totems listed by
 check(#FO4.Classes.SHAMAN:Lines() >= 4, "shaman tab renders")
 SlashCmdList.FOREVEROPTIMIZER("rotation") check(outHas("Rockbiter Weapon") and outHas("Stormstrike"), "/fo rotation prints the shaman priority with Stormstrike optional")
 SlashCmdList.FOREVEROPTIMIZER("build") check(outHas("Enhancement leveling"), "/fo build picks the shaman build")
+SlashCmdList.FOREVEROPTIMIZER("guide goto 5")
+check(FO4.Guide.index == 7 and FO4.Guide.current.class == "SHAMAN", "shaman sees the shaman class step (" .. FO4.Guide.index .. ")")
 noErrors("fourth load (shaman)")
 
 print(string.format("\n%d failures, %d chat lines", failures, #S.out))

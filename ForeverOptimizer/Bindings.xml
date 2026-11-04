@@ -3,4 +3,6 @@
   <Binding name="FOREVEROPTIMIZER_NEXT" category="ForeverOptimizer">ForeverOptimizer_NextWaypoint()</Binding>
   <Binding name="FOREVEROPTIMIZER_NEARBY" category="ForeverOptimizer">ForeverOptimizer_Nearby()</Binding>
   <Binding name="FOREVEROPTIMIZER_REVEAL" category="ForeverOptimizer">ForeverOptimizer_ToggleReveal()</Binding>
+  <Binding name="FOREVEROPTIMIZER_GUIDE" category="ForeverOptimizer">ForeverOptimizer_GuideToggle()</Binding>
+  <Binding name="FOREVEROPTIMIZER_GUIDE_SKIP" category="ForeverOptimizer">ForeverOptimizer_GuideSkip()</Binding>
 </Bindings>

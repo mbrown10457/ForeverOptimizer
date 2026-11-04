@@ -60,6 +60,8 @@ Status key: **done** = implemented and exercised by `test/run.lua`; **partial** 
 | Warlock: shard inventory and consumption | done | Count, low/high warnings |
 | Warlock: Life Tap / Drain Life tradeoffs | partial | Casts per kill counted; health/mana tradeoff math not yet |
 | Shaman: shield charges, weapon imbue timers, totems down, shocks/bolts/heals per kill, drink share; alerts for no shield or imbue at combat start and imbue about to expire | done | `/fo shaman`; Shaman HUD tab; Enhancement build reordered to reach Flurry at 15 points and Stormstrike at 30 |
+| Leveling guide: step-by-step route window and HUD tab, auto-advance from the quest log, class-filtered steps, per-character progress; Orc & Troll 1-20 route generated from QuestieDB | done (route order is a first draft) | `/fo guide`; `scripts/build_routes.py`, `scripts/routes/*.txt`, `Data/Routes.lua`; docs/Leveling_Guide.md |
+| Direction arrow: TomTom-style arrow with yards, colour by heading, arrival callback; driven by the guide, `/fo next`, `/fo route`, `/fo arrow` | done (world-space bearing is a live check) | `/fo arrow`; `Dashboard/Arrow.lua` |
 | Warlock: DoT efficiency, demon contribution | done (combat log) | Ticks delivered vs lost to early refresh/death per DoT, demon damage share, mana spent vs gained; `/fo dots` |
 | Priest: wand vs spell | done (combat log) | Wand share by damage when the log is live; by casts otherwise |
 | Priest: Spirit Tap / regen timing | partial | Drink share and mana shown; no per-fight regen model |

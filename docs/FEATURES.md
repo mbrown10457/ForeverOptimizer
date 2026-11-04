@@ -1,4 +1,4 @@
-# ForeverOptimizer add-ins (v0.9.6)
+# ForeverOptimizer add-ins (v0.10.0)
 
 Generated from `docs/addins.html` by `scripts/build_features.js`. The browsable version with filters and the architecture diagram is at https://mbrown10457.github.io/ForeverOptimizer/addins.html.
 
@@ -38,7 +38,8 @@ Status: **ready** = built and exercised by the offline harness; **live check** =
 | Quest tracker | ready | Records where you accepted each quest, where each objective ticked and where you turned it in. Those positions feed the route planner and the map. | `/fo quests`, `/fo quest`, `/fo autotrack` | `Quest/QuestTracker.lua` |
 | Quest efficiency | ready | Drop odds per objective from your kills with a 95% Wilson interval, kills and minutes to finish, and quest XP per hour against reward size. Rates are kept per objective for alts and friends. | `/fo drops`, `/fo questxp` | `Quest/QuestEfficiency.lua` |
 | Route planner | ready | Waypoint to the next known quest location and a nearest-neighbour route through every target on the map. Blizzard waypoint, then your recording, then the database. | `/fo next`, `/fo route` | `Quest/QuestRoutePlanner.lua` |
-| Quest database adapter | live check | Reads QuestieDB live for quest facts, prerequisites, chains, race and class rules and spawn positions. Lists what you can pick up on this map, nearest first. *Gap: Optional dependency; many Forever givers lack coordinates in the database.* | `/fo nearby`, `/fo questinfo`, `/fo qdb` | `Quest/QuestDatabase.lua`; HUD: Map pins |
+| Quest database adapter | live check | Reads QuestieDB live for quest facts, prerequisites, chains, race and class rules and spawn positions. Lists what you can pick up on this map, nearest first. *Gap: Optional dependency; without it the quest modules use recorded positions and the baked route data.* | `/fo nearby`, `/fo questinfo`, `/fo qdb` | `Quest/QuestDatabase.lua`; HUD: Map pins |
+| Leveling guide | ready | Step-by-step route window: accept, do and turn in this quest, go here, set hearth, train, reach a level. Advances from the quest log and the arrow's arrival, hides other classes' steps, saves progress per character. Routes are text specs baked with QuestieDB names and coordinates (scripts/build_routes.py). Ships Orc & Troll 1-20. *Gap: Step order is a first draft from the database, not a measured run.* | `/fo guide` | `Quest/Guide.lua`; HUD: Guide |
 
 ## Economy
 
@@ -76,6 +77,7 @@ Status: **ready** = built and exercised by the offline harness; **live check** =
 |---|---|---|---|---|
 | HUD | ready | Movable frame with tabs and a button row per tab. Every button drives a command, so macros and key binds can click them too. | `/fo show`, `/fo hide`, `/fo toggle`, `/fo lock`, `/fo scale`, `/fo tab`, `/fo hud` | `Dashboard/Overview.lua`; HUD: Overview |
 | Leveling, Economy, Character, History tabs | ready | Objective presets, quest or grind override, scan and autosell toggles, build switching, paged session history with comparison. | `/fo history` | `Dashboard/*.lua` |
+| Direction arrow | live check | TomTom-style arrow with yards left, green when you face the target, red behind you; arrival fires the guide forward. Driven by the guide, /fo next, /fo route or /fo arrow <x> <y>. *Gap: Bearing to a target on another map needs C_Map.GetWorldPosFromMapPos; same-map works from the map's world size.* | `/fo arrow` | `Dashboard/Arrow.lua` |
 | World map overlay | live check | Player and cursor coordinates, pins for recorded nodes, rares, tracked spawn points with respawn estimate, available quests, objectives and turn-ins. Unexplored parts of the zone drawn from the client's own overlay art (seeded for 45 maps) and tinted darker; a map button, /fo map reveal and a key binding switch between full and explored-only. *Gap: Degrades to coordinates only if the client lacks the map data-provider API.* | `/fo map`, `/fo coords` | `Dashboard/MapOverlay.lua` |
 | Help and manual | ready | Commands by area on a HUD tab and a scrollable manual window, both built from the live command registry so they cannot drift. | `/fo help`, `/fo manual` | `Dashboard/Help.lua`; HUD: Help |
 
@@ -95,7 +97,7 @@ Status: **ready** = built and exercised by the offline harness; **live check** =
 
 | Add-in | Status | What it does | Commands | Where |
 |---|---|---|---|---|
-| Leveling route | open slot | Import a Guidelime or RestedXP guide if one appears for Forever, or generate a 1 to 60 route from QuestieDB level bands, chains and giver positions, weighted by measured drop rates and kill times. |  |  |
+| Routes 20 to 60 | open slot | The guide covers Orc & Troll 1 to 20. Next: Stonetalon and Ashenvale 20 to 30, Tauren and Undead starts, and a generated route from QuestieDB level bands and chains weighted by measured drop rates and kill times. |  |  |
 | Shared data pool | open slot | A watcher outside the game pushes the shareable parts of each player's file (nodes, rares, spawns, mob stats, prices) to a data repo; an Action merges them into Data/Shared.lua that the installer fetches and the addon merges on load. |  |  |
 | More class trackers | open slot | Rotations and builds exist for all nine classes; live trackers exist for four. Mage, Rogue, Warrior, Paladin and Druid each need a status line and the class-specific numbers that matter when leveling. |  |  |
 | Minimap pins | open slot | The world map has pins; the minimap does not. Nodes, rares and quest targets within range on the minimap. |  |  |
@@ -108,4 +110,4 @@ Status: **ready** = built and exercised by the offline harness; **live check** =
 | Buff and debuff uptime | open slot | Per-fight uptime of your own buffs, Hunter's Mark, curses and Power Word: Fortitude, from aura events in the combat log. |  |  |
 | Your idea | open slot | Anything that turns something you can observe in game into a number that changes how you play. Open a proposal with the button at the top. |  |  |
 
-Totals: 33 ready, 9 live check, 5 partial, 12 open slots.
+Totals: 34 ready, 10 live check, 5 partial, 12 open slots.

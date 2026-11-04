@@ -49,11 +49,14 @@ function RP:NextWaypoint(questID)
     return nil
 end
 
-local function SetWaypoint(mapID, x, y)
-    if not C_Map.CanSetUserWaypointOnMap or not C_Map.CanSetUserWaypointOnMap(mapID) then return false end
-    C_Map.SetUserWaypoint(UiMapPoint.CreateFromCoordinates(mapID, x, y))
-    if C_SuperTrack and C_SuperTrack.SetSuperTrackedUserWaypoint then C_SuperTrack.SetSuperTrackedUserWaypoint(true) end
-    return true
+local function SetWaypoint(mapID, x, y, label)
+    local ok = false
+    if C_Map.CanSetUserWaypointOnMap and C_Map.CanSetUserWaypointOnMap(mapID) and UiMapPoint and UiMapPoint.CreateFromCoordinates then
+        ok = pcall(C_Map.SetUserWaypoint, UiMapPoint.CreateFromCoordinates(mapID, x, y))
+        if ok and C_SuperTrack and C_SuperTrack.SetSuperTrackedUserWaypoint then pcall(C_SuperTrack.SetSuperTrackedUserWaypoint, true) end
+    end
+    if FO.Arrow and FO.Arrow:Set(mapID, x, y, label) then ok = true end
+    return ok
 end
 
 local function Yards(mapID, x1, y1, x2, y2)
@@ -107,13 +110,13 @@ RP.commands = {
         local title = C_QuestLog.GetTitleForQuestID and U.Str(C_QuestLog.GetTitleForQuestID(qid)) or ("quest " .. qid)
         if not mapID then print("%s: no location known yet.", title) return end
         print("%s -> %s (%.1f, %.1f) [%s]", title, U.MapName(mapID), x * 100, y * 100, src)
-        if SetWaypoint(mapID, x, y) then print("waypoint set.") end
+        if SetWaypoint(mapID, x, y, title) then print("waypoint set.") end
     end },
     route = { help = "(quest) ordered route through quest targets on this map | route all (adds pickups)", fn = function(self, arg)
         local route, err, total, mapID = self:Route((U.Str(arg) or "") == "all")
         if not route then print("route: %s", err) return end
         print("Quest route on %s, %d stops, ~%.0f yards:", U.MapName(mapID), #route, total)
         for i, t in ipairs(route) do print("  %2d. %-30s (%.1f, %.1f) +%.0fy [%s]", i, U.Trunc(t.title, 30), t.x * 100, t.y * 100, t.leg, t.src) end
-        if SetWaypoint(mapID, route[1].x, route[1].y) then print("waypoint set to stop 1.") end
+        if SetWaypoint(mapID, route[1].x, route[1].y, route[1].title) then print("waypoint set to stop 1.") end
     end },
 }

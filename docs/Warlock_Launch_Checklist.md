@@ -25,7 +25,8 @@ from the client seed (build 1.60.1.70707). Quest IDs 9xxxx are new in Forever an
 - [ ] `/fo build use 2` selects "Demonology leveling". `/fo build` shows the next points at every level.
 - [ ] `/fo rotation` prints the warlock priority with estimated damage per mana.
 - [ ] `/fo alerts shards 2` so the shard warning fires before you are out, not at zero.
-- [ ] Bind Toggle HUD and Next waypoint: Esc, Key Bindings, ForeverOptimizer.
+- [ ] `/fo guide` opens the leveling route (Orc & Troll 1 to 20): accept, do, turn in, go here, with the arrow at the top of the screen pointing at the current step. It advances from your quest log; Skip moves past anything you would rather not do, Back returns.
+- [ ] Bind Toggle HUD, Next waypoint and the guide keys: Esc, Key Bindings, ForeverOptimizer.
 - [ ] `/fo manual` if you want the whole command list in game.
 
 ## Levels 1 to 5: Valley of Trials

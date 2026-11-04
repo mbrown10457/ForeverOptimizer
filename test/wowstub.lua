@@ -60,6 +60,7 @@ local function Region()
         r[m] = function() end
     end
     r.GetFrameLevel = function() return 10 end
+    r.SetRotation = function(self, a) self.rotation = a end
     r.SetText = function(self, t) self.text = t end
     r.GetText = function(self) return self.text end
     r.CreateTexture = function() local t = Region() S.textures = (S.textures or 0) + 1 return t end
@@ -306,6 +307,11 @@ C_Map = {
     CanSetUserWaypointOnMap = function() return true end,
     SetUserWaypoint = function(p) S.waypoint = p end,
 }
+S.facing = 0
+function GetPlayerFacing() return S.facing end
+function CreateVector2D(x, y) return { x = x, y = y, GetXY = function(self) return self.x, self.y end } end
+-- world space: x grows north, y grows west; the stub's maps are 6000x4000 yards
+C_Map.GetWorldPosFromMapPos = function(mapID, v) return 1, CreateVector2D(-(v.y * 4000), -(v.x * 6000)) end
 UiMapPoint = { CreateFromCoordinates = function(m, x, y) return { m = m, x = x, y = y } end }
 C_SuperTrack = { SetSuperTrackedUserWaypoint = function() end, GetSuperTrackedQuestID = function() return 0 end }
 

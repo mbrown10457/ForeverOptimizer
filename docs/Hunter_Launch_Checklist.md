@@ -27,7 +27,8 @@ Quest IDs 9xxxx are new in Forever and were not in Classic, so expect those to d
 - [ ] `/fo build use 1` selects "Beast Mastery leveling". `/fo build` shows the next points at every level.
 - [ ] `/fo rotation` prints the hunter priority with estimated damage per mana.
 - [ ] `/fo alerts ammo 60` for the first session. The default threshold is 200 and would fire on a starting stack.
-- [ ] Bind the HUD toggle and "next waypoint": Esc, Key Bindings, ForeverOptimizer.
+- [ ] `/fo guide` opens the leveling route (Orc & Troll 1 to 20): accept, do, turn in, go here, with the arrow at the top of the screen pointing at the current step. It advances from your quest log; Skip moves past anything you would rather not do, Back returns.
+- [ ] Bind Toggle HUD, Next waypoint and the guide keys: Esc, Key Bindings, ForeverOptimizer.
 - [ ] `/fo note first session` to stamp the start.
 
 ## Levels 1 to 5: Valley of Trials

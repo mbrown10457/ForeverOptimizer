@@ -296,6 +296,19 @@ function Q:Finishers(qid, onlyMap)
     return out
 end
 
+function Q:Starters(qid, onlyMap)
+    local q = self:Quest(qid)
+    if not q then return {} end
+    local out = {}
+    for _, npcID in ipairs(q.startedBy[1] or {}) do
+        for _, sp in ipairs(self:NpcSpawns(npcID)) do if not onlyMap or sp[1] == onlyMap then out[#out + 1] = { mapID = sp[1], x = sp[2], y = sp[3], label = self:NpcName(npcID) or ("npc " .. npcID), kind = "giver" } end end
+    end
+    for _, objID in ipairs(q.startedBy[2] or {}) do
+        for _, sp in ipairs(self:ObjectSpawns(objID)) do if not onlyMap or sp[1] == onlyMap then out[#out + 1] = { mapID = sp[1], x = sp[2], y = sp[3], label = self:ObjectName(objID) or ("object " .. objID), kind = "giver" } end end
+    end
+    return out
+end
+
 local function Nearest(rows, mapID, px, py)
     local best, bd
     for _, r in ipairs(rows) do
@@ -309,6 +322,7 @@ end
 
 function Q:NearestObjective(qid, mapID, px, py) return Nearest(self:ObjectiveTargets(qid, mapID), mapID, px, py) end
 function Q:NearestFinisher(qid, mapID, px, py) return Nearest(self:Finishers(qid, mapID), mapID, px, py) end
+function Q:NearestStarter(qid, mapID, px, py) return Nearest(self:Starters(qid, mapID), mapID, px, py) end
 
 -- ---------------------------------------------------------------------------
 -- Commands

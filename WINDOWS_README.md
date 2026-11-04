@@ -26,7 +26,7 @@ powershell -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.c
 
 - At the character select screen, click **AddOns** (bottom left). Both **ForeverOptimizer** and **QuestieDB** should be listed and ticked. If the client says they are out of date, tick **Load out of date AddOns**.
 - In the world, type `/reload`, then `/fo checklist`. The checklist walks you through the first hour.
-- `/fo help` lists every command. `/fo warlock` is the warlock status line (shards, demon, mana); `/fo shaman` is the shaman one (shield, weapon imbue, totems, mana).
+- `/fo help` lists every command. `/fo warlock` is the warlock status line (shards, demon, mana); `/fo shaman` is the shaman one (shield, weapon imbue, totems, mana). `/fo guide` opens the step-by-step leveling route (Orc & Troll 1 to 20); the arrow at the top of the screen points at the current step and Skip moves past anything you would rather not do.
 
 ## If something goes wrong
 
