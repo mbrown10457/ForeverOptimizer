@@ -128,7 +128,7 @@ footer { margin-top: 56px; color: var(--fg-3); font-size: 13px; font-family: var
   <h1>ForeverOptimizer Add-in Catalog</h1>
   <p class="sub">One core, many add-ins. Every module below records something from your own play and turns it into a number on the HUD or a <code>/fo</code> command. This page is the full list of what exists, how the pieces fit, and the open slots where a new add-in is wanted.</p>
   <div class="facts">
-    <span><b>36</b> modules</span><span><b>88</b> commands</span><span><b>9</b> HUD tabs</span><span><b>7,900</b> lines of module Lua</span><span><b>19,267</b> seeded items</span><span><b>9</b> class rotations</span><span><b>176</b> harness checks</span>
+    <span><b>37</b> modules</span><span><b>89</b> commands</span><span><b>9</b> HUD tabs</span><span><b>8,260</b> lines of module Lua</span><span><b>19,267</b> seeded items</span><span><b>9</b> class rotations</span><span><b>207</b> harness checks</span>
   </div>
   <div class="links">
     <a class="primary" href="https://github.com/mbrown10457/ForeverOptimizer/issues/new?template=add-in.yml">Propose an add-in</a>
@@ -137,6 +137,7 @@ footer { margin-top: 56px; color: var(--fg-3); font-size: 13px; font-family: var
     <a href="https://github.com/mbrown10457/ForeverOptimizer/blob/main/WINDOWS_README.md">Windows install</a>
     <a href="https://mbrown10457.github.io/ForeverOptimizer/Hunter_Launch_Checklist">Hunter checklist</a>
     <a href="https://mbrown10457.github.io/ForeverOptimizer/Warlock_Launch_Checklist">Warlock checklist</a>
+    <a href="https://mbrown10457.github.io/ForeverOptimizer/Shaman_Launch_Checklist">Shaman checklist</a>
   </div>
 </header>
 
@@ -281,10 +282,11 @@ const ADDINS = [
  {a:"Classes",n:"Hunter",s:"part",f:"Classes/Hunter.lua",t:"Hunter",c:["hunter"],w:"Pet damage share and uptime, aspect, ammo remaining, happiness and food, Auto Shot clipping.",g:"Pet training points not read yet."},
  {a:"Classes",n:"Warlock",s:"part",f:"Classes/Warlock.lua",t:"Warlock",c:["warlock"],w:"Shard count with low and high warnings, demon damage share, DoT efficiency, mana spent versus Life Tapped.",g:"Life Tap versus Drain Life trade-off math not built."},
  {a:"Classes",n:"Priest",s:"part",f:"Classes/Priest.lua",t:"Priest",c:["priest"],w:"Wand versus spell share, drink share, heal per mana with overheal.",g:"No buff uptime or per-fight regen model."},
+ {a:"Classes",n:"Shaman",s:"live",f:"Classes/Shaman.lua",t:"Shaman",c:["shaman"],w:"Shield charges, weapon imbue time left, totems down with time left, shocks, bolts and heals per kill, drink share, melee share and heal per mana from the combat log. Warns when a fight starts without a shield or an imbue and when the imbue has two minutes left.",g:"Totem names, imbue timers and shield charges are read from client APIs the harness only stubs."},
  // Dashboard
  {a:"Dashboard",n:"HUD",s:"ok",f:"Dashboard/Overview.lua",t:"Overview",c:["show","hide","toggle","lock","scale","tab","hud"],w:"Movable frame with tabs and a button row per tab. Every button drives a command, so macros and key binds can click them too."},
  {a:"Dashboard",n:"Leveling, Economy, Character, History tabs",s:"ok",f:"Dashboard/*.lua",c:["history"],w:"Objective presets, quest or grind override, scan and autosell toggles, build switching, paged session history with comparison."},
- {a:"Dashboard",n:"World map overlay",s:"live",f:"Dashboard/MapOverlay.lua",c:["map","coords"],w:"Player and cursor coordinates, pins for recorded nodes, rares, tracked spawn points with respawn estimate, available quests, objectives and turn-ins.",g:"Degrades to coordinates only if the client lacks the map data-provider API."},
+ {a:"Dashboard",n:"World map overlay",s:"live",f:"Dashboard/MapOverlay.lua",c:["map","coords"],w:"Player and cursor coordinates, pins for recorded nodes, rares, tracked spawn points with respawn estimate, available quests, objectives and turn-ins. Unexplored parts of the zone drawn from the client's own overlay art (seeded for 45 maps) and tinted darker; a map button, /fo map reveal and a key binding switch between full and explored-only.",g:"Degrades to coordinates only if the client lacks the map data-provider API."},
  {a:"Dashboard",n:"Help and manual",s:"ok",f:"Dashboard/Help.lua",t:"Help",c:["help","manual"],w:"Commands by area on a HUD tab and a scrollable manual window, both built from the live command registry so they cannot drift."},
  // Tooling
  {a:"Tooling",n:"Installers",s:"ok",f:"scripts/install.sh, scripts/install-windows.ps1",w:"One command on Mac or Windows finds the game folder, fetches the latest release and QuestieDB with checksum, and installs both."},
@@ -297,7 +299,7 @@ const ADDINS = [
  // Open slots
  {a:"Open slots",n:"Leveling route",s:"open",w:"Import a Guidelime or RestedXP guide if one appears for Forever, or generate a 1 to 60 route from QuestieDB level bands, chains and giver positions, weighted by measured drop rates and kill times."},
  {a:"Open slots",n:"Shared data pool",s:"open",w:"A watcher outside the game pushes the shareable parts of each player's file (nodes, rares, spawns, mob stats, prices) to a data repo; an Action merges them into Data/Shared.lua that the installer fetches and the addon merges on load."},
- {a:"Open slots",n:"More class trackers",s:"open",w:"Rotations and builds exist for all nine classes; live trackers exist for three. Mage, Rogue, Warrior, Paladin, Shaman and Druid each need a status line and the class-specific numbers that matter when leveling."},
+ {a:"Open slots",n:"More class trackers",s:"open",w:"Rotations and builds exist for all nine classes; live trackers exist for four. Mage, Rogue, Warrior, Paladin and Druid each need a status line and the class-specific numbers that matter when leveling."},
  {a:"Open slots",n:"Minimap pins",s:"open",w:"The world map has pins; the minimap does not. Nodes, rares and quest targets within range on the minimap."},
  {a:"Open slots",n:"Duo quest sync",s:"open",w:"Addon-to-addon messages between grouped players: who still needs which collection drop, whose turn-in is where, shared kill counts."},
  {a:"Open slots",n:"Offline session report",s:"open",w:"A rendered HTML report from the saved file: sessions, zones, gold, deaths, with charts, for sharing after a night of play."},

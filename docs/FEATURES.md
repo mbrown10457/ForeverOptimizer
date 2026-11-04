@@ -68,6 +68,7 @@ Status: **ready** = built and exercised by the offline harness; **live check** =
 | Hunter | partial | Pet damage share and uptime, aspect, ammo remaining, happiness and food, Auto Shot clipping. *Gap: Pet training points not read yet.* | `/fo hunter` | `Classes/Hunter.lua`; HUD: Hunter |
 | Warlock | partial | Shard count with low and high warnings, demon damage share, DoT efficiency, mana spent versus Life Tapped. *Gap: Life Tap versus Drain Life trade-off math not built.* | `/fo warlock` | `Classes/Warlock.lua`; HUD: Warlock |
 | Priest | partial | Wand versus spell share, drink share, heal per mana with overheal. *Gap: No buff uptime or per-fight regen model.* | `/fo priest` | `Classes/Priest.lua`; HUD: Priest |
+| Shaman | live check | Shield charges, weapon imbue time left, totems down with time left, shocks, bolts and heals per kill, drink share, melee share and heal per mana from the combat log. Warns when a fight starts without a shield or an imbue and when the imbue has two minutes left. *Gap: Totem names, imbue timers and shield charges are read from client APIs the harness only stubs.* | `/fo shaman` | `Classes/Shaman.lua`; HUD: Shaman |
 
 ## Dashboard
 
@@ -75,7 +76,7 @@ Status: **ready** = built and exercised by the offline harness; **live check** =
 |---|---|---|---|---|
 | HUD | ready | Movable frame with tabs and a button row per tab. Every button drives a command, so macros and key binds can click them too. | `/fo show`, `/fo hide`, `/fo toggle`, `/fo lock`, `/fo scale`, `/fo tab`, `/fo hud` | `Dashboard/Overview.lua`; HUD: Overview |
 | Leveling, Economy, Character, History tabs | ready | Objective presets, quest or grind override, scan and autosell toggles, build switching, paged session history with comparison. | `/fo history` | `Dashboard/*.lua` |
-| World map overlay | live check | Player and cursor coordinates, pins for recorded nodes, rares, tracked spawn points with respawn estimate, available quests, objectives and turn-ins. *Gap: Degrades to coordinates only if the client lacks the map data-provider API.* | `/fo map`, `/fo coords` | `Dashboard/MapOverlay.lua` |
+| World map overlay | live check | Player and cursor coordinates, pins for recorded nodes, rares, tracked spawn points with respawn estimate, available quests, objectives and turn-ins. Unexplored parts of the zone drawn from the client's own overlay art (seeded for 45 maps) and tinted darker; a map button, /fo map reveal and a key binding switch between full and explored-only. *Gap: Degrades to coordinates only if the client lacks the map data-provider API.* | `/fo map`, `/fo coords` | `Dashboard/MapOverlay.lua` |
 | Help and manual | ready | Commands by area on a HUD tab and a scrollable manual window, both built from the live command registry so they cannot drift. | `/fo help`, `/fo manual` | `Dashboard/Help.lua`; HUD: Help |
 
 ## Tooling
@@ -96,7 +97,7 @@ Status: **ready** = built and exercised by the offline harness; **live check** =
 |---|---|---|---|---|
 | Leveling route | open slot | Import a Guidelime or RestedXP guide if one appears for Forever, or generate a 1 to 60 route from QuestieDB level bands, chains and giver positions, weighted by measured drop rates and kill times. |  |  |
 | Shared data pool | open slot | A watcher outside the game pushes the shareable parts of each player's file (nodes, rares, spawns, mob stats, prices) to a data repo; an Action merges them into Data/Shared.lua that the installer fetches and the addon merges on load. |  |  |
-| More class trackers | open slot | Rotations and builds exist for all nine classes; live trackers exist for three. Mage, Rogue, Warrior, Paladin, Shaman and Druid each need a status line and the class-specific numbers that matter when leveling. |  |  |
+| More class trackers | open slot | Rotations and builds exist for all nine classes; live trackers exist for four. Mage, Rogue, Warrior, Paladin and Druid each need a status line and the class-specific numbers that matter when leveling. |  |  |
 | Minimap pins | open slot | The world map has pins; the minimap does not. Nodes, rares and quest targets within range on the minimap. |  |  |
 | Duo quest sync | open slot | Addon-to-addon messages between grouped players: who still needs which collection drop, whose turn-in is where, shared kill counts. |  |  |
 | Offline session report | open slot | A rendered HTML report from the saved file: sessions, zones, gold, deaths, with charts, for sharing after a night of play. |  |  |
@@ -107,4 +108,4 @@ Status: **ready** = built and exercised by the offline harness; **live check** =
 | Buff and debuff uptime | open slot | Per-fight uptime of your own buffs, Hunter's Mark, curses and Power Word: Fortitude, from aura events in the combat log. |  |  |
 | Your idea | open slot | Anything that turns something you can observe in game into a number that changes how you play. Open a proposal with the button at the top. |  |  |
 
-Totals: 33 ready, 8 live check, 5 partial, 12 open slots.
+Totals: 33 ready, 9 live check, 5 partial, 12 open slots.

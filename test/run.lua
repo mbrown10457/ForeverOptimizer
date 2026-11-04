@@ -9,7 +9,7 @@ local function outHas(pat) for i = #S.out, 1, -1 do if S.out[i]:find(pat, 1, tru
 local function noErrors(label) check(#S.errors == 0, label .. " (no handler errors)") if #S.errors > 0 then for _, e in ipairs(S.errors) do print("   " .. e) end S.errors = {} end end
 
 local FO, order = S.loadAddon("ForeverOptimizer")
-check(#order == 48, "loaded " .. #order .. " files from TOC")
+check(#order == 50, "loaded " .. #order .. " files from TOC")
 check(#FO.modules >= 26, #FO.modules .. " modules registered")
 check(ForeverOptimizerDB == nil or true, "pre-login")
 
@@ -228,17 +228,49 @@ for _, node in pairs(FEm.db.nodes) do for _, pt in ipairs(node.points) do nodeMa
 check(nodeMap ~= nil, "harness recorded gathering nodes to pin")
 S.worldMap.mapID = nodeMap
 WorldMapFrame:Show()
-check(#WorldMapFrame.pins > 0 and WorldMapFrame.pins[1].x and WorldMapFrame.pins[1].template == "FOMapPinTemplate", "node pins placed on map open (" .. #WorldMapFrame.pins .. ")")
-WorldMapFrame.pins[1]:OnMouseEnter() WorldMapFrame.pins[1]:OnMouseLeave()
+local firstNodePin for _, p in ipairs(WorldMapFrame.pins) do if p.template == "FOMapPinTemplate" then firstNodePin = p break end end
+check(firstNodePin and firstNodePin.x, "node pins placed on map open (" .. #WorldMapFrame.pins .. ")")
+firstNodePin:OnMouseEnter() firstNodePin:OnMouseLeave()
 S.mapUpdate()
 check(MapM.coordText and MapM.coordText:IsShown(), "coordinate text shown while map open")
 SlashCmdList.FOREVEROPTIMIZER("map") check(outHas("world map overlay: pins") and outHas("this map"), "/fo map status")
 SlashCmdList.FOREVEROPTIMIZER("map nodes off") SlashCmdList.FOREVEROPTIMIZER("map refresh")
-local nodePins = 0 for _, p in ipairs(WorldMapFrame.pins) do if p.data.kind == "herb" or p.data.kind == "ore" then nodePins = nodePins + 1 end end
+local nodePins = 0 for _, p in ipairs(WorldMapFrame.pins) do if p.data and (p.data.kind == "herb" or p.data.kind == "ore") then nodePins = nodePins + 1 end end
 check(nodePins == 0, "nodes layer off removes node pins")
 SlashCmdList.FOREVEROPTIMIZER("map nodes on") SlashCmdList.FOREVEROPTIMIZER("map spawns on") SlashCmdList.FOREVEROPTIMIZER("map refresh")
 check(#WorldMapFrame.pins > 0, "layers back on restores pins")
 WorldMapFrame:Hide()
+
+-- Unexplored map art: every overlay of the seed that the client has not revealed is drawn, tiled 256x256
+local MAPM = FO:GetModule("Dashboard.Map")
+local durotar = FO.Seed.mapOverlays[1411]
+local durotarTiles = 0 for _, o in ipairs(durotar) do durotarTiles = durotarTiles + #o[5] end
+check(durotarTiles > 10 and FO.Seed.mapOverlayBuild == FO.Seed.spellBuild, "map overlay seed loaded for the same client build (" .. durotarTiles .. " Durotar tiles)")
+S.worldMap.mapID = 1411
+S.explored = { { textureWidth = durotar[1][1], textureHeight = durotar[1][2], offsetX = durotar[1][3], offsetY = durotar[1][4] } }
+WorldMapFrame:Show()
+check(MAPM.revealProvider and MAPM.revealProvider.pin and MAPM.revealProvider.pin.template == "FOMapRevealPinTemplate", "reveal pin acquired on the map")
+check(MAPM.revealCount == durotarTiles - #durotar[1][5], "unexplored pieces drawn = seed tiles minus the explored overlay (" .. tostring(MAPM.revealCount) .. ")")
+local revealPin = MAPM.revealProvider.pin
+check(revealPin.used == MAPM.revealCount and #revealPin.textures >= revealPin.used, "one pooled texture per piece")
+local texAfterFirst = S.textures or 0
+S.explored = {}
+MAPM.revealProvider:OnEvent("MAP_EXPLORATION_UPDATED")
+check(MAPM.revealCount == durotarTiles and revealPin.used == durotarTiles and (S.textures or 0) == texAfterFirst + math.max(0, durotarTiles - #revealPin.textures),
+      "exploration update redraws from the pool, creating textures only past the pool size")
+SlashCmdList.FOREVEROPTIMIZER("map reveal off")
+check(MAPM.db.settings.reveal == false and MAPM.revealCount == 0 and revealPin.used == 0, "/fo map reveal off clears the art")
+check(MAPM.revealButton and MAPM.revealButton:GetText() == "Full map", "map button offers the full map when hidden")
+ForeverOptimizer_ToggleReveal()
+check(MAPM.db.settings.reveal == true and MAPM.revealCount == durotarTiles and MAPM.revealButton:GetText() == "Explored only", "binding toggles it back on and the button flips")
+SlashCmdList.FOREVEROPTIMIZER("map tint off") SlashCmdList.FOREVEROPTIMIZER("map tint on")
+check(outHas("unexplored tint") and MAPM.db.settings.revealTint == true, "/fo map tint toggles")
+S.worldMap.mapID = 9999
+MAPM.revealProvider:OnMapChanged()
+check(MAPM.revealCount == 0, "maps without overlay data draw nothing")
+SlashCmdList.FOREVEROPTIMIZER("map") check(outHas("unexplored art"), "/fo map reports the reveal state")
+WorldMapFrame:Hide()
+S.worldMap.mapID = nil
 check(not MapM.coordText:IsShown(), "coordinate text hidden with map")
 SlashCmdList.FOREVEROPTIMIZER("coords") check(outHas("(map "), "/fo coords prints position")
 noErrors("map overlay")
@@ -429,7 +461,7 @@ SlashCmdList.FOREVEROPTIMIZER("questinfo Chained") check(outHas("not available: 
 SlashCmdList.FOREVEROPTIMIZER("qdb") check(outHas("quest database: QuestieDB"), "/fo qdb status")
 S.worldMap.mapID = S.pos.map
 WorldMapFrame:Show()
-local kinds = {} for _, p in ipairs(WorldMapFrame.pins) do kinds[p.data.kind] = (kinds[p.data.kind] or 0) + 1 end
+local kinds = {} for _, p in ipairs(WorldMapFrame.pins) do if p.data then kinds[p.data.kind] = (kinds[p.data.kind] or 0) + 1 end end
 check((kinds.quest or 0) == 1 and (kinds.objective or 0) >= 4, "map shows quest giver and objective pins (quest " .. tostring(kinds.quest) .. ", objective " .. tostring(kinds.objective) .. ")")
 WorldMapFrame:Hide()
 SlashCmdList.FOREVEROPTIMIZER("route all") check(outHas("pick up: Welcome to the Jungle"), "/fo route all includes pickups")
@@ -545,6 +577,32 @@ check(FO3.CombatLog.registered == false and FO3.CombatLog.available == false, "c
 SlashCmdList.FOREVEROPTIMIZER("combat") check(outHas("combat log not available"), "combat commands degrade")
 check(#FO3.Classes.HUNTER:Lines() >= 3, "hunter lines still render without the log")
 noErrors("third load (no combat log)")
+
+-- Fourth load as a shaman: shield, imbue, totems and per-kill counts come from the client
+S.combatLogAllowed = true
+S.player.class = { "Shaman", "SHAMAN" }
+S.frames, S.registered, S.tickers, S.timers = nil, {}, {}, {}
+local FO4 = S.loadAddon("ForeverOptimizer")
+S.fire("ADDON_LOADED", "ForeverOptimizer") S.fire("PLAYER_LOGIN")
+check(FO4.Player.class == "SHAMAN" and FO4.Classes.SHAMAN, "shaman module active for a shaman")
+S.auras = {}
+S.imbue = { main = nil }
+S.totems = {}
+SlashCmdList.FOREVEROPTIMIZER("shaman")
+check(outHas("No shield up") and outHas("No weapon imbue") and outHas("No totems down"), "/fo shaman reports the three gaps")
+S.fire("PLAYER_REGEN_DISABLED")
+check(outHas("no shield up: Lightning Shield") and outHas("no weapon imbue: Rockbiter"), "combat start without shield or imbue alerts")
+S.auras = { { name = "Lightning Shield", applications = 3 } }
+S.imbue = { main = 90 * 1000, off = 1500 * 1000 }
+S.totems = { { name = "Searing Totem", start = S.clock, duration = 60 }, { name = "Strength of Earth Totem", start = S.clock, duration = 120 } }
+S.fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast-1", 8042)   -- Earth Shock (name via C_Spell stub)
+SlashCmdList.FOREVEROPTIMIZER("shaman")
+check(outHas("Lightning Shield x3") and outHas("Imbue 01:30 left") and outHas("LOW") and outHas("off-hand 25:00"), "shield charges and imbue timers read")
+check(outHas("Totems Searing 01:00, Strength of Earth 02:00"), "totems listed by slot with time left")
+check(#FO4.Classes.SHAMAN:Lines() >= 4, "shaman tab renders")
+SlashCmdList.FOREVEROPTIMIZER("rotation") check(outHas("Rockbiter Weapon") and outHas("Stormstrike"), "/fo rotation prints the shaman priority with Stormstrike optional")
+SlashCmdList.FOREVEROPTIMIZER("build") check(outHas("Enhancement leveling"), "/fo build picks the shaman build")
+noErrors("fourth load (shaman)")
 
 print(string.format("\n%d failures, %d chat lines", failures, #S.out))
 os.exit(failures == 0 and 0 or 1)

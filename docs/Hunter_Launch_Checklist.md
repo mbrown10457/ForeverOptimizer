@@ -1,7 +1,8 @@
 # Orc Beast Mastery hunter: launch checklist
 
 Built 2026-11-02 for launch day (Wed 2026-11-04, 15:00). Duo: Orc Beast Mastery hunter (Mike) with an
-Orc Demonology warlock. Quest names, givers and chain order come from the QuestieDB Forever data
+Orc Demonology warlock, or an Orc Enhancement shaman if the friend rolls that instead (then read
+[Shaman_Launch_Checklist](Shaman_Launch_Checklist): the duo gets a healer and the playbook changes). Quest names, givers and chain order come from the QuestieDB Forever data
 (release 1.0.10); spell levels and talent tiers come from the client seed (build 1.60.1.70707).
 Quest IDs 9xxxx are new in Forever and were not in Classic, so expect those to differ from memory.
 

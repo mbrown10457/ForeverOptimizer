@@ -1,5 +1,5 @@
-# Every day: if wago.tools lists a newer Forever (wowf) client build, regenerate the item, spell and
-# talent seeds from it, run the harness and the rotation-data validator, and either commit the new
+# Every day: if wago.tools lists a newer Forever (wowf) client build, regenerate the item, spell,
+# talent and map-overlay seeds from it, run the harness and the rotation-data validator, and either commit the new
 # open a pull request with the new seeds (green) or open an issue with the validator output (a patch
 # renamed/removed something the hand-authored rotations or builds reference). The job itself has run
 # the harness and validator; CI does not run again on a bot-token PR, so the PR body carries the log.
@@ -35,6 +35,7 @@ jobs:
         run: |
           python3 scripts/build_seed.py --build "${{ steps.check.outputs.latest }}"
           python3 scripts/build_spells.py --build "${{ steps.check.outputs.latest }}"
+          python3 scripts/build_mapoverlays.py --build "${{ steps.check.outputs.latest }}"
       - name: Validate
         if: steps.check.outputs.new == 'true'
         id: validate

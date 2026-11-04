@@ -26,7 +26,7 @@ powershell -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.c
 
 - At the character select screen, click **AddOns** (bottom left). Both **ForeverOptimizer** and **QuestieDB** should be listed and ticked. If the client says they are out of date, tick **Load out of date AddOns**.
 - In the world, type `/reload`, then `/fo checklist`. The checklist walks you through the first hour.
-- `/fo help` lists every command. `/fo warlock` is the warlock status line (shards, demon, mana).
+- `/fo help` lists every command. `/fo warlock` is the warlock status line (shards, demon, mana); `/fo shaman` is the shaman one (shield, weapon imbue, totems, mana).
 
 ## If something goes wrong
 

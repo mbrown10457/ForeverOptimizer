@@ -229,6 +229,7 @@ BINDING_HEADER_FOREVEROPTIMIZER = "ForeverOptimizer"
 BINDING_NAME_FOREVEROPTIMIZER_TOGGLE = "Toggle HUD"
 BINDING_NAME_FOREVEROPTIMIZER_NEXT = "Waypoint to next quest target"
 BINDING_NAME_FOREVEROPTIMIZER_NEARBY = "List quests to pick up nearby"
+BINDING_NAME_FOREVEROPTIMIZER_REVEAL = "Toggle unexplored map art"
 function ForeverOptimizer_ToggleHUD() SlashCmdList.FOREVEROPTIMIZER("toggle") end
 function ForeverOptimizer_NextWaypoint() SlashCmdList.FOREVEROPTIMIZER("next") end
 function ForeverOptimizer_Nearby() SlashCmdList.FOREVEROPTIMIZER("nearby") end

@@ -14,4 +14,10 @@
       <OnLeave method="OnMouseLeave"/>
     </Scripts>
   </Frame>
+  <!-- One full-canvas frame per map that carries the unexplored overlay art (FOMapRevealPinMixin). -->
+  <Frame name="FOMapRevealPinTemplate" mixin="FOMapRevealPinMixin" virtual="true">
+    <Scripts>
+      <OnLoad method="OnLoad"/>
+    </Scripts>
+  </Frame>
 </Ui>

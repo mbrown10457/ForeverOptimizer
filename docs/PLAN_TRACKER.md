@@ -23,7 +23,7 @@ Status key: **done** = implemented and exercised by `test/run.lua`; **partial** 
 | ForeverEconomy: AH, history, gold/hr, inventory, crafting | `Economy/` 5 files | done |
 | ForeverGrinding: XP/loot, mobs, kill times, downtime, farming | `Grinding/` 5 files | done |
 | ForeverCharacter: gear, training, consumables, progression | `Character/` 4 files | done |
-| ForeverClasses: Hunter, Warlock, Priest | `Classes/` 3 files | partial (see class table) |
+| ForeverClasses: Hunter, Warlock, Priest, Shaman | `Classes/` 4 files | partial (see class table) |
 | ForeverDashboard: overview, session history, leveling, economy, character | `Dashboard/` 5 tabs | done |
 
 ## Feature backlog
@@ -59,6 +59,7 @@ Status key: **done** = implemented and exercised by `test/run.lua`; **partial** 
 | Hunter: Auto Shot timing / clipping | done (combat log) | Shot gaps vs ranged speed from cast-success/range-damage events; `/fo autoshot`, HUD line |
 | Warlock: shard inventory and consumption | done | Count, low/high warnings |
 | Warlock: Life Tap / Drain Life tradeoffs | partial | Casts per kill counted; health/mana tradeoff math not yet |
+| Shaman: shield charges, weapon imbue timers, totems down, shocks/bolts/heals per kill, drink share; alerts for no shield or imbue at combat start and imbue about to expire | done | `/fo shaman`; Shaman HUD tab; Enhancement build reordered to reach Flurry at 15 points and Stormstrike at 30 |
 | Warlock: DoT efficiency, demon contribution | done (combat log) | Ticks delivered vs lost to early refresh/death per DoT, demon damage share, mana spent vs gained; `/fo dots` |
 | Priest: wand vs spell | done (combat log) | Wand share by damage when the log is live; by casts otherwise |
 | Priest: Spirit Tap / regen timing | partial | Drink share and mana shown; no per-fight regen model |
@@ -136,6 +137,7 @@ All of these are probed by `/fo verify` and the result is saved to `account.veri
 | First-hour checklist, session notes, alerts (rare, respawn window, bags, ammo, shards) with per-kind toggles, key bindings | `Core/Checklist.lua`, `Core/Alerts.lua`, `Core/SessionManager.lua`, `Bindings.xml` | done |
 | Quest database: live QuestieDB adapter (optional dependency) for quest facts, availability rules and spawn coordinates; nearby pickups, quest facts, route fallbacks, map pins; recorded positions win | `Quest/QuestDatabase.lua`, `Quest/QuestRoutePlanner.lua`, `Dashboard/MapOverlay.lua` | done against QuestieDB's documented API; unverified until both addons run on the real client |
 | World map overlay: player and cursor coordinates, pins for recorded herb/ore nodes, rare sightings and tracked spawn points with respawn estimate; `/fo map`, `/fo coords`, HUD position line | `Dashboard/MapOverlay.lua` + `.xml` (map data-provider API) | done; degrades to coordinates only if the client lacks `WorldMapFrame:AddDataProvider`, which `/fo map` reports |
+| Unexplored map art: every exploration overlay of every map seeded from the client's WorldMapOverlay tables (`scripts/build_mapoverlays.py`, 45 maps, 579 overlays); the ones `C_MapExplorationInfo` does not report are tiled onto a full-canvas pin, tinted darker; map button, `/fo map reveal`, `/fo map tint`, key binding | `Data/MapOverlays.lua`, `Dashboard/MapOverlay.lua` | done offline (harness checks tile counts against the seed); live check: pin level and the explored-texture keys on the real client |
 | Add-in catalog: every module with status, commands and file, architecture layers, module contract, open slots, filters; markdown export and an issue template for proposals | `docs/addins.html`, `docs/FEATURES.md`, `scripts/build_features.js`, `.github/ISSUE_TEMPLATE/add-in.yml` | done 2026-11-02 |
 | Review fixes (2026-11-02): amounts-hidden detection over a sliding window of amount-bearing events; zero-stack auctions no longer divide by zero; auction API guarded; migrations run on a staged copy and roll back on failure with `FO.migrationFailed` and a newer-file warning; combat log handler has a fixed closure (`FO.TryCall`); CI runs the harness on Lua 5.1 and 5.4; seed bot opens a pull request instead of pushing to main | `Core/CombatLog.lua`, `Core/DataStorage.lua`, `Core/Init.lua`, `Economy/AuctionHouseScanner.lua`, `.github/workflows/*` | done, v0.9.7 |
 

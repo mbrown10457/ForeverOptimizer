@@ -54,9 +54,15 @@ local function Region()
     for _, m in ipairs({ "SetPoint", "SetText", "SetJustifyH", "SetWordWrap", "SetTextColor", "SetSize", "SetBackdrop", "SetBackdropColor",
                          "SetScale", "SetMovable", "EnableMouse", "RegisterForDrag", "SetClampedToScreen", "SetHeight", "StartMoving", "StopMovingOrSizing", "AddLine",
                          "SetTexture", "SetAlpha", "SetOwner", "ClearLines", "SetFontObject", "SetWidth",
-                         "SetScrollChild", "SetBackdropBorderColor", "SetFrameStrata", "SetSpacing", "SetVerticalScroll" }) do
+                         "SetScrollChild", "SetBackdropBorderColor", "SetFrameStrata", "SetSpacing", "SetVerticalScroll",
+                         "SetTexCoord", "SetVertexColor", "ClearAllPoints", "SetAllPoints", "SetFrameLevel", "EnableMouse", "SetMouseClickEnabled", "SetMouseMotionEnabled",
+                         "SetIgnoreGlobalPinScale" }) do
         r[m] = function() end
     end
+    r.GetFrameLevel = function() return 10 end
+    r.SetText = function(self, t) self.text = t end
+    r.GetText = function(self) return self.text end
+    r.CreateTexture = function() local t = Region() S.textures = (S.textures or 0) + 1 return t end
     r.Show = function(self) self.shown = true end
     r.Hide = function(self) self.shown = false end
     r.IsShown = function(self) return self.shown end
@@ -149,7 +155,8 @@ function Region_HookScript(self, k, fn) self.hooks = self.hooks or {} self.hooks
 function Mixin(obj, ...) for i = 1, select("#", ...) do for k, v in pairs((select(i, ...))) do obj[k] = v end end return obj end
 function CreateFromMixins(...) return Mixin({}, ...) end
 MapCanvasDataProviderMixin = { OnAdded = function(self, map) self.owningMap = map end, GetMap = function(self) return self.owningMap end, RefreshAllData = function() end, RemoveAllData = function() end }
-MapCanvasPinMixin = { SetPosition = function(self, x, y) self.x, self.y = x, y end, SetScalingLimits = function() end, UseFrameLevelType = function() end, OnLoad = function() end }
+MapCanvasPinMixin = { SetPosition = function(self, x, y) self.x, self.y = x, y end, SetScalingLimits = function() end, UseFrameLevelType = function() end, OnLoad = function() end,
+                      GetMap = function(self) return self.owningMap end }
 S.worldMap = { mapID = nil, cursor = { 0.25, 0.5 } }
 WorldMapFrame = Region()
 WorldMapFrame.shown = false
@@ -159,7 +166,7 @@ WorldMapFrame.GetMapID = function() return S.worldMap.mapID or S.pos.map end
 WorldMapFrame.AddDataProvider = function(self, p) self.providers[#self.providers + 1] = p p:OnAdded(self) end
 WorldMapFrame.AcquirePin = function(self, template, ...)
     local pin = CreateFromMixins(_G[(template:gsub("Template$", "")) .. "Mixin"] or MapCanvasPinMixin)
-    Mixin(pin, Region()) pin.Icon = Region() pin.template = template
+    Mixin(pin, Region()) pin.Icon = Region() pin.template = template pin.owningMap = self
     for k, v in pairs(_G[(template:gsub("Template$", "")) .. "Mixin"] or {}) do pin[k] = v end
     if pin.OnLoad then pin:OnLoad() end
     if pin.OnAcquired then pin:OnAcquired(...) end
@@ -169,6 +176,13 @@ end
 WorldMapFrame.RemoveAllPinsByTemplate = function(self, template) for i = #self.pins, 1, -1 do if self.pins[i].template == template then table.remove(self.pins, i) end end end
 WorldMapFrame.ScrollContainer = Region()
 WorldMapFrame.ScrollContainer.GetNormalizedCursorPosition = function() return S.worldMap.cursor[1], S.worldMap.cursor[2] end
+WorldMapFrame.ScrollContainer.GetCurrentLayerIndex = function() return 1 end
+WorldMapFrame.GetCanvasContainer = function(self) return self.ScrollContainer end
+WorldMapFrame.DenormalizeHorizontalSize = function(_, v) return 1002 * v end
+WorldMapFrame.DenormalizeVerticalSize = function(_, v) return 668 * v end
+-- Exploration: S.explored = { { textureWidth=, textureHeight=, offsetX=, offsetY= }, ... } for the open map
+S.explored = {}
+C_MapExplorationInfo = { GetExploredMapTextures = function(mapID) return S.explored end }
 WorldMapFrame.Show = function(self)
     self.shown = true
     for _, p in ipairs(self.providers) do p:RefreshAllData() end
@@ -287,6 +301,8 @@ C_Map = {
     GetPlayerMapPosition = function() return { GetXY = function() return S.pos.x, S.pos.y end } end,
     GetMapWorldSize = function() return 6000, 4000 end,
     GetMapInfo = function(id) return { name = "Stranglethorn Vale", mapID = id } end,
+    GetMapArtID = function(id) return id end,
+    GetMapArtLayers = function(id) return { { layerWidth = 1002, layerHeight = 668, tileWidth = 256, tileHeight = 256 } } end,
     CanSetUserWaypointOnMap = function() return true end,
     SetUserWaypoint = function(p) S.waypoint = p end,
 }
@@ -353,7 +369,16 @@ LibQuestieDB = {
 }
 
 -- Misc API groups ------------------------------------------------------------
-C_UnitAuras = { GetAuraDataByIndex = function(u, i) if i == 1 and S.eating then return { name = "Food" } end if i == 1 and S.buffed then return { name = "Well Fed" } end return nil end }
+S.auras = {}   -- { { name=, applications= }, ... } buffs on the player, checked before the food/well-fed shortcuts
+C_UnitAuras = { GetAuraDataByIndex = function(u, i)
+    if S.auras[i] then return S.auras[i] end
+    if i == 1 and S.eating then return { name = "Food" } end if i == 1 and S.buffed then return { name = "Well Fed" } end return nil end }
+-- Shaman: totems down by slot (1 fire, 2 earth, 3 water, 4 air) and weapon imbues (ms left)
+S.totems = {}
+function GetTotemInfo(slot) local t = S.totems[slot] if not t then return false, "", 0, 0 end return true, t.name, t.start or S.clock, t.duration or 120 end
+S.imbue = { main = nil, off = nil }
+C_Item = C_Item or {}
+C_Item.GetWeaponEnchantInfo = function() return S.imbue.main ~= nil, S.imbue.main or 0, 0, 0, S.imbue.off ~= nil, S.imbue.off or 0, 0, 0 end
 C_Spell = { GetSpellName = function(id) return ({ [2575] = "Mining", [2366] = "Herb Gathering" })[id] end }
 C_Reputation = { GetNumFactions = function() return 1 end, GetFactionDataByIndex = function() return { name = "Booty Bay", reaction = 5, currentStanding = 3400, currentReactionThreshold = 3000, nextReactionThreshold = 9000, isWatched = true } end }
 Enum = { LootSlotType = { Item = 1, Money = 2 }, ItemClass = { Consumable = 0, Weapon = 2, Armor = 4, Reagent = 5, Projectile = 6, Tradegoods = 7, Questitem = 12, Miscellaneous = 15 },
