@@ -8,10 +8,10 @@
         <Texture parentKey="Icon" setAllPoints="true"/>
       </Layer>
     </Layers>
+    <!-- No OnEnter/OnLeave here: MapCanvasMixin:AcquirePin asserts they are unset and
+         wires the mixin's OnMouseEnter/OnMouseLeave itself. -->
     <Scripts>
       <OnLoad method="OnLoad"/>
-      <OnEnter method="OnMouseEnter"/>
-      <OnLeave method="OnMouseLeave"/>
     </Scripts>
   </Frame>
   <!-- One full-canvas frame per map that carries the unexplored overlay art (FOMapRevealPinMixin). -->
