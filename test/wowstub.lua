@@ -310,6 +310,16 @@ C_Map = {
     SetUserWaypoint = function(p) S.waypoint = p end,
 }
 S.facing = 0
+S.cvars = { minimapZoom = "0", minimapInsideZoom = "1", rotateMinimap = "0" }
+function GetCVar(name) return S.cvars[name] end
+function SetCVar(name, v) S.cvars[name] = tostring(v) end
+Minimap = Region()
+Minimap.zoom = 0
+Minimap.GetZoom = function(self) return self.zoom end
+Minimap.SetZoom = function(self, z) self.zoom = z end
+Minimap.GetWidth = function() return 140 end
+Minimap.GetHeight = function() return 140 end
+Minimap.GetFrameLevel = function() return 2 end
 function GetPlayerFacing() return S.facing end
 function CreateVector2D(x, y) return { x = x, y = y, GetXY = function(self) return self.x, self.y end } end
 -- world space: x grows north, y grows west; the stub's maps are 6000x4000 yards

@@ -1,4 +1,4 @@
-# ForeverOptimizer add-ins (v0.17.0)
+# ForeverOptimizer add-ins (v0.18.0)
 
 Generated from `docs/addins.html` by `scripts/build_features.js`. The browsable version with filters and the architecture diagram is at https://mbrown10457.github.io/ForeverOptimizer/addins.html.
 
@@ -82,6 +82,7 @@ Status: **ready** = built and exercised by the offline harness; **live check** =
 | HUD | ready | Movable frame with tabs and a button row per tab. Every button drives a command, so macros and key binds can click them too. | `/fo show`, `/fo hide`, `/fo toggle`, `/fo lock`, `/fo scale`, `/fo tab`, `/fo hud` | `Dashboard/Overview.lua`; HUD: Overview |
 | Leveling, Economy, Character, History tabs | ready | Objective presets, quest or grind override, scan and autosell toggles, build switching, paged session history with comparison. | `/fo history` | `Dashboard/*.lua` |
 | Direction arrow | live check | TomTom-style arrow with yards left, green when you face the target, red behind you; arrival fires the guide forward. Driven by the guide, /fo next, /fo route or /fo arrow <x> <y>. *Gap: Bearing to a target on another map needs C_Map.GetWorldPosFromMapPos; same-map works from the map's world size.* | `/fo arrow` | `Dashboard/Arrow.lua` |
+| Minimap node icons | live check | The recorded herb and ore nodes on the minimap with their item icons, placed by yards from the player against the minimap zoom radius (indoor and outdoor scales), rotating with the minimap, hover for name, sightings and distance. /fo minimap on\|off, herb\|ore on\|off, size, minseen. *Gap: Zoom radii are Blizzard's retail values; needs a live look to confirm the icons sit on the nodes at each zoom level.* | `/fo minimap` | `Dashboard/MinimapNodes.lua` |
 | World map overlay | live check | Player and cursor coordinates, pins for recorded herb and ore nodes drawn with the gathered item's icon, rares, tracked spawn points with respawn estimate, available quests, objectives and turn-ins. Unexplored parts of the zone drawn from the client's own overlay art (seeded for 45 maps) and tinted darker; a map button, /fo map reveal and a key binding switch between full and explored-only. *Gap: Degrades to coordinates only if the client lacks the map data-provider API.* | `/fo map`, `/fo coords` | `Dashboard/MapOverlay.lua` |
 | Help and manual | ready | Commands by area on a HUD tab and a scrollable manual window, both built from the live command registry so they cannot drift. | `/fo help`, `/fo manual` | `Dashboard/Help.lua`; HUD: Help |
 
@@ -93,7 +94,7 @@ Status: **ready** = built and exercised by the offline harness; **live check** =
 | Collect and summarize | ready | After a session, zips the saved file and the game log; the Mac side converts to JSON and prints verify results, errors, sessions, notes, checklist and runes. |  | `scripts/collect.*, scripts/summarize.py` |
 | SQLite export | ready | Loads the saved file into SQLite tables for offline analysis in any tool. |  | `scripts/fo_sqlite.py, scripts/savedvars_to_json.py` |
 | Nightly backup | ready | launchd agent copies the saved files nightly and at login, keeps 30 days. |  | `scripts/backup.sh, scripts/backup-install.sh` |
-| Test harness | ready | A fake WoW client in Lua: frames, events, combat log, spellbook, units, chat capture. Every module is loaded, every command smoke-run, 325 checks. |  | `test/run.lua, test/wowstub.lua` |
+| Test harness | ready | A fake WoW client in Lua: frames, events, combat log, spellbook, units, chat capture. Every module is loaded, every command smoke-run, 335 checks. |  | `test/run.lua, test/wowstub.lua` |
 | CI, releases, seed updates | ready | Syntax check and harness on every push, zip release on tag, a daily job that rebuilds the item and spell seeds when the client build changes and opens an issue if validation fails. |  | `.github/workflows/*.yml` |
 | HUD mockup generator | ready | Drives the harness, dumps every tab, button and command output, and renders the mockup page on GitHub Pages from real addon text. |  | `scripts/mock/` |
 
@@ -114,4 +115,4 @@ Status: **ready** = built and exercised by the offline harness; **live check** =
 | Buff and debuff uptime | open slot | Per-fight uptime of your own buffs, Hunter's Mark, curses and Power Word: Fortitude, from aura events in the combat log. |  |  |
 | Your idea | open slot | Anything that turns something you can observe in game into a number that changes how you play. Open a proposal with the button at the top. |  |  |
 
-Totals: 35 ready, 13 live check, 5 partial, 12 open slots.
+Totals: 35 ready, 14 live check, 5 partial, 12 open slots.

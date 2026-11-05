@@ -9,7 +9,7 @@ local function outHas(pat) for i = #S.out, 1, -1 do if S.out[i]:find(pat, 1, tru
 local function noErrors(label) check(#S.errors == 0, label .. " (no handler errors)") if #S.errors > 0 then for _, e in ipairs(S.errors) do print("   " .. e) end S.errors = {} end end
 
 local FO, order = S.loadAddon("ForeverOptimizer")
-check(#order == 57, "loaded " .. #order .. " files from TOC")
+check(#order == 58, "loaded " .. #order .. " files from TOC")
 check(#FO.modules >= 26, #FO.modules .. " modules registered")
 check(ForeverOptimizerDB == nil or true, "pre-login")
 
@@ -234,6 +234,37 @@ local orePin for _, p in ipairs(WorldMapFrame.pins) do if p.data and p.data.kind
 check(orePin and orePin.data.icon == "icon" and MapM:NodeIcon("Copper Vein", "ore") == "icon", "ore node pin carries Copper Ore's item icon")
 check(MapM:NodeIcon("Unknown Flower", "herb") == "Interface\\Icons\\Trade_Herbalism", "unknown herb falls back to the generic herb icon")
 firstNodePin:OnMouseEnter() firstNodePin:OnMouseLeave()
+
+-- Minimap node icons: the same points, placed by yards from the player
+local MN = FO:GetModule("Dashboard.Minimap")
+check(MN.frame ~= nil and MN.radius == 233.335, "minimap layer built, outdoor zoom 0 radius " .. tostring(MN.radius))
+local savedPos = { S.pos.map, S.pos.x, S.pos.y }
+S.pos.map = nodeMap
+local nodeX, nodeY
+for _, node in pairs(FEm.db.nodes) do for _, pt in ipairs(node.points) do if pt[1] == nodeMap then nodeX, nodeY = pt[2], pt[3] end end end
+S.pos.x, S.pos.y = nodeX + 0.01, nodeY        -- 60 yards east of a node (stub maps are 6000 x 4000 yards)
+S.mapUpdate()
+check(MN.mapID == nodeMap and #MN.rows > 0 and MN.shown > 0, "minimap pins placed on the current map (" .. tostring(MN.shown) .. " of " .. #MN.rows .. ")")
+local west
+for _, r in ipairs(MN.rows) do if r.x == nodeX and r.y == nodeY then west = r end end
+check(west and west.sx and west.sx < -17 and west.sx > -19 and math.abs(west.sy) < 0.01, "a node 60 yd west sits 18 px left of centre (" .. tostring(west and west.sx) .. ")")
+S.cvars.rotateMinimap = "1" S.facing = math.pi / 2       -- facing west: the node is now straight ahead
+S.mapUpdate()
+check(west.sy > 17 and math.abs(west.sx) < 0.01, "with a rotating minimap and the player facing it, the node moves to the top (" .. tostring(west.sy) .. ")")
+S.cvars.rotateMinimap = "0" S.facing = 0
+Minimap.zoom = 5 S.cvars.minimapZoom = "5" S.fire("MINIMAP_UPDATE_ZOOM")
+check(MN.radius == 66.665, "zoom 5 radius " .. tostring(MN.radius))
+S.pos.x = nodeX + 0.02                                       -- 120 yards: outside the zoomed-in radius
+S.mapUpdate()
+check(west.d and west.d > 100 and MN.shown < #MN.rows, "nodes beyond the zoom radius are hidden")
+Minimap.zoom = 0 S.cvars.minimapZoom = "0" S.fire("MINIMAP_UPDATE_ZOOM")
+SlashCmdList.FOREVEROPTIMIZER("minimap") check(outHas("minimap nodes: on") and outHas("zoom radius 233 yd"), "/fo minimap status")
+SlashCmdList.FOREVEROPTIMIZER("minimap off") S.mapUpdate() check(MN.shown == 0, "minimap off hides every pin")
+SlashCmdList.FOREVEROPTIMIZER("minimap on") SlashCmdList.FOREVEROPTIMIZER("minimap size 20") S.mapUpdate() check(MN.shown > 0 and MN.db.settings.size == 20, "minimap on and size set")
+SlashCmdList.FOREVEROPTIMIZER("minimap size 14")
+S.pos.map, S.pos.x, S.pos.y = savedPos[1], savedPos[2], savedPos[3]
+S.mapUpdate()
+noErrors("minimap nodes")
 S.mapUpdate()
 check(MapM.coordText and MapM.coordText:IsShown(), "coordinate text shown while map open")
 SlashCmdList.FOREVEROPTIMIZER("map") check(outHas("world map overlay: pins") and outHas("this map"), "/fo map status")
