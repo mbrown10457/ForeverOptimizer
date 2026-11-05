@@ -186,7 +186,7 @@ SlashCmdList.FOREVEROPTIMIZER("gear |cffffffff|Hitem:1515::::::::23:::::|h[Rough
 SlashCmdList.FOREVEROPTIMIZER("tab Economy")
 SlashCmdList.FOREVEROPTIMIZER("bags trash")
 SlashCmdList.FOREVEROPTIMIZER("find Linen")
-SlashCmdList.FOREVEROPTIMIZER("route ore")
+SlashCmdList.FOREVEROPTIMIZER("route ore") check(outHas("Route on") and outHas("Copper Vein"), "/fo route ore reaches the gathering router")
 SlashCmdList.FOREVEROPTIMIZER("respawn 595")
 SlashCmdList.FOREVEROPTIMIZER("objective gold") SlashCmdList.FOREVEROPTIMIZER("zones") SlashCmdList.FOREVEROPTIMIZER("objective custom 1 2 3") SlashCmdList.FOREVEROPTIMIZER("objective balanced")
 SlashCmdList.FOREVEROPTIMIZER("module off Classes.Priest") SlashCmdList.FOREVEROPTIMIZER("module on priest") SlashCmdList.FOREVEROPTIMIZER("module off Core.Verify")
@@ -230,6 +230,9 @@ S.worldMap.mapID = nodeMap
 WorldMapFrame:Show()
 local firstNodePin for _, p in ipairs(WorldMapFrame.pins) do if p.template == "FOMapPinTemplate" then firstNodePin = p break end end
 check(firstNodePin and firstNodePin.x, "node pins placed on map open (" .. #WorldMapFrame.pins .. ")")
+local orePin for _, p in ipairs(WorldMapFrame.pins) do if p.data and p.data.kind == "ore" then orePin = p break end end
+check(orePin and orePin.data.icon == "icon" and MapM:NodeIcon("Copper Vein", "ore") == "icon", "ore node pin carries Copper Ore's item icon")
+check(MapM:NodeIcon("Unknown Flower", "herb") == "Interface\\Icons\\Trade_Herbalism", "unknown herb falls back to the generic herb icon")
 firstNodePin:OnMouseEnter() firstNodePin:OnMouseLeave()
 S.mapUpdate()
 check(MapM.coordText and MapM.coordText:IsShown(), "coordinate text shown while map open")
@@ -539,6 +542,8 @@ QT.db.quests[102].objectives[1].points = {}   -- the fake tick above recorded a 
 SlashCmdList.FOREVEROPTIMIZER("route group")
 local lines = RT:Lines()
 check(#lines >= 2 and lines[1]:find("stops", 1, true), "Route HUD tab lists the plan")
+local solo = RT:Plan({ only = { [101] = true } })
+check(solo and #solo.stops == 2 and solo.stops[1].kind == "objective" and solo.stops[1].quests[101] and RT.plan ~= solo, "single-quest plan (guide steps) is separate and quiet")
 noErrors("quest router")
 
 -- Checklist, notes, alerts, bindings

@@ -52,6 +52,7 @@ Status key: **done** = implemented and exercised by `test/run.lua`; **partial** 
 
 | Item | Status | Notes |
 |---|---|---|
+| Map node icons (gathered item's icon per herb/ore pin), `/fo route herb|ore` restored (the quest route command had shadowed it), guide do-quest steps use the router's densest patch | done (v0.15.0) | `Dashboard/MapOverlay.lua`, `Quest/Guide.lua` |
 | Auto Shot timer bar: weapon-speed cycle, aim window, moving warning, cast pause and restart, secret ids via cast GUID, wand Shoot | done (v0.14.0; events unverified live) | `/fo shotbar`, `Classes/AutoShot.lua` |
 | Quest router: objective patches from QuestieDB spawns plus recorded ticks, shared patches merged, turn-ins after their objectives, pickups folded in, nearest-neighbour + 2-opt, follow mode with live replanning, map pins and Route tab | done (v0.13.0; patch sizes and arrival radius unverified live) | `/fo route`, `Quest/QuestRoutePlanner.lua` |
 | Combat events without a combat log | done (UNIT_COMBAT feed, v0.12.0) | `Core/CombatFeed.lua`: hits, heals, misses, casts and deaths attributed by last cast per school, DoT duration, pet target; estimates, group damage on your target counts as yours |

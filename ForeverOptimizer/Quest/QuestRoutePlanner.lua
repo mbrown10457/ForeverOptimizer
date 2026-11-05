@@ -244,6 +244,7 @@ end
 -- ---------------------------------------------------------------------------
 function RP:Plan(opts)
     opts = opts or {}
+    local only = opts.only          -- { [qid] = true }: plan these quests only, say nothing, keep self.plan
     local s = self.db.settings
     local QT, QDB = FO:GetModule("Quest.QuestTracker"), FO.QuestDB
     local mapID, px, py = U.PlayerPosition()
@@ -307,7 +308,9 @@ function RP:Plan(opts)
         inLog[qid] = true
         local dbq = hasDB and QDB:Quest(qid) or nil
         local gk = self:GroupKind(qid, dbq)
-        if gk and not includeGroup then
+        if only and not only[qid] then
+            -- not part of this plan
+        elseif gk and not includeGroup and not only then
             skipped[#skipped + 1] = { qid = qid, title = title, why = gk }
         else
             local objs = QT.ReadObjectives(qid) or {}
@@ -339,7 +342,7 @@ function RP:Plan(opts)
 
     -- pickups: quests available on this map (route all)
     local pickupInfo = {}
-    if includePickups and hasDB then
+    if includePickups and hasDB and not only then
         for _, r in ipairs(QDB:AvailableOnMap(mapID, px, py)) do
             local gk = self:GroupKind(r.id, r.q)
             if gk and not includeGroup then
@@ -488,7 +491,9 @@ function RP:Plan(opts)
         st.num = i
         lx, ly = st.x, st.y
     end
-    self.plan = { stops = order, total = total, mapID = mapID, skipped = skipped, offMap = offMap, at = now, pickups = includePickups }
+    local plan = { stops = order, total = total, mapID = mapID, skipped = skipped, offMap = offMap, at = now, pickups = includePickups }
+    if only then return plan end
+    self.plan = plan
     FO:Fire("FO_ROUTE_PLANNED", self.plan)
     return self.plan
 end
@@ -689,9 +694,12 @@ RP.commands = {
         print("%s -> %s (%.1f, %.1f) [%s]", title, U.MapName(mapID), x * 100, y * 100, src)
         if SetWaypoint(mapID, x, y, title) then print("waypoint set.") end
     end },
-    route = { help = "(quest) plan a loop through your quests on this map | route all (adds pickups) | follow [all] | stop | skip | group | show", fn = function(self, arg)
+    route = { help = "(quest) plan a loop through your quests on this map | route all (adds pickups) | follow [all] | stop | skip | group | show | herb|ore [stops] (gathering nodes)", fn = function(self, arg)
         local sub, rest = U.SplitCmd(arg or "")
-        if sub == "follow" then
+        if sub == "herb" or sub == "ore" then
+            local FE = FO:GetModule("Grinding.FarmingEfficiency")
+            if FE and FE.commands and FE.commands.route then FE.commands.route.fn(FE, arg) else print("gathering routes unavailable.") end
+        elseif sub == "follow" then
             self:Follow(true, { pickups = rest == "all" and true or (rest == "" and nil) })
         elseif sub == "stop" or sub == "off" then
             self:Follow(false)

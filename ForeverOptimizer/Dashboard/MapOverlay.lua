@@ -35,6 +35,48 @@ local STYLE = {
 }
 
 -- ---------------------------------------------------------------------------
+-- Node icons: the gathered item's own icon (Peacebloom, Copper Ore) looked up
+-- by name in the seed items, else a generic herb / pick icon.
+-- ---------------------------------------------------------------------------
+local GENERIC_ICON = { herb = "Interface\\Icons\\Trade_Herbalism", ore = "Interface\\Icons\\Trade_Mining" }
+local ORE_ITEM = {
+    ["Copper Vein"] = "Copper Ore", ["Tin Vein"] = "Tin Ore", ["Silver Vein"] = "Silver Ore", ["Iron Deposit"] = "Iron Ore",
+    ["Gold Vein"] = "Gold Ore", ["Mithril Deposit"] = "Mithril Ore", ["Truesilver Deposit"] = "Truesilver Ore",
+    ["Dark Iron Deposit"] = "Dark Iron Ore", ["Small Thorium Vein"] = "Thorium Ore", ["Rich Thorium Vein"] = "Thorium Ore",
+    ["Hakkari Thorium Vein"] = "Thorium Ore", ["Incendicite Mineral Vein"] = "Incendicite Ore",
+    ["Lesser Bloodstone Deposit"] = "Lesser Bloodstone Ore", ["Indurium Mineral Vein"] = "Indurium Ore",
+}
+local nameIndex          -- item name -> itemID for trade goods, built once from the seed
+local iconCache = {}     -- node name -> icon (fileID or path) or false
+
+local function ItemIDByName(name)
+    if not nameIndex then
+        nameIndex = {}
+        local items = FO.Seed and FO.Seed.items or {}
+        for id, row in pairs(items) do
+            if row[8] == 7 and type(row[1]) == "string" then nameIndex[row[1]] = id end   -- class 7: trade goods
+        end
+    end
+    return nameIndex[name]
+end
+
+function M:NodeIcon(name, kind)
+    local c = iconCache[name]
+    if c ~= nil then return c or GENERIC_ICON[kind] end
+    local itemName = name
+    if kind == "ore" then
+        itemName = ORE_ITEM[name] or name:gsub("^Ooze Covered ", ""):gsub(" Mineral Vein$", " Ore"):gsub(" Vein$", " Ore"):gsub(" Deposit$", " Ore")
+        itemName = ORE_ITEM[itemName] or itemName
+    end
+    local id = ItemIDByName(itemName)
+    local icon
+    if id then local _, _, _, ic = U.ItemInstant(id) icon = ic end
+    if type(icon) ~= "number" and type(icon) ~= "string" then icon = nil end
+    iconCache[name] = icon or false
+    return icon or GENERIC_ICON[kind]
+end
+
+-- ---------------------------------------------------------------------------
 -- Pin
 -- ---------------------------------------------------------------------------
 FOMapPinMixin = CreateFromMixins and MapCanvasPinMixin and CreateFromMixins(MapCanvasPinMixin) or {}
@@ -59,8 +101,17 @@ function FOMapPinMixin:OnAcquired(data)
     -- hover for the tooltip, but let clicks (right-click zoom out) fall through to the map
     if self.SetMouseClickEnabled then pcall(self.SetMouseClickEnabled, self, false) end
     local style = STYLE[data.kind] or STYLE.node
-    if self.Icon and self.Icon.SetTexture then self.Icon:SetTexture(style.tex) end
+    if self.Icon and self.Icon.SetTexture then
+        if data.icon then
+            self.Icon:SetTexture(data.icon)
+            if self.Icon.SetTexCoord then self.Icon:SetTexCoord(0.07, 0.93, 0.07, 0.93) end   -- trim the icon border
+        else
+            self.Icon:SetTexture(style.tex)
+            if self.Icon.SetTexCoord then self.Icon:SetTexCoord(0, 1, 0, 1) end
+        end
+    end
     local size = 10 + math.min(6, (data.n or 1) - 1)   -- seen more often = slightly bigger
+    if data.icon then size = 16 + math.min(4, (data.n or 1) - 1) end
     if data.num then size = 18 end
     if self.SetSize then self:SetSize(size, size) end
     if self.Num then
@@ -102,7 +153,8 @@ function M:Layers(mapID)
         for name, node in pairs(FE.db.nodes or {}) do
             for _, p in ipairs(node.points or {}) do
                 if p[1] == mapID and (p.n or 1) >= (s.minSeen or 1) then
-                    rows[#rows + 1] = { kind = node.kind or "node", name = name, x = p[2], y = p[3], n = p.n or 1, last = p.last }
+                    rows[#rows + 1] = { kind = node.kind or "node", name = name, x = p[2], y = p[3], n = p.n or 1, last = p.last,
+                                        icon = (node.kind == "herb" or node.kind == "ore") and self:NodeIcon(name, node.kind) or nil }
                 end
             end
         end

@@ -156,6 +156,11 @@ function G:Location(step)
         local s = QDB:NearestStarter(q, pmap, px, py)
         if s then return s.mapID, s.x, s.y, s.label end
     elseif k == "C" and RP and self.log and self.log[q] then
+        if RP.Plan then
+            local plan = RP:Plan({ only = { [q] = true } })
+            local st = plan and plan.stops[1]
+            if st then return st.mapID, st.x, st.y, st.kind == "objective" and (step[3] .. ": " .. st.short) or step[3] end
+        end
         local m, x, y = RP:NextWaypoint(q)
         if m and x then return m, x, y, step[3] end
     elseif k == "T" and QDB and QDB.available and pmap then
