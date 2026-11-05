@@ -27,8 +27,11 @@ local function BuildIndex()
     if not class then return end
     for id, row in pairs((FO.Seed and FO.Seed.spells) or {}) do
         if row[2] == class then
+            -- "Runes" and "Meditation" rows are hidden bookkeeping spells (e.g. "Priest Racial
+            -- Ability" 459695, known at level 1), not abilities a rune teaches
+            local hidden = row[3] == "Runes" or row[3] == "Meditation" or tostring(row[1]):find("Racial Ability", 1, true)
             if row[3] == "Engraving" then index.engrave[#index.engrave + 1] = { id = id, name = row[1] }
-            elseif id >= 400000 then index.abilities[#index.abilities + 1] = { id = id, name = row[1] } end
+            elseif id >= 400000 and not hidden then index.abilities[#index.abilities + 1] = { id = id, name = row[1] } end
         end
     end
     table.sort(index.engrave, function(a, b) return a.name < b.name end)
