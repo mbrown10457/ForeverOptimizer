@@ -56,8 +56,13 @@ function R:Speak(text, force)
     text = Clean(text)
     if not text then return false end
     self:Stop()
-    local p = self:Paths()[self.db.path or 1] or self:Paths()[1]
-    if not p.available() then p = self:Paths()[1] end
+    local paths = self:Paths()
+    local p = paths[self.db.path or 1]
+    if not (p and p.available()) then
+        p = nil
+        for _, q in ipairs(paths) do if q.available() then p = q break end end
+        if not p then return false end
+    end
     local ok, err = pcall(p.speak, text, U.Num(self.db.rate) or 0, U.Num(self.db.volume) or 100)
     if not ok then print("tts: %s", tostring(err)) return false end
     self.last = text
@@ -89,21 +94,32 @@ local function VC(fnName, ...)
 end
 
 -- Every way this client might play speech. Each entry: name, available(), speak(text, rate, volume).
--- Path 1 is the normal one; /fo tts debug tries them all and /fo tts path <n> picks another.
+-- Path 1, the client's own chat-TTS wrapper, is the one that produces sound on Forever (verified
+-- 2026-11-05); direct C_VoiceChat.SpeakText calls go through without audio there. /fo tts debug
+-- tries them all and /fo tts path <n> picks another. The wrapper takes rate and volume from the
+-- client's Accessibility settings, so ours are written there first when the setters exist.
+local function hasVC() return C_VoiceChat and type(C_VoiceChat.SpeakText) == "function" end
+local function hasBlizz() return type(TextToSpeech_Speak) == "function" end
+local function ApplyClientSettings(r, v)
+    local T = C_TTSSettings
+    if not T then return end
+    if T.SetSpeechRate then pcall(T.SetSpeechRate, r) end
+    if T.SetSpeechVolume then pcall(T.SetSpeechVolume, v) end
+end
+
 function R:Paths()
     local dest = Enum and Enum.VoiceTtsDestination or {}
     local voice = self:VoiceID()
-    local function hasVC() return C_VoiceChat and type(C_VoiceChat.SpeakText) == "function" end
-    local function hasBlizz() return type(TextToSpeech_Speak) == "function" end
     return {
+        { name = "client chat TTS (TextToSpeech_Speak)", available = hasBlizz, speak = function(t, r, v) ApplyClientSettings(r, v) TextToSpeech_Speak(t, { voiceID = voice }) end },
+        { name = "client chat TTS with its own voice choice", available = hasBlizz, speak = function(t, r, v)
+            ApplyClientSettings(r, v)
+            local sel = (TextToSpeech_GetSelectedVoice and TextToSpeech_GetSelectedVoice()) or (TEXTTOSPEECH_CONFIG and TEXTTOSPEECH_CONFIG.ttsVoiceOptionStandard)
+            TextToSpeech_Speak(t, sel) end },
         { name = "SpeakText, local playback", available = hasVC, speak = function(t, r, v) C_VoiceChat.SpeakText(voice, t, dest.LocalPlayback or 1, r, v) end },
         { name = "SpeakText, queued local playback", available = hasVC, speak = function(t, r, v) C_VoiceChat.SpeakText(voice, t, dest.QueuedLocalPlayback or 4, r, v) end },
         { name = "SpeakText, screen reader destination", available = hasVC, speak = function(t, r, v) C_VoiceChat.SpeakText(voice, t, dest.ScreenReader or 6, r, v) end },
         { name = "SpeakText, voice 0, destination 1", available = hasVC, speak = function(t, r, v) C_VoiceChat.SpeakText(0, t, 1, r, v) end },
-        { name = "Blizzard TextToSpeech_Speak", available = hasBlizz, speak = function(t) TextToSpeech_Speak(t, { voiceID = voice }) end },
-        { name = "Blizzard TextToSpeech_Speak with its own voice choice", available = hasBlizz, speak = function(t)
-            local v = (TextToSpeech_GetSelectedVoice and TextToSpeech_GetSelectedVoice()) or (TEXTTOSPEECH_CONFIG and TEXTTOSPEECH_CONFIG.ttsVoiceOptionStandard)
-            TextToSpeech_Speak(t, v) end },
     }
 end
 
@@ -131,7 +147,7 @@ function R:Debug()
             print("  path %d: %s: %s", i, p.name, ok and "called" or ("error " .. tostring(err)))
         end)
     end
-    print("  then: /fo tts path <n> makes the reader use the one that worked.")
+    print("  then: /fo tts path <n> makes the reader use the one that worked (path 1 is the default).")
 end
 
 function R:ReadDetail()
@@ -218,7 +234,10 @@ R.commands = {
         elseif sub == "debug" then self:Debug()
         elseif sub == "path" then
             local n, paths = tonumber(rest), self:Paths()
-            if n and paths[n] then self.db.path = n print("reader uses path %d: %s", n, paths[n].name) self:Speak("Reading through path " .. n .. ".", true)
+            if n and paths[n] then
+                self.db.path = n
+                print("reader uses path %d: %s%s", n, paths[n].name, paths[n].available() and "" or " (not on this client; the first available path is used)")
+                self:Speak("Reading through path " .. n .. ".", true)
             else
                 print("playback path %d of %d (/fo tts debug tries each one):", self.db.path or 1, #paths)
                 for i, p in ipairs(paths) do print("  %d  %s%s", i, p.name, p.available() and "" or "  (not on this client)") end

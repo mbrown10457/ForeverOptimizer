@@ -791,12 +791,22 @@ noErrors("item advisor")
 local RD = FO:GetModule("Quest.Reader")
 local n0 = #S.tts.spoken
 SlashCmdList.FOREVEROPTIMIZER("tts debug") S.advance(30)
-check(outHas("tts debug: 2 voices (Samantha, Daniel)") and outHas("path 1: SpeakText, local playback: called") and outHas("path 5: Blizzard TextToSpeech_Speak: not on this client"), "/fo tts debug reports the client state and tries each path")
+check(outHas("tts debug: 2 voices (Samantha, Daniel)") and outHas("path 1: client chat TTS (TextToSpeech_Speak): not on this client") and outHas("path 3: SpeakText, local playback: called"), "/fo tts debug reports the client state and tries each path")
 check(#S.tts.spoken == n0 + 4 and S.tts.spoken[n0 + 2].dest == 4 and S.tts.spoken[n0 + 4].voice == 0, "four SpeakText paths spoke with their own destinations")
-SlashCmdList.FOREVEROPTIMIZER("tts path 2")
-check(RD.db.path == 2 and S.tts.spoken[#S.tts.spoken].dest == 4, "/fo tts path 2 switches the reader to queued playback")
-SlashCmdList.FOREVEROPTIMIZER("tts path") check(outHas("playback path 2 of 6"), "/fo tts path lists the paths")
+SlashCmdList.FOREVEROPTIMIZER("tts path 4")
+check(RD.db.path == 4 and S.tts.spoken[#S.tts.spoken].dest == 4, "/fo tts path 4 switches the reader to queued playback")
+SlashCmdList.FOREVEROPTIMIZER("tts path") check(outHas("playback path 4 of 6"), "/fo tts path lists the paths")
 SlashCmdList.FOREVEROPTIMIZER("tts path 1")
+n0 = #S.tts.spoken
+SlashCmdList.FOREVEROPTIMIZER("tts test")
+check(#S.tts.spoken == n0 + 1 and S.tts.spoken[#S.tts.spoken].dest == 1, "without the client wrapper, path 1 falls back to the first SpeakText path")
+S.tts.blizz = {}
+TextToSpeech_Speak = function(t, v) S.tts.blizz[#S.tts.blizz + 1] = { text = t, voice = v and v.voiceID } end
+C_TTSSettings = { SetSpeechRate = function(r) S.tts.rate = r end, SetSpeechVolume = function(v) S.tts.volume = v end }
+SlashCmdList.FOREVEROPTIMIZER("tts rate 3")
+check(#S.tts.blizz == 1 and S.tts.blizz[1].voice == RD:VoiceID() and S.tts.rate == 3 and S.tts.volume == 100 and #S.tts.spoken == n0 + 1, "with the client wrapper present, path 1 speaks through it with our voice, rate and volume")
+SlashCmdList.FOREVEROPTIMIZER("tts rate 0")
+TextToSpeech_Speak, C_TTSSettings = nil, nil
 noErrors("tts diagnostics")
 
 -- Module disable is honoured on the next load
