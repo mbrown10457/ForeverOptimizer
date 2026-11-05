@@ -1,16 +1,21 @@
 # ForeverOptimizer
 
+[![latest release](https://img.shields.io/github/v/release/mbrown10457/ForeverOptimizer?label=release)](https://github.com/mbrown10457/ForeverOptimizer/releases/latest) [![ci](https://github.com/mbrown10457/ForeverOptimizer/actions/workflows/ci.yml/badge.svg)](https://github.com/mbrown10457/ForeverOptimizer/actions/workflows/ci.yml)
+
 One World of Warcraft: Forever addon that learns from your own play: leveling, gold, mobs, quests, auction house, inventory, gear, training, downtime. Written for the Forever client (product `wowf`, build 1.60.1.x, modern engine) and defensive about Midnight-era addon restrictions: no combat log, every API number checked for secret values.
 
 ```
 ForeverOptimizer/
-  Core/        Init, Util, EventManager, DataStorage, CharacterProfile, SessionManager, AnalyticsEngine
-  Grinding/    XPTracker, LootTracker, MobDatabase, FarmingEfficiency, DowntimeAnalyzer
-  Quest/       QuestTracker, QuestEfficiency, QuestRoutePlanner
+  Core/        Init, Util, SeedData, EventManager, Alerts, DataStorage, CharacterProfile, SessionManager,
+               CombatLog, CombatFeed (UNIT_COMBAT stand-in for the missing combat log), AnalyticsEngine, Verify, Checklist
+  Data/        Items, Spells, Talents, MapOverlays, Rotations, Routes (generated seeds; scripts/build_*.py)
+  Grinding/    XPTracker, LootTracker, MobDatabase, CombatStats, Meter, FarmingEfficiency, DowntimeAnalyzer
+  Quest/       QuestTracker, QuestDatabase (QuestieDB adapter), QuestEfficiency, QuestRoutePlanner (quest router), Guide (leveling guide)
   Economy/     PriceHistory, AuctionHouseScanner, GoldPerHour, InventoryOptimizer, ProfessionProfit
-  Character/   GearEvaluator, TrainingPlanner, ConsumableTracker, ProgressionPlanner
+  Character/   GearEvaluator, TrainingPlanner, ConsumableTracker, ProgressionPlanner, Rotation, Runes
   Classes/     Hunter, AutoShot (timer bar), Warlock, Priest, Shaman
-  Dashboard/   Overview (HUD + tabs; the class module gets its own tab), Leveling, Economy, Character
+  Dashboard/   Overview (HUD + tabs; the class module gets its own tab), Leveling, Economy, Character, History, Help,
+               Arrow (direction arrow), MapOverlay (world map pins, route stops, unexplored art)
 ```
 
 ## Install
@@ -27,7 +32,7 @@ The addon is the same on both platforms; only the helper scripts differ.
 - **Just playing (one command):** see [WINDOWS_README.md](WINDOWS_README.md). In PowerShell, `irm https://raw.githubusercontent.com/mbrown10457/ForeverOptimizer/main/scripts/install-windows.ps1 | iex` finds the game, downloads the latest release and QuestieDB, verifies the QuestieDB checksum and installs both. Re-run to update.
 - **By hand:** extract `dist/ForeverOptimizer-<version>.zip` (made by `scripts/package.sh`, attached to every GitHub release) into `C:\Program Files (x86)\World of Warcraft\_forever_\Interface\AddOns\`. The zip carries an `INSTALL.txt` with the same steps for both operating systems.
 - **Working from the repo:** `powershell -ExecutionPolicy Bypass -File scripts\install.ps1` copies the addon into AddOns (it finds the game via the registry and the usual folders, or takes `-AddOns <path>`). Add `-Link` for a directory junction so the game loads the repo copy directly, the Windows equivalent of the Mac symlink.
-- **Offline tools** (`savedvars_to_json.py`, `fo_sqlite.py`, `build_seed.py`) are plain Python 3 and run unchanged. The saved data is at `...\_forever_\WTF\Account\<ACCOUNT>\SavedVariables\ForeverOptimizerDB.lua`.
+- **Offline tools** (`savedvars_to_json.py`, `fo_sqlite.py`, `build_seed.py`) are plain Python 3 and run unchanged. The saved data is at `...\_forever_\WTF\Account\<ACCOUNT>\SavedVariables\ForeverOptimizer.lua`.
 
 ## What it looks like
 
@@ -41,7 +46,7 @@ lua scripts/mock/dump_ui.lua > /tmp/ui_dump.txt && python3 scripts/mock/build_mo
 
 ## After a session: send the data
 
-- **Mac:** `scripts/collect.sh` copies every account's `ForeverOptimizerDB.lua`, converts it to JSON, prints the launch-day summary (`scripts/summarize.py`: verify results, saved errors, sessions with notes, checklist, runes) and zips it under `dist/collect/`.
+- **Mac:** `scripts/collect.sh` copies every account's `ForeverOptimizer.lua`, converts it to JSON, prints the launch-day summary (`scripts/summarize.py`: verify results, saved errors, sessions with notes, checklist, runes) and zips it under `dist/collect/`.
 - **Windows:** the collect line in [WINDOWS_README.md](WINDOWS_README.md) zips the same data to the Desktop.
 - **Nightly backup (Mac):** `scripts/backup-install.sh` installs a launchd agent that copies the SavedVariables to `~/Backups/ForeverOptimizer/<date>/` at 04:30 and at login, keeping 30 days. `status` and `remove` are the other verbs. Plain user paths, no extra permissions.
 
@@ -97,8 +102,8 @@ The SavedVariables file is written on logout or `/reload`:
 
 | | Path |
 |---|---|
-| macOS | `/Applications/World of Warcraft/_forever_/WTF/Account/<ACCOUNT>/SavedVariables/ForeverOptimizerDB.lua` |
-| Windows | `C:\Program Files (x86)\World of Warcraft\_forever_\WTF\Account\<ACCOUNT>\SavedVariables\ForeverOptimizerDB.lua` |
+| macOS | `/Applications/World of Warcraft/_forever_/WTF/Account/<ACCOUNT>/SavedVariables/ForeverOptimizer.lua` |
+| Windows | `C:\Program Files (x86)\World of Warcraft\_forever_\WTF\Account\<ACCOUNT>\SavedVariables\ForeverOptimizer.lua` |
 
 
 `scripts/savedvars_to_json.py <file> --var ForeverOptimizerDB -o fo.json` converts it with no Lua runtime. `scripts/fo_sqlite.py <file> -o fo.sqlite` goes further and upserts sessions, zone segments, dungeons, mobs, drops, encounters, loot, prices, quests, nodes, respawns, verify results and the saved error log into SQLite, so history outlives the in-game caps. Everything lives under `account.<namespace>` and `chars.<Name-Realm>.<namespace>`.

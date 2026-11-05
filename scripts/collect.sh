@@ -13,7 +13,7 @@ STAMP="$(date +%Y%m%d-%H%M)"
 OUT="$REPO/dist/collect/$STAMP"
 mkdir -p "$OUT"
 found=0
-for f in "$GAME"/WTF/Account/*/SavedVariables/ForeverOptimizerDB.lua; do
+for f in "$GAME"/WTF/Account/*/SavedVariables/ForeverOptimizer.lua; do
   [ -f "$f" ] || continue
   acct="$(basename "$(dirname "$(dirname "$f")")")"
   cp "$f" "$OUT/ForeverOptimizerDB-$acct.lua"
@@ -23,7 +23,7 @@ for f in "$GAME"/WTF/Account/*/SavedVariables/ForeverOptimizerDB.lua; do
   found=1
 done
 if [ "$found" = 0 ]; then
-  echo "no ForeverOptimizerDB.lua under $GAME/WTF/Account/*/SavedVariables" >&2
+  echo "no ForeverOptimizer.lua under $GAME/WTF/Account/*/SavedVariables" >&2
   echo "log out once so the game writes it; if the game lives elsewhere: WOW_FOREVER=<path to _forever_> $0" >&2
   exit 1
 fi

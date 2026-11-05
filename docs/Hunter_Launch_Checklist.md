@@ -122,7 +122,7 @@ Forever ships Season-of-Discovery-style engraved abilities. The hunter ones in t
 Point Claude at the SavedVariables file:
 
 ```
-/Applications/World of Warcraft/_forever_/WTF/Account/84702676#1/SavedVariables/ForeverOptimizerDB.lua
+/Applications/World of Warcraft/_forever_/WTF/Account/84702676#1/SavedVariables/ForeverOptimizer.lua
 ```
 
 It answers the open questions: combat log restricted or not, secret values, map pins, QuestieDB loaded, and any errors from `/fo errors`.

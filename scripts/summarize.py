@@ -2,7 +2,7 @@
 """Print a launch-day summary of a ForeverOptimizer SavedVariables file converted to JSON.
 
 Usage:
-  scripts/savedvars_to_json.py ForeverOptimizerDB.lua --var ForeverOptimizerDB -o db.json
+  scripts/savedvars_to_json.py ForeverOptimizer.lua --var ForeverOptimizerDB -o db.json
   scripts/summarize.py db.json
 
 Shows: addon version, the last /fo verify run (fails and info lines), saved Lua errors,

@@ -47,7 +47,7 @@ powershell -ExecutionPolicy Bypass -Command "irm https://raw.githubusercontent.c
 - **Errors in game.** The addon catches its own Lua errors. Type `/fo errors` and send a screenshot, or send the saved-variables file after you log out:
 
   ```
-  C:\Program Files (x86)\World of Warcraft\_forever_\WTF\Account\<YOUR ACCOUNT>\SavedVariables\ForeverOptimizerDB.lua
+  C:\Program Files (x86)\World of Warcraft\_forever_\WTF\Account\<YOUR ACCOUNT>\SavedVariables\ForeverOptimizer.lua
   ```
 
 ## Send your data to Mike
@@ -62,4 +62,4 @@ It puts `ForeverOptimizer-data-<date>.zip` on your Desktop. Send that file. It h
 
 ## Remove it
 
-Delete the `ForeverOptimizer` and `QuestieDB` folders from `Interface\AddOns`. Your recorded data stays in the `WTF` folder until you delete `ForeverOptimizerDB.lua` as well.
+Delete the `ForeverOptimizer` and `QuestieDB` folders from `Interface\AddOns`. Your recorded data stays in the `WTF` folder until you delete `ForeverOptimizer.lua` as well.

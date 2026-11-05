@@ -39,9 +39,9 @@ try {
     Write-Host '    $env:WOW_FOREVER = "D:\Games\World of Warcraft\_forever_"' -ForegroundColor Yellow
     return
   }
-  $files = @(Get-ChildItem -Path (Join-Path $Game 'WTF\Account\*\SavedVariables\ForeverOptimizerDB.lua') -ErrorAction SilentlyContinue)
+  $files = @(Get-ChildItem -Path (Join-Path $Game 'WTF\Account\*\SavedVariables\ForeverOptimizer.lua') -ErrorAction SilentlyContinue)
   if ($files.Count -eq 0) {
-    Write-Host "  No ForeverOptimizerDB.lua under $Game\WTF\Account. Log out of the game once so it writes the file, then run this again." -ForegroundColor Red
+    Write-Host "  No ForeverOptimizer.lua under $Game\WTF\Account. Log out of the game once so it writes the file, then run this again." -ForegroundColor Red
     return
   }
   $stamp = Get-Date -Format 'yyyyMMdd-HHmm'

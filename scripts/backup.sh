@@ -10,7 +10,7 @@ DEST="${FO_BACKUP_DIR:-$HOME/Backups/ForeverOptimizer}"
 STAMP="$(date +%Y%m%d-%H%M)"
 mkdir -p "$DEST"
 n=0
-for f in "$GAME"/WTF/Account/*/SavedVariables/ForeverOptimizerDB.lua; do
+for f in "$GAME"/WTF/Account/*/SavedVariables/ForeverOptimizer.lua; do
   [ -f "$f" ] || continue
   acct="$(basename "$(dirname "$(dirname "$f")")")"
   mkdir -p "$DEST/$STAMP"
