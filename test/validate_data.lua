@@ -11,6 +11,21 @@ for _, r in ipairs(report) do
     if not r.warning then errs = errs + 1 end
     print(string.format("%s %s: %s", r.warning and "warn " or "ERROR", r.class, r.line))
 end
+-- Node seed (Data/Nodes.lua): every point on a numbered map, inside 0-1, a known kind
+local nodeNames, nodePts = 0, 0
+for name, node in pairs(FO.Seed.nodes or {}) do
+    nodeNames = nodeNames + 1
+    if node.kind ~= "herb" and node.kind ~= "ore" then errs = errs + 1 print("ERROR node " .. name .. ": kind " .. tostring(node.kind)) end
+    for mapID, pts in pairs(node.maps or {}) do
+        if type(mapID) ~= "number" then errs = errs + 1 print("ERROR node " .. name .. ": map " .. tostring(mapID)) end
+        if #pts % 2 ~= 0 then errs = errs + 1 print("ERROR node " .. name .. " map " .. tostring(mapID) .. ": odd coordinate count") end
+        for i = 1, #pts do if type(pts[i]) ~= "number" or pts[i] < 0 or pts[i] > 1 then errs = errs + 1 print("ERROR node " .. name .. " map " .. tostring(mapID) .. ": bad coordinate " .. tostring(pts[i])) break end end
+        nodePts = nodePts + #pts / 2
+    end
+end
+if nodePts ~= (FO.Seed.nodeCount or 0) then errs = errs + 1 print("ERROR node seed: " .. nodePts .. " points counted, header says " .. tostring(FO.Seed.nodeCount)) end
+if nodePts < 15000 then errs = errs + 1 print("ERROR node seed: only " .. nodePts .. " points") end
+print(string.format("node seed: %d nodes, %d points (%s)", nodeNames, nodePts, tostring(FO.Seed.nodeSource)))
 -- Leveling routes (Data/Routes.lua): every step well formed, class tags valid, quest steps placed
 local KINDS = { A = true, C = true, T = true, GOTO = true, HEARTH = true, TRAIN = true, LEVEL = true, NOTE = true }
 local RACES = { Orc = true, Troll = true, Tauren = true, Scourge = true, Human = true, Dwarf = true, Gnome = true, NightElf = true }

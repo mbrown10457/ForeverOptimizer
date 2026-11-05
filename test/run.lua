@@ -9,7 +9,7 @@ local function outHas(pat) for i = #S.out, 1, -1 do if S.out[i]:find(pat, 1, tru
 local function noErrors(label) check(#S.errors == 0, label .. " (no handler errors)") if #S.errors > 0 then for _, e in ipairs(S.errors) do print("   " .. e) end S.errors = {} end end
 
 local FO, order = S.loadAddon("ForeverOptimizer")
-check(#order == 58, "loaded " .. #order .. " files from TOC")
+check(#order == 59, "loaded " .. #order .. " files from TOC")
 check(#FO.modules >= 26, #FO.modules .. " modules registered")
 check(ForeverOptimizerDB == nil or true, "pre-login")
 
@@ -235,6 +235,35 @@ check(orePin and orePin.data.icon == "icon" and MapM:NodeIcon("Copper Vein", "or
 check(MapM:NodeIcon("Unknown Flower", "herb") == "Interface\\Icons\\Trade_Herbalism", "unknown herb falls back to the generic herb icon")
 firstNodePin:OnMouseEnter() firstNodePin:OnMouseLeave()
 
+-- Node seed: Wowhead spawn points (via GatherLite) under your own sightings
+check(FO.Seed.nodeCount and FO.Seed.nodeCount > 15000 and FO.Seed.nodes["Copper Vein"] and FO.Seed.nodes["Copper Vein"].kind == "ore" and FO.Seed.nodes["Copper Vein"].skill == 1, "node seed loaded: " .. tostring(FO.Seed.nodeCount) .. " points")
+local seedRows = MapM:SeedRows(1434, 5000)
+local seedKinds = {}
+for _, r in ipairs(seedRows) do seedKinds[r.kind] = (seedKinds[r.kind] or 0) + 1 end
+check(#seedRows > 200 and seedKinds.ore and seedKinds.herb and seedRows[1].seed and seedRows[1].icon, "Stranglethorn seed rows: " .. #seedRows .. " (" .. tostring(seedKinds.herb) .. " herb, " .. tostring(seedKinds.ore) .. " ore) with icons")
+S.worldMap.mapID = 1434
+WorldMapFrame:Hide() WorldMapFrame:Show()
+local seedPin, seedPins = nil, 0
+for _, p in ipairs(WorldMapFrame.pins) do if p.data and p.data.seed then seedPins = seedPins + 1 seedPin = seedPin or p end end
+check(seedPins > 200 and seedPin.data.seed and seedPin.data.skill and seedPin.data.icon, "seeded pins drawn on the world map with skill and icon (" .. seedPins .. ")")
+seedPin:OnMouseEnter() seedPin:OnMouseLeave()
+SlashCmdList.FOREVEROPTIMIZER("map seed off")
+WorldMapFrame:Hide() WorldMapFrame:Show()
+seedPins = 0
+for _, p in ipairs(WorldMapFrame.pins) do if p.data and p.data.seed then seedPins = seedPins + 1 end end
+check(seedPins == 0 and MapM.db.settings.seed == false, "map seed off removes them")
+SlashCmdList.FOREVEROPTIMIZER("map seed on") SlashCmdList.FOREVEROPTIMIZER("map seed herb off")
+check(MapM.db.settings.seed == true and MapM.db.settings.seedHerb == false and #MapM:SeedRows(1434, 5000) < #seedRows, "map seed herb off keeps the ores")
+SlashCmdList.FOREVEROPTIMIZER("map seed herb on")
+SlashCmdList.FOREVEROPTIMIZER("map") check(outHas("node seed: ") and outHas("on this map"), "/fo map status reports the seed")
+S.worldMap.mapID = nodeMap
+local savedPos2 = { S.pos.map, S.pos.x, S.pos.y }
+S.pos.map, S.pos.x, S.pos.y = 1434, 0.45, 0.35
+SlashCmdList.FOREVEROPTIMIZER("route herb 5")
+check(outHas("Route on") and outHas("Wowhead spawn"), "/fo route herb plans through seeded herbs where nothing was gathered")
+S.pos.map, S.pos.x, S.pos.y = savedPos2[1], savedPos2[2], savedPos2[3]
+noErrors("node seed")
+
 -- Minimap node icons: the same points, placed by yards from the player
 local MN = FO:GetModule("Dashboard.Minimap")
 check(MN.frame ~= nil and MN.radius == 233.335, "minimap layer built, outdoor zoom 0 radius " .. tostring(MN.radius))
@@ -245,6 +274,13 @@ for _, node in pairs(FEm.db.nodes) do for _, pt in ipairs(node.points) do if pt[
 S.pos.x, S.pos.y = nodeX + 0.01, nodeY        -- 60 yards east of a node (stub maps are 6000 x 4000 yards)
 S.mapUpdate()
 check(MN.mapID == nodeMap and #MN.rows > 0 and MN.shown > 0, "minimap pins placed on the current map (" .. tostring(MN.shown) .. " of " .. #MN.rows .. ")")
+local mnSeeded = 0
+for _, r in ipairs(MN.rows) do if r.seed then mnSeeded = mnSeeded + 1 end end
+check(mnSeeded > 0, "minimap rows include seeded spawn points (" .. mnSeeded .. ")")
+SlashCmdList.FOREVEROPTIMIZER("minimap seed off") S.mapUpdate()
+mnSeeded = 0 for _, r in ipairs(MN.rows) do if r.seed then mnSeeded = mnSeeded + 1 end end
+check(mnSeeded == 0, "minimap seed off drops them")
+SlashCmdList.FOREVEROPTIMIZER("minimap seed on") S.mapUpdate()
 local west
 for _, r in ipairs(MN.rows) do if r.x == nodeX and r.y == nodeY then west = r end end
 check(west and west.sx and west.sx < -17 and west.sx > -19 and math.abs(west.sy) < 0.01, "a node 60 yd west sits 18 px left of centre (" .. tostring(west and west.sx) .. ")")

@@ -16,7 +16,7 @@ local U = FO.Util
 -- ===========================================================================
 local M = FO:NewModule("Dashboard.Map", {
     account = "map",
-    defaults = { settings = { nodes = true, rares = true, spawns = false, coords = true, quests = true, objectives = true, turnins = true, route = true, minSeen = 1, maxPins = 400,
+    defaults = { settings = { nodes = true, rares = true, spawns = false, coords = true, quests = true, objectives = true, turnins = true, route = true, seed = true, seedMax = 1200, minSeen = 1, maxPins = 400,
                              reveal = true, revealTint = true } },
 })
 local print = FO:Printer("Dashboard")
@@ -45,6 +45,8 @@ local ORE_ITEM = {
     ["Dark Iron Deposit"] = "Dark Iron Ore", ["Small Thorium Vein"] = "Thorium Ore", ["Rich Thorium Vein"] = "Thorium Ore",
     ["Hakkari Thorium Vein"] = "Thorium Ore", ["Incendicite Mineral Vein"] = "Incendicite Ore",
     ["Lesser Bloodstone Deposit"] = "Lesser Bloodstone Ore", ["Indurium Mineral Vein"] = "Indurium Ore",
+    ["Fool's Gold Vein"] = "Fool's Gold Dust", ["Greater Moonstone Formation"] = "Greater Moonstone",
+    ["Small Obsidian Chunk"] = "Dark Iron Ore", ["Large Obsidian Chunk"] = "Dark Iron Ore",
 }
 local nameIndex          -- item name -> itemID for trade goods, built once from the seed
 local iconCache = {}     -- node name -> icon (fileID or path) or false
@@ -54,7 +56,8 @@ local function ItemIDByName(name)
         nameIndex = {}
         local items = FO.Seed and FO.Seed.items or {}
         for id, row in pairs(items) do
-            if row[8] == 7 and type(row[1]) == "string" then nameIndex[row[1]] = id end   -- class 7: trade goods
+            -- trade goods (class 7) win a name clash; Forever's new herbs and ores are class 15, so every class is indexed
+            if type(row[1]) == "string" and (row[8] == 7 or nameIndex[row[1]] == nil) then nameIndex[row[1]] = id end
         end
     end
     return nameIndex[name]
@@ -112,12 +115,13 @@ function FOMapPinMixin:OnAcquired(data)
     end
     local size = 10 + math.min(6, (data.n or 1) - 1)   -- seen more often = slightly bigger
     if data.icon then size = 16 + math.min(4, (data.n or 1) - 1) end
+    if data.seed then size = 13 end                      -- seeded spawn points: smaller and dimmer than your own sightings
     if data.num then size = 18 end
     if self.SetSize then self:SetSize(size, size) end
     if self.Num then
         if data.num then self.Num:SetText(tostring(data.num)) self.Num:Show() else self.Num:SetText("") self.Num:Hide() end
     end
-    if self.SetAlpha then self:SetAlpha(data.kind == "spawn" and 0.7 or 1) end
+    if self.SetAlpha then self:SetAlpha(data.seed and 0.6 or data.kind == "spawn" and 0.7 or 1) end
     self:SetPosition(data.x, data.y)
 end
 
@@ -129,7 +133,8 @@ function FOMapPinMixin:OnMouseEnter()
     GameTooltip:AddLine(d.name or "?")
     local style = STYLE[d.kind] or STYLE.node
     GameTooltip:AddLine(string.format("%s  %.1f, %.1f", style.label, d.x * 100, d.y * 100), 0.8, 0.8, 0.8)
-    if d.n and not d.num then GameTooltip:AddLine(string.format("seen %d time%s", d.n, d.n == 1 and "" or "s"), 0.8, 0.8, 0.8) end
+    if d.seed then GameTooltip:AddLine(string.format("spawn point from Wowhead (via GatherLite)%s", d.skill and (", skill " .. d.skill) or ""), 0.8, 0.8, 0.8)
+    elseif d.n and not d.num then GameTooltip:AddLine(string.format("seen %d time%s", d.n, d.n == 1 and "" or "s"), 0.8, 0.8, 0.8) end
     if d.last then GameTooltip:AddLine("last " .. U.FormatDuration(math.max(0, time() - d.last)) .. " ago", 0.8, 0.8, 0.8) end
     if d.extra then GameTooltip:AddLine(d.extra, 1, 0.82, 0) end
     GameTooltip:Show()
@@ -218,7 +223,44 @@ function M:Layers(mapID)
     end
     table.sort(rows, function(a, b) return (a.n or 1) > (b.n or 1) end)
     for i = #rows, (s.maxPins or 400) + 1, -1 do rows[i] = nil end
+    if s.nodes and s.seed ~= false then
+        for _, r in ipairs(M:SeedRows(mapID, s.seedMax or 1200)) do rows[#rows + 1] = r end
+    end
     return rows
+end
+
+-- Seeded spawn points (Data/Nodes.lua, Wowhead via GatherLite) on a map, minus any within
+-- ~15 yards of a node you have gathered yourself, which the recorded pin already shows.
+function M:SeedRows(mapID, limit)
+    local out = {}
+    local N = FO.Seed and FO.Seed.nodes
+    if not (N and mapID) then return out end
+    local s = self.db.settings
+    local FE = FO:GetModule("Grinding.FarmingEfficiency")
+    local own = {}
+    if FE and FE.db then
+        for name, node in pairs(FE.db.nodes or {}) do
+            for _, p in ipairs(node.points or {}) do if p[1] == mapID then own[#own + 1] = { name, p[2], p[3] } end end
+        end
+    end
+    local function recorded(name, x, y)
+        for _, o in ipairs(own) do if o[1] == name and math.abs(o[2] - x) < 0.004 and math.abs(o[3] - y) < 0.004 then return true end end
+        return false
+    end
+    for name, node in pairs(N) do
+        local pts = node.maps and node.maps[mapID]
+        if pts and ((node.kind == "herb" and s.seedHerb ~= false) or (node.kind == "ore" and s.seedOre ~= false)) then
+            local icon = self:NodeIcon(name, node.kind)
+            for i = 1, #pts - 1, 2 do
+                local x, y = pts[i], pts[i + 1]
+                if not recorded(name, x, y) then
+                    out[#out + 1] = { kind = node.kind, name = name, x = x, y = y, n = 1, seed = true, skill = node.skill, icon = icon }
+                    if limit and #out >= limit then return out end
+                end
+            end
+        end
+    end
+    return out
 end
 
 if FOMapDataProviderMixin then
@@ -521,7 +563,7 @@ M.commands = {
         end,
     },
     map = {
-        help = "World map overlay: status | reveal|tint on|off (unexplored art) | nodes|rares|spawns|quests|objectives|turnins|coords on|off | minseen <n> | refresh",
+        help = "World map overlay: status | reveal|tint on|off (unexplored art) | nodes|rares|spawns|quests|objectives|turnins|coords on|off | seed [herb|ore] on|off (Wowhead spawn points) | minseen <n> | refresh",
         fn = function(self, arg)
             local s = self.db.settings
             local sub, rest = U.SplitCmd(arg or "")
@@ -531,6 +573,15 @@ M.commands = {
                 self:RefreshReveal()
                 if sub == "reveal" then print("unexplored map art %s", s.reveal and "|cff80ff80shown|r" or "|cffff6060hidden|r")
                 else print("unexplored tint %s", s.revealTint and "|cff80ff80on|r (darker)" or "|cffff6060off|r (same as explored)") end
+                return
+            elseif sub == "seed" then
+                local which = rest:match("^(%a+)") or ""
+                local key = which == "herb" and "seedHerb" or which == "ore" and "seedOre" or "seed"
+                local val = rest:match("(%a+)$")
+                if val == "on" or val == "off" then s[key] = (val == "on") elseif key ~= "seed" then s[key] = not (s[key] ~= false) else s.seed = not (s.seed ~= false) end
+                self.dirty = true
+                print("seeded %s spawn points %s on the world map (%d points in the seed from %s)", key == "seed" and "node" or which, s[key] ~= false and "|cff80ff80shown|r" or "|cffff6060hidden|r",
+                    FO.Seed and FO.Seed.nodeCount or 0, tostring(FO.Seed and FO.Seed.nodeSource or "?"))
                 return
             elseif sub == "nodes" or sub == "rares" or sub == "spawns" or sub == "coords" or sub == "quests" or sub == "objectives" or sub == "turnins" then
                 if rest == "on" or rest == "off" then s[sub] = (rest == "on") else s[sub] = not s[sub] end
@@ -550,9 +601,11 @@ M.commands = {
             end
             local mapID = U.PlayerPosition()
             local rows = mapID and self:Layers(mapID) or {}
-            local kinds = {}
-            for _, r in ipairs(rows) do kinds[r.kind] = (kinds[r.kind] or 0) + 1 end
+            local kinds, seeded = {}, 0
+            for _, r in ipairs(rows) do if r.seed then seeded = seeded + 1 else kinds[r.kind] = (kinds[r.kind] or 0) + 1 end end
             print("world map overlay: pins %s, coords %s", self.available and "|cff80ff80available|r" or ("|cffff6060unavailable|r (" .. tostring(self.reason) .. ")"), s.coords and "on" or "off")
+            print("node seed: %s, %d spawn points (%s); %d on this map%s%s", s.seed ~= false and "|cff80ff80shown|r" or "|cffff6060hidden|r", FO.Seed and FO.Seed.nodeCount or 0,
+                tostring(FO.Seed and FO.Seed.nodeSource or "none"), seeded, s.seedHerb == false and ", herbs off" or "", s.seedOre == false and ", ores off" or "")
             print("layers: nodes %s, rares %s, spawns %s, quests %s, objectives %s, turnins %s, min seen %d", s.nodes and "on" or "off", s.rares and "on" or "off", s.spawns and "on" or "off", s.quests and "on" or "off", s.objectives and "on" or "off", s.turnins and "on" or "off", s.minSeen or 1)
             if not (FO.QuestDB and FO.QuestDB.available) then print("quest layers need QuestieDB: %s", tostring(FO.QuestDB and FO.QuestDB.reason)) end
             local nMaps = 0

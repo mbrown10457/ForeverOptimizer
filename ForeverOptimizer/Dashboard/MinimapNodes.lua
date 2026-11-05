@@ -11,7 +11,7 @@ local print = FO:Printer("Dashboard")
 -- ===========================================================================
 local MN = FO:NewModule("Dashboard.Minimap", {
     account = "minimap",
-    defaults = { settings = { enabled = true, herb = true, ore = true, size = 14, minSeen = 1, maxPins = 80 } },
+    defaults = { settings = { enabled = true, herb = true, ore = true, seed = true, size = 14, minSeen = 1, maxPins = 80 } },
 })
 FO.MinimapNodes = MN
 
@@ -69,8 +69,12 @@ local function Tooltip(pin)
     local r = pin.row
     GameTooltip:SetOwner(pin, "ANCHOR_LEFT")
     GameTooltip:AddLine(r.name)
-    GameTooltip:AddLine(string.format("%s, seen %d time%s%s", r.kind == "herb" and "Herb" or "Ore", r.n or 1, (r.n or 1) == 1 and "" or "s",
-        r.last and (", last " .. U.FormatDuration(time() - r.last) .. " ago") or ""), 0.8, 0.8, 0.8)
+    if r.seed then
+        GameTooltip:AddLine(string.format("%s spawn point from Wowhead%s", r.kind == "herb" and "Herb" or "Ore", r.skill and (", skill " .. r.skill) or ""), 0.8, 0.8, 0.8)
+    else
+        GameTooltip:AddLine(string.format("%s, seen %d time%s%s", r.kind == "herb" and "Herb" or "Ore", r.n or 1, (r.n or 1) == 1 and "" or "s",
+            r.last and (", last " .. U.FormatDuration(time() - r.last) .. " ago") or ""), 0.8, 0.8, 0.8)
+    end
     if pin.yards then GameTooltip:AddLine(string.format("%.0f yd away", pin.yards), 0.6, 0.6, 0.6) end
     GameTooltip:Show()
 end
@@ -126,6 +130,15 @@ function MN:Rebuild()
             end
         end
     end
+    -- seeded spawn points (Wowhead via GatherLite), dimmer, with the same icons
+    if s.seed ~= false and M and M.SeedRows then
+        for _, r in ipairs(M:SeedRows(mapID, 3000)) do
+            if (r.kind == "herb" and s.herb ~= false) or (r.kind == "ore" and s.ore ~= false) then
+                local wx, wy = WorldPos(mapID, r.x, r.y)
+                rows[#rows + 1] = { name = r.name, kind = r.kind, x = r.x, y = r.y, seed = true, skill = r.skill, wx = wx, wy = wy, icon = r.icon }
+            end
+        end
+    end
     self.rows = rows
     return rows
 end
@@ -169,6 +182,7 @@ function MN:Update()
         pin.sx, pin.sy = r.sx, r.sy
         pin:SetSize(s.size or 14, s.size or 14)
         pin.tex:SetTexture(r.icon or (r.kind == "herb" and "Interface\\Icons\\Trade_Herbalism" or "Interface\\Icons\\Trade_Mining"))
+        if pin.SetAlpha then pin:SetAlpha(r.seed and 0.65 or 1) end
         pin:ClearAllPoints()
         pin:SetPoint("CENTER", Minimap, "CENTER", r.sx, r.sy)
         pin:Show()
@@ -196,22 +210,25 @@ MN.messages = {
 }
 
 MN.commands = {
-    minimap = { help = "node icons on the minimap: status | on | off | herb on|off | ore on|off | size <8-32> | minseen <n>", fn = function(self, arg)
+    minimap = { help = "node icons on the minimap: status | on | off | herb on|off | ore on|off | seed on|off | size <8-32> | minseen <n>", fn = function(self, arg)
         local s = self.db.settings
         local sub, rest = U.SplitCmd(arg or "")
         if sub == "" or sub == "status" then
-            print("minimap nodes: %s, herbs %s, ores %s, size %d, min seen %d; %d of %d on this map in view, zoom radius %.0f yd%s",
-                s.enabled == false and "off" or "on", s.herb == false and "off" or "on", s.ore == false and "off" or "on", s.size or 14, s.minSeen or 1,
-                self.shown or 0, #(self.rows or {}), self.radius or radius, self.inside and " (indoors)" or "")
+            local seeded = 0
+            for _, r in ipairs(self.rows or {}) do if r.seed then seeded = seeded + 1 end end
+            print("minimap nodes: %s, herbs %s, ores %s, seed %s, size %d, min seen %d; %d of %d on this map in view (%d seeded), zoom radius %.0f yd%s",
+                s.enabled == false and "off" or "on", s.herb == false and "off" or "on", s.ore == false and "off" or "on", s.seed == false and "off" or "on", s.size or 14, s.minSeen or 1,
+                self.shown or 0, #(self.rows or {}), seeded, self.radius or radius, self.inside and " (indoors)" or "")
         elseif sub == "on" then s.enabled = true self.dirty = true print("minimap nodes on.")
         elseif sub == "off" then s.enabled = false self:HideAll() print("minimap nodes off.")
         elseif sub == "herb" or sub == "ore" then s[sub] = rest ~= "off" self.dirty = true print("%s nodes %s on the minimap.", sub, s[sub] and "shown" or "hidden")
+        elseif sub == "seed" then s.seed = rest ~= "off" self.dirty = true print("seeded spawn points %s on the minimap.", s.seed and "shown" or "hidden")
         elseif sub == "size" then
             local n = tonumber(rest)
             if n and n >= 8 and n <= 32 then s.size = math.floor(n) print("minimap node icons %d px.", s.size) else print("size <8-32>") end
         elseif sub == "minseen" then
             local n = tonumber(rest)
             if n and n >= 1 then s.minSeen = math.floor(n) self.dirty = true print("showing nodes seen at least %d time%s.", s.minSeen, s.minSeen == 1 and "" or "s") else print("minseen <n>") end
-        else print("minimap: status | on | off | herb on|off | ore on|off | size <n> | minseen <n>") end
+        else print("minimap: status | on | off | herb on|off | ore on|off | seed on|off | size <n> | minseen <n>") end
     end },
 }

@@ -258,7 +258,14 @@ function FE:Route(kind, maxStops)
             end
         end
     end
-    if #pts == 0 then return nil, "no nodes recorded on this map" end
+    -- seeded spawn points (Data/Nodes.lua) fill in where you have not gathered yet
+    local M = FO:GetModule("Dashboard.Map")
+    if M and M.SeedRows and self.db.settings.seedRoute ~= false then
+        for _, r in ipairs(M:SeedRows(mapID, 3000)) do
+            if not kind or r.kind == kind then pts[#pts + 1] = { name = r.name, x = r.x, y = r.y, n = 0, seed = true } end
+        end
+    end
+    if #pts == 0 then return nil, "no nodes recorded or seeded on this map" end
     local route, cx, cy, total = {}, x, y, 0
     while #pts > 0 and #route < (maxStops or 15) do
         local bi, bd
@@ -320,14 +327,14 @@ FE.commands = {
         end
         if not any then print("  none yet. Gather something; nodes record on successful casts.") end
     end },
-    route = { help = "[herb|ore] [stops] — greedy route through known nodes, sets first waypoint", fn = function(self, arg)
+    route = { help = "[herb|ore] [stops] — greedy route through known and seeded nodes, sets first waypoint", fn = function(self, arg)
         local kind, stops = U.SplitCmd(arg)
         kind = (kind == "herb" or kind == "ore") and kind or nil
         local route, err, total, mapID = self:Route(kind, tonumber(stops) or 12)
         if not route then print("route: %s", err) return end
         print("Route on %s, %d stops, ~%.0f yards:", U.MapName(mapID), #route, total)
         for i, p in ipairs(route) do
-            print("  %2d. %-22s (%.1f, %.1f)  +%.0fy  seen x%d", i, U.Trunc(p.name, 22), p.x * 100, p.y * 100, p.leg, p.n)
+            print("  %2d. %-22s (%.1f, %.1f)  +%.0fy  %s", i, U.Trunc(p.name, 22), p.x * 100, p.y * 100, p.leg, p.seed and "Wowhead spawn" or ("seen x" .. p.n))
         end
         if SetWaypoint(mapID, route[1].x, route[1].y) then print("waypoint set to stop 1.") end
     end },
