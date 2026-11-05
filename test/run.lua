@@ -888,6 +888,16 @@ SlashCmdList.FOREVEROPTIMIZER("tts voice zz") check(outHas("no voice matches 'zz
 S.tts.many = nil
 noErrors("voice list")
 
+-- Arrow undo after a stray right-click
+local AR = FO:GetModule("Dashboard.Arrow")
+AR:Set(S.pos.map, 0.5, 0.5, "test target", nil, 0)
+AR:Clear()
+check(AR.target == nil and AR.lastTarget and AR.lastTarget.label == "test target", "clearing the arrow remembers the target")
+SlashCmdList.FOREVEROPTIMIZER("arrow back")
+check(AR.target and AR.target.label == "test target" and AR.target.arrive == 0, "/fo arrow back restores it with its arrival radius")
+AR:Clear()
+noErrors("arrow back")
+
 -- Module disable is honoured on the next load
 ForeverOptimizerDB.account.modules.disabled["Classes.Warlock"] = true
 S.frames, S.registered, S.tickers, S.timers = nil, {}, {}, {}

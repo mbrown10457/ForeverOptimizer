@@ -116,13 +116,13 @@ local function Build()
         local p, _, rp, x, y = self:GetPoint()
         A.db.point = { p, rp, x, y }
     end)
-    frame:SetScript("OnMouseUp", function(self, btn) if btn == "RightButton" then A:Clear() print("arrow cleared.") end end)
+    frame:SetScript("OnMouseUp", function(self, btn) if btn == "RightButton" then A:Clear() print("arrow cleared. /fo arrow back restores it.") end end)
     frame:SetScript("OnEnter", function(self)
         if not (GameTooltip and A.target) then return end
         GameTooltip:SetOwner(self, "ANCHOR_BOTTOM")
         GameTooltip:AddLine(A.target.label or "waypoint")
         GameTooltip:AddLine(string.format("%s %.1f, %.1f", U.MapName(A.target.mapID), A.target.x * 100, A.target.y * 100), 0.8, 0.8, 0.8)
-        GameTooltip:AddLine("drag to move, right-click to clear", 0.6, 0.6, 0.6)
+        GameTooltip:AddLine("drag to move, right-click to clear (/fo arrow back undoes)", 0.6, 0.6, 0.6)
         GameTooltip:Show()
     end)
     frame:SetScript("OnLeave", function() if GameTooltip then GameTooltip:Hide() end end)
@@ -163,8 +163,15 @@ function A:Set(mapID, x, y, label, onArrive, arrive)
 end
 
 function A:Clear()
+    if self.target then self.lastTarget = self.target end   -- /fo arrow back restores it
     self.target, self.yards, self.heading = nil, nil, nil
     if frame then frame:Hide() end
+end
+
+function A:Back()
+    local t = self.lastTarget
+    if not t then return false end
+    return self:Set(t.mapID, t.x, t.y, t.label, t.onArrive, t.arrive)
 end
 
 function A:Active() return self.target ~= nil end
@@ -172,14 +179,16 @@ function A:Active() return self.target ~= nil end
 function A:OnEnable() Build() end
 
 A.commands = {
-    arrow = { help = "<x> <y> [label] | clear | on | off | lock | arrive <yards> | scale <n> — direction arrow to the current target", fn = function(self, arg)
+    arrow = { help = "<x> <y> [label] | clear | back | on | off | lock | arrive <yards> | scale <n> — direction arrow to the current target", fn = function(self, arg)
         local sub, rest = U.SplitCmd(arg or "")
         if sub == "" then
             local t = self.target
-            if not t then print("arrow: no target. /fo next, /fo route, /fo guide or /fo arrow <x> <y> set one.") return end
+            if not t then print("arrow: no target. /fo arrow back restores the last one; /fo next, /fo route, /fo guide or /fo arrow <x> <y> set one.") return end
             print("arrow: %s on %s (%.1f, %.1f)%s%s", t.label, U.MapName(t.mapID), t.x * 100, t.y * 100,
                 self.yards and string.format(", %.0f yd", self.yards) or "", self.db.enabled == false and " [hidden: /fo arrow on]" or "")
-        elseif sub == "clear" then self:Clear() print("arrow cleared.")
+        elseif sub == "clear" then self:Clear() print("arrow cleared. /fo arrow back restores it.")
+        elseif sub == "back" then
+            if self:Back() then print("arrow back on %s.", self.target.label) else print("arrow: nothing to restore.") end
         elseif sub == "on" then self.db.enabled = true if self.target and frame then frame:Show() end print("arrow on.")
         elseif sub == "off" then self.db.enabled = false if frame then frame:Hide() end print("arrow hidden. Targets still update; /fo arrow on brings it back.")
         elseif sub == "lock" then self.db.locked = not self.db.locked print("arrow %s", self.db.locked and "locked" or "unlocked")
