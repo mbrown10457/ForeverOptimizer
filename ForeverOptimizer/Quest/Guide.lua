@@ -169,6 +169,7 @@ end
 function G:PointArrow(force)
     local A = FO.Arrow
     if not (A and self.db.arrow) then return end
+    if FO.Router and FO.Router.following then return end   -- /fo route follow owns the arrow until stopped
     local step, i = self.current, self.index
     if not step then if lastArrowKey then A:Clear() lastArrowKey = nil end return end
     local m, x, y, label = self:Location(step)

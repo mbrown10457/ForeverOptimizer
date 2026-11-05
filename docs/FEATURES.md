@@ -1,4 +1,4 @@
-# ForeverOptimizer add-ins (v0.12.0)
+# ForeverOptimizer add-ins (v0.13.0)
 
 Generated from `docs/addins.html` by `scripts/build_features.js`. The browsable version with filters and the architecture diagram is at https://mbrown10457.github.io/ForeverOptimizer/addins.html.
 
@@ -38,7 +38,7 @@ Status: **ready** = built and exercised by the offline harness; **live check** =
 |---|---|---|---|---|
 | Quest tracker | ready | Records where you accepted each quest, where each objective ticked and where you turned it in. Those positions feed the route planner and the map. | `/fo quests`, `/fo quest`, `/fo autotrack` | `Quest/QuestTracker.lua` |
 | Quest efficiency | ready | Drop odds per objective from your kills with a 95% Wilson interval, kills and minutes to finish, and quest XP per hour against reward size. Rates are kept per objective for alts and friends. | `/fo drops`, `/fo questxp` | `Quest/QuestEfficiency.lua` |
-| Route planner | ready | Waypoint to the next known quest location and a nearest-neighbour route through every target on the map. Blizzard waypoint, then your recording, then the database. | `/fo next`, `/fo route` | `Quest/QuestRoutePlanner.lua` |
+| Quest router | ready | Turns the quest log into an ordered loop on the current map: unfinished objectives' spawn points and the spots where they ticked for you grouped into patches, patches shared by several quests merged into one stop, turn-ins placed only after their objectives and merged per finisher, pickups folded in on request. Nearest-neighbour under those rules, then 2-opt. Follow mode replans on every quest log change and walks the arrow through the loop; numbered stops on the world map and a Route HUD tab. Group, dungeon and raid quests stay out unless asked. *Gap: Patches come from spawn data, not live mobs; escort and event objectives route to their trigger point when the database has one.* | `/fo next`, `/fo route` | `Quest/QuestRoutePlanner.lua`; HUD: Route |
 | Quest database adapter | live check | Reads QuestieDB live for quest facts, prerequisites, chains, race and class rules and spawn positions. Lists what you can pick up on this map, nearest first. *Gap: Optional dependency; without it the quest modules use recorded positions and the baked route data.* | `/fo nearby`, `/fo questinfo`, `/fo qdb` | `Quest/QuestDatabase.lua`; HUD: Map pins |
 | Leveling guide | ready | Step-by-step route window: accept, do and turn in this quest, go here, set hearth, train, reach a level. Advances from the quest log and the arrow's arrival, hides other classes' and races' steps, saves progress per character. Routes are text specs baked with QuestieDB names and coordinates (scripts/build_routes.py), with a shared Barrens section spliced in. Ships Orc & Troll 1-20 and Tauren 1-20 with the class quests for all six Horde classes: hunter pet, warlock Voidwalker, shaman totems, warrior Defensive Stance, priest Hex of Weakness, druid Bear Form and Cure Poison. *Gap: Step order is a first draft from the database, not a measured run.* | `/fo guide` | `Quest/Guide.lua`; HUD: Guide |
 
@@ -90,7 +90,7 @@ Status: **ready** = built and exercised by the offline harness; **live check** =
 | Collect and summarize | ready | After a session, zips the saved file and the game log; the Mac side converts to JSON and prints verify results, errors, sessions, notes, checklist and runes. |  | `scripts/collect.*, scripts/summarize.py` |
 | SQLite export | ready | Loads the saved file into SQLite tables for offline analysis in any tool. |  | `scripts/fo_sqlite.py, scripts/savedvars_to_json.py` |
 | Nightly backup | ready | launchd agent copies the saved files nightly and at login, keeps 30 days. |  | `scripts/backup.sh, scripts/backup-install.sh` |
-| Test harness | ready | A fake WoW client in Lua: frames, events, combat log, spellbook, units, chat capture. Every module is loaded, every command smoke-run, 244 checks. |  | `test/run.lua, test/wowstub.lua` |
+| Test harness | ready | A fake WoW client in Lua: frames, events, combat log, spellbook, units, chat capture. Every module is loaded, every command smoke-run, 262 checks. |  | `test/run.lua, test/wowstub.lua` |
 | CI, releases, seed updates | ready | Syntax check and harness on every push, zip release on tag, a daily job that rebuilds the item and spell seeds when the client build changes and opens an issue if validation fails. |  | `.github/workflows/*.yml` |
 | HUD mockup generator | ready | Drives the harness, dumps every tab, button and command output, and renders the mockup page on GitHub Pages from real addon text. |  | `scripts/mock/` |
 

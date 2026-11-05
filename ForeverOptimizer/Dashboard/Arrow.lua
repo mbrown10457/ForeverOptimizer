@@ -81,7 +81,8 @@ function A:Update()
         tex:SetVertexColor(0.6, 0.6, 0.6)
     end
     distFS:SetText(string.format("%s%.0f yd", approx and "~" or "", yards))
-    if yards <= (self.db.arrive or 15) then self:Arrived() end
+    local arrive = t.arrive or self.db.arrive or 15
+    if arrive > 0 and yards <= arrive then self:Arrived() end
 end
 
 function A:Arrived()
@@ -146,13 +147,14 @@ local function Build()
     frame:Hide()
 end
 
--- x, y accept either 0-1 or 0-100. onArrive(target) replaces the default "arrived" print.
-function A:Set(mapID, x, y, label, onArrive)
+-- x, y accept either 0-1 or 0-100. onArrive(target) replaces the default "arrived" print;
+-- arrive overrides the arrival radius for this target (0 = never arrives, just points).
+function A:Set(mapID, x, y, label, onArrive, arrive)
     mapID, x, y = U.Num(mapID), U.Num(x), U.Num(y)
     if not (mapID and x and y) then return false end
     if x > 1 or y > 1 then x, y = x / 100, y / 100 end
     Build()
-    self.target = { mapID = mapID, x = x, y = y, label = label or "waypoint", onArrive = onArrive }
+    self.target = { mapID = mapID, x = x, y = y, label = label or "waypoint", onArrive = onArrive, arrive = U.Num(arrive) }
     labelFS:SetText(U.Trunc(self.target.label, 26))
     distFS:SetText("")
     if self.db.enabled ~= false then frame:Show() end

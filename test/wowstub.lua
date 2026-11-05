@@ -327,6 +327,7 @@ C_QuestLog = {
     AddQuestWatch = function() end,
     IsComplete = function(id) return S.completeInLog and S.completeInLog[id] == true end,
     IsQuestFlaggedCompleted = function(id) return S.qdb.completed[id] == true end,
+    GetQuestTagInfo = function(id) return S.questTags and S.questTags[id] or nil end,
 }
 function UnitRace() return "Orc", "Orc", 2 end
 

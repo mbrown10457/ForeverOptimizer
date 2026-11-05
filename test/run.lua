@@ -464,8 +464,52 @@ WorldMapFrame:Show()
 local kinds = {} for _, p in ipairs(WorldMapFrame.pins) do if p.data then kinds[p.data.kind] = (kinds[p.data.kind] or 0) + 1 end end
 check((kinds.quest or 0) == 1 and (kinds.objective or 0) >= 4, "map shows quest giver and objective pins (quest " .. tostring(kinds.quest) .. ", objective " .. tostring(kinds.objective) .. ")")
 WorldMapFrame:Hide()
-SlashCmdList.FOREVEROPTIMIZER("route all") check(outHas("pick up: Welcome to the Jungle"), "/fo route all includes pickups")
+SlashCmdList.FOREVEROPTIMIZER("route all") check(outHas("Welcome to the Jungle from Nimboya"), "/fo route all includes pickups")
 noErrors("quest database")
+
+-- Quest router: objective patches, precedence, 2-opt, follow mode, map pins
+local RT = FO.Router
+local plan, perr = RT:Plan()
+check(plan ~= nil, "router plans a loop (" .. tostring(perr) .. ")")
+local function idx(kind, qid) for i, st in ipairs(plan.stops) do if st.kind == kind and (not qid or st.quests[qid]) then return i end end end
+check(#plan.stops == 4 and idx("objective", 101) and idx("objective", 102) and idx("turnin", 101) and idx("turnin", 102),
+      "two objective patches and two turn-ins (" .. #plan.stops .. " stops)")
+check(idx("turnin", 101) > idx("objective", 101) and idx("turnin", 102) > idx("objective", 102), "turn-ins come after their objective patches")
+local ears = plan.stops[idx("objective", 101)]
+check(ears.recorded == 1 and ears.label:find("x9", 1, true), "patch where the objective ticked for you wins and shows kills left (" .. ears.label .. ")")
+check(plan.stops[1].leg == 0 and plan.total > 1500 and plan.total < 1900, string.format("nearest-first order with legs (%.0f yd)", plan.total))
+check(plan.stops[idx("objective", 102)].label:find("Crystal", 1, true) ~= nil, "object objective matched to its spawn (" .. plan.stops[idx("objective", 102)].label .. ")")
+S.worldMap.mapID = S.pos.map WorldMapFrame:Show()
+local routePins = 0 for _, p in ipairs(WorldMapFrame.pins) do if p.data and p.data.kind == "route" then routePins = routePins + 1 end end
+check(routePins == 4, "map shows numbered route stops (" .. routePins .. ")")
+WorldMapFrame:Hide()
+SlashCmdList.FOREVEROPTIMIZER("route follow")
+-- stop 1 is the patch under the player's feet: the arrow arrives at once and stays on it as "here:"
+check(RT.following and FO.Arrow.target and FO.Arrow.target.label:sub(1, 6) == "here: " and FO.Arrow.target.arrive == 0 and outHas("at stop 1:"),
+      "follow mode arrives at stop 1 and holds the patch (" .. tostring(FO.Arrow.target and FO.Arrow.target.label) .. ")")
+local firstKey = RT.current.key
+S.quests[2].objectives[1].finished = true S.quests[2].objectives[1].numFulfilled = 10
+S.completeInLog = { [102] = true }
+S.fire("QUEST_LOG_UPDATE") S.advance(1)
+check(#RT.plan.stops == 3 and not idx("objective", 102) == false, "replan drops the finished objective patch (" .. #RT.plan.stops .. " stops)")
+local hasCrystal = false for _, st in ipairs(RT.plan.stops) do if st.kind == "objective" and st.quests[102] then hasCrystal = true end end
+check(not hasCrystal, "completed quest keeps only its turn-in")
+S.questTags = { [101] = { tagID = 81 } }
+S.fire("QUEST_LOG_UPDATE") S.advance(1)
+check(#RT.plan.stops == 1 and #RT.plan.skipped == 1 and RT.plan.skipped[1].why == "dungeon", "dungeon quest leaves the loop (" .. tostring(RT.plan.skipped[1] and RT.plan.skipped[1].why) .. ")")
+SlashCmdList.FOREVEROPTIMIZER("route group") S.flush()
+check(#RT.plan.stops == 3 and outHas("join the route"), "/fo route group brings it back")
+SlashCmdList.FOREVEROPTIMIZER("route skip")
+check(RT.current and RT.current.key ~= firstKey, "/fo route skip moves to the next stop")
+SlashCmdList.FOREVEROPTIMIZER("route stop")
+check(not RT.following and FO.Arrow.target == nil, "/fo route stop clears the arrow")
+S.questTags = nil S.completeInLog = nil
+S.quests[2].objectives[1].finished = false S.quests[2].objectives[1].numFulfilled = 0
+QT.db.quests[102].objectives[1].points = {}   -- the fake tick above recorded a point under the player; later arrow tests expect the database spot
+SlashCmdList.FOREVEROPTIMIZER("route group")
+local lines = RT:Lines()
+check(#lines >= 2 and lines[1]:find("stops", 1, true), "Route HUD tab lists the plan")
+noErrors("quest router")
 
 -- Checklist, notes, alerts, bindings
 local CLk = FO:GetModule("Core.Checklist")

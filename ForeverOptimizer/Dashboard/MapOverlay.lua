@@ -16,7 +16,7 @@ local U = FO.Util
 -- ===========================================================================
 local M = FO:NewModule("Dashboard.Map", {
     account = "map",
-    defaults = { settings = { nodes = true, rares = true, spawns = false, coords = true, quests = true, objectives = true, turnins = true, minSeen = 1, maxPins = 400,
+    defaults = { settings = { nodes = true, rares = true, spawns = false, coords = true, quests = true, objectives = true, turnins = true, route = true, minSeen = 1, maxPins = 400,
                              reveal = true, revealTint = true } },
 })
 local print = FO:Printer("Dashboard")
@@ -31,6 +31,7 @@ local STYLE = {
     quest = { tex = "Interface\\GossipFrame\\AvailableQuestIcon", label = "Quest available" },
     objective = { tex = "Interface\\GossipFrame\\IncompleteQuestIcon", label = "Objective" },
     turnin = { tex = "Interface\\GossipFrame\\ActiveQuestIcon", label = "Turn in" },
+    route = { tex = "Interface\\COMMON\\Indicator-Yellow", label = "Route stop" },
 }
 
 -- ---------------------------------------------------------------------------
@@ -41,6 +42,10 @@ FOMapPinMixin = CreateFromMixins and MapCanvasPinMixin and CreateFromMixins(MapC
 function FOMapPinMixin:OnLoad()
     if self.SetScalingLimits then self:SetScalingLimits(1, 1.0, 1.2) end
     if self.UseFrameLevelType then self:UseFrameLevelType("PIN_FRAME_LEVEL_AREA_POI") end
+    if self.CreateFontString then
+        local ok, fs = pcall(self.CreateFontString, self, nil, "OVERLAY", "GameFontNormalSmall")
+        if ok and fs then fs:SetPoint("CENTER", self, "CENTER", 0, 0) self.Num = fs end
+    end
 end
 
 -- MapCanvasMixin:AcquirePin ends with pin:CheckMouseButtonPassthrough("RightButton"),
@@ -56,7 +61,11 @@ function FOMapPinMixin:OnAcquired(data)
     local style = STYLE[data.kind] or STYLE.node
     if self.Icon and self.Icon.SetTexture then self.Icon:SetTexture(style.tex) end
     local size = 10 + math.min(6, (data.n or 1) - 1)   -- seen more often = slightly bigger
+    if data.num then size = 18 end
     if self.SetSize then self:SetSize(size, size) end
+    if self.Num then
+        if data.num then self.Num:SetText(tostring(data.num)) self.Num:Show() else self.Num:SetText("") self.Num:Hide() end
+    end
     if self.SetAlpha then self:SetAlpha(data.kind == "spawn" and 0.7 or 1) end
     self:SetPosition(data.x, data.y)
 end
@@ -69,7 +78,7 @@ function FOMapPinMixin:OnMouseEnter()
     GameTooltip:AddLine(d.name or "?")
     local style = STYLE[d.kind] or STYLE.node
     GameTooltip:AddLine(string.format("%s  %.1f, %.1f", style.label, d.x * 100, d.y * 100), 0.8, 0.8, 0.8)
-    if d.n then GameTooltip:AddLine(string.format("seen %d time%s", d.n, d.n == 1 and "" or "s"), 0.8, 0.8, 0.8) end
+    if d.n and not d.num then GameTooltip:AddLine(string.format("seen %d time%s", d.n, d.n == 1 and "" or "s"), 0.8, 0.8, 0.8) end
     if d.last then GameTooltip:AddLine("last " .. U.FormatDuration(math.max(0, time() - d.last)) .. " ago", 0.8, 0.8, 0.8) end
     if d.extra then GameTooltip:AddLine(d.extra, 1, 0.82, 0) end
     GameTooltip:Show()
@@ -145,6 +154,14 @@ function M:Layers(mapID)
                     end
                 end
             end
+        end
+    end
+    -- Numbered stops of the planned quest route (/fo route)
+    local R = FO.Router
+    if s.route ~= false and R and R.plan and R.plan.mapID == mapID then
+        for _, st in ipairs(R.plan.stops) do
+            rows[#rows + 1] = { kind = "route", name = string.format("%d. %s", st.num, st.label), x = st.x, y = st.y, n = 100, num = st.num,
+                                extra = string.format("%s, +%.0f yd%s", st.kind == "objective" and "objectives" or st.kind == "turnin" and "turn in" or "pick up", st.leg or 0, R.following and R.current and R.current.key == st.key and " (arrow)" or "") }
         end
     end
     table.sort(rows, function(a, b) return (a.n or 1) > (b.n or 1) end)
@@ -429,6 +446,7 @@ M.messages = {
     FO_NODE = function(self) self.dirty = true end,
     FO_RARE = function(self) self.dirty = true end,
     FO_KILL = function(self) if self.db.settings.spawns then self.dirty = true end end,
+    FO_ROUTE_PLANNED = function(self) self.dirty = true end,
 }
 
 -- ---------------------------------------------------------------------------

@@ -52,6 +52,7 @@ Status key: **done** = implemented and exercised by `test/run.lua`; **partial** 
 
 | Item | Status | Notes |
 |---|---|---|
+| Quest router: objective patches from QuestieDB spawns plus recorded ticks, shared patches merged, turn-ins after their objectives, pickups folded in, nearest-neighbour + 2-opt, follow mode with live replanning, map pins and Route tab | done (v0.13.0; patch sizes and arrival radius unverified live) | `/fo route`, `Quest/QuestRoutePlanner.lua` |
 | Combat events without a combat log | done (UNIT_COMBAT feed, v0.12.0) | `Core/CombatFeed.lua`: hits, heals, misses, casts and deaths attributed by last cast per school, DoT duration, pet target; estimates, group damage on your target counts as yours |
 | Hunter: pet damage contribution, uptime | done (combat log) | Pet share of damage on HUD from CombatStats; falls back to pet presence if the log is refused |
 | Hunter: happiness, loyalty, food compatibility | partial | Happiness and food types shown when the client has the classic pet API (verify) |
