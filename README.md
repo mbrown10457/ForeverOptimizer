@@ -115,9 +115,9 @@ The SavedVariables file is written on logout or `/reload`:
 `scripts/package.sh` zips the addon plus `INSTALL.txt` into `dist/` for friends on either platform.
 
 ## Keeping the data current
-- Node seed: `python3 -I scripts/build_nodes.py <GatherLite checkout> --commit <sha> --date <date>` reads GatherLite's `plugins/database/data/forever.lua`, `scripts/nodes.lua` and `LICENSE` and rewrites `Data/Nodes.lua`.
 
 The seeds are regenerated from the client's tables, so numbers, ranks, levels and talent trees follow patches without hand edits. `scripts/check_build.py` reports whether wago.tools lists a newer Forever build than `ForeverOptimizer/Data/BUILD`; `scripts/build_seed.py` and `scripts/build_spells.py` rebuild the seeds for a build. The `seed-update` GitHub Actions workflow runs daily: when a new client build appears it regenerates the seeds, runs the harness and the rotation validator, commits to main if everything passes, and opens an issue with the validator output if a patch renamed or removed something the hand-authored rotations or builds reference. The `ci` workflow runs the harness on every push and the `release` workflow attaches the zip to a GitHub Release on every `v*` tag.
+- Node seed: `python3 -I scripts/build_nodes.py <GatherLite checkout> --commit <sha> --date <date>` reads GatherLite's `plugins/database/data/forever.lua`, `scripts/nodes.lua` and `LICENSE` and rewrites `Data/Nodes.lua`.
 
 ## Tests
 
