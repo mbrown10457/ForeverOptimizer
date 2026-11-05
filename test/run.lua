@@ -9,7 +9,7 @@ local function outHas(pat) for i = #S.out, 1, -1 do if S.out[i]:find(pat, 1, tru
 local function noErrors(label) check(#S.errors == 0, label .. " (no handler errors)") if #S.errors > 0 then for _, e in ipairs(S.errors) do print("   " .. e) end S.errors = {} end end
 
 local FO, order = S.loadAddon("ForeverOptimizer")
-check(#order == 55, "loaded " .. #order .. " files from TOC")
+check(#order == 56, "loaded " .. #order .. " files from TOC")
 check(#FO.modules >= 26, #FO.modules .. " modules registered")
 check(ForeverOptimizerDB == nil or true, "pre-login")
 
@@ -545,6 +545,28 @@ check(#lines >= 2 and lines[1]:find("stops", 1, true), "Route HUD tab lists the 
 local solo = RT:Plan({ only = { [101] = true } })
 check(solo and #solo.stops == 2 and solo.stops[1].kind == "objective" and solo.stops[1].quests[101] and RT.plan ~= solo, "single-quest plan (guide steps) is separate and quiet")
 noErrors("quest router")
+
+-- Quest reader: text-to-speech on quest and gossip windows
+local RD = FO.Reader
+check(RD.available, "quest reader connected to C_VoiceChat (" .. tostring(RD.reason) .. ")")
+local n0 = #S.tts.spoken
+S.fire("QUEST_DETAIL")
+local sp = S.tts.spoken[#S.tts.spoken]
+check(#S.tts.spoken == n0 + 1 and sp.text == "Bloodscalp Ears. The Bloodscalp trolls raid our camp. Bring me 12 ears. Objectives: Bloodscalp Ear (0/12)" and sp.dest == 1 and sp.volume == 100,
+      "quest detail read as title, cleaned description and objectives (" .. tostring(sp and sp.text) .. ")")
+S.fire("QUEST_PROGRESS") check(S.tts.spoken[#S.tts.spoken].text == "Bloodscalp Ears. Do you have the ears?", "progress text read")
+S.fire("QUEST_COMPLETE") check(S.tts.spoken[#S.tts.spoken].text:find("Well done", 1, true) ~= nil, "reward text read")
+local stops = S.tts.stopped
+S.fire("QUEST_FINISHED") check(S.tts.stopped == stops + 1, "closing the quest window stops the voice")
+S.fire("GOSSIP_SHOW") check(S.tts.spoken[#S.tts.spoken].text == "What can I do for you?", "gossip read")
+SlashCmdList.FOREVEROPTIMIZER("tts gossip off") S.fire("GOSSIP_SHOW") check(S.tts.spoken[#S.tts.spoken].text == "What can I do for you?" and #S.tts.spoken == n0 + 4, "gossip off skips gossip")
+SlashCmdList.FOREVEROPTIMIZER("tts voice 1") check(RD.db.voice == 1 and S.tts.spoken[#S.tts.spoken].voice == 1 and outHas("voice 1: Daniel"), "/fo tts voice picks a voice and previews it")
+SlashCmdList.FOREVEROPTIMIZER("tts rate 3") check(RD.db.rate == 3 and S.tts.spoken[#S.tts.spoken].rate == 3, "/fo tts rate")
+SlashCmdList.FOREVEROPTIMIZER("tts off") S.fire("QUEST_DETAIL") check(#S.tts.spoken == n0 + 6, "tts off reads nothing")
+SlashCmdList.FOREVEROPTIMIZER("tts again") check(#S.tts.spoken == n0 + 7, "/fo tts again repeats the last text even when off")
+SlashCmdList.FOREVEROPTIMIZER("tts on") SlashCmdList.FOREVEROPTIMIZER("tts gossip on")
+SlashCmdList.FOREVEROPTIMIZER("tts") check(outHas("quest reader: on, voice Daniel (2 available)"), "/fo tts status")
+noErrors("quest reader")
 
 -- Checklist, notes, alerts, bindings
 local CLk = FO:GetModule("Core.Checklist")

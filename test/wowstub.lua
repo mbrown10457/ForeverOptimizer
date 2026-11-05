@@ -390,7 +390,21 @@ C_Item = C_Item or {}
 C_Item.GetWeaponEnchantInfo = function() return S.imbue.main ~= nil, S.imbue.main or 0, 0, 0, S.imbue.off ~= nil, S.imbue.off or 0, 0, 0 end
 C_Spell = { GetSpellName = function(id) return ({ [2575] = "Mining", [2366] = "Herb Gathering" })[id] end }
 C_Reputation = { GetNumFactions = function() return 1 end, GetFactionDataByIndex = function() return { name = "Booty Bay", reaction = 5, currentStanding = 3400, currentReactionThreshold = 3000, nextReactionThreshold = 9000, isWatched = true } end }
-Enum = { LootSlotType = { Item = 1, Money = 2 }, ItemClass = { Consumable = 0, Weapon = 2, Armor = 4, Reagent = 5, Projectile = 6, Tradegoods = 7, Questitem = 12, Miscellaneous = 15 },
+S.tts = { spoken = {}, stopped = 0 }
+C_VoiceChat = {
+    GetTtsVoices = function() return { { voiceID = 0, name = "Samantha" }, { voiceID = 1, name = "Daniel" } } end,
+    SpeakText = function(voice, text, dest, rate, volume) S.tts.spoken[#S.tts.spoken + 1] = { voice = voice, text = text, dest = dest, rate = rate, volume = volume } end,
+    StopSpeakingText = function() S.tts.stopped = S.tts.stopped + 1 end,
+}
+S.questFrame = { title = "Bloodscalp Ears", text = "The Bloodscalp trolls|cffff0000 raid|r our camp.\nBring me 12 ears.", objectives = "Bloodscalp Ear (0/12)", progress = "Do you have the ears?", reward = "Well done, $n." }
+function GetTitleText() return S.questFrame.title end
+function GetQuestText() return S.questFrame.text end
+function GetObjectiveText() return S.questFrame.objectives end
+function GetProgressText() return S.questFrame.progress end
+function GetRewardText() return S.questFrame.reward end
+function GetGreetingText() return "Greetings, traveler." end
+C_GossipInfo = { GetText = function() return "What can I do for you?" end }
+Enum = { LootSlotType = { Item = 1, Money = 2 }, VoiceTtsDestination = { LocalPlayback = 1, QueuedLocalPlayback = 2 }, ItemClass = { Consumable = 0, Weapon = 2, Armor = 4, Reagent = 5, Projectile = 6, Tradegoods = 7, Questitem = 12, Miscellaneous = 15 },
          BagIndex = { Backpack = 0, Bank = -1, BankBag_1 = 5 }, TooltipDataType = { Item = 0 }, CraftingReagentType = { Basic = 1 } }
 TooltipDataProcessor = { AddTooltipPostCall = function(t, fn) S.tooltipFn = fn end }
 GetNumTrainerServices = function() return 3 end

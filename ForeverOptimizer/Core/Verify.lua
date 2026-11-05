@@ -96,6 +96,7 @@ function V:Run()
     add("C_QuestLog.GetQuestObjectives", has("C_QuestLog.GetQuestObjectives"), "objective ticks")
     add("C_QuestLog.GetNextWaypoint", has("C_QuestLog.GetNextWaypoint"), has("C_QuestLog.GetNextWaypoint") and "present; check it returns data for vanilla quests" or "absent; recorded points only")
     add("C_QuestLog.GetInfo", has("C_QuestLog.GetInfo"), "")
+    add("text to speech", nil, has("C_VoiceChat.SpeakText") and "C_VoiceChat.SpeakText present: quest reader can speak" or "C_VoiceChat.SpeakText absent: quest reader off")
 
     -- economy
     local retailAH = has("C_AuctionHouse.ReplicateItems")
