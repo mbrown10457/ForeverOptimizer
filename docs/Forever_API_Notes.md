@@ -45,3 +45,22 @@ install script also accepts a `_camelot_` folder.
 - Whether health and power read as secrets outside instances.
 - Whether the world-map data-provider API accepts our XML pin template (Blizzard_MapCanvas ships in every client, so it very likely does).
 - Whether QuestieDB's Forever data loads under the client's game-type selection.
+
+## Live client findings, launch night (2026-11-04, build 1.60.1.70790)
+
+From `/fo verify` and the error stacks on a level 1 Troll priest, Normal ruleset.
+
+| Area | Finding | What the addon does |
+|---|---|---|
+| Combat log | `CombatLogGetCurrentEventInfo` does not exist. Registering `COMBAT_LOG_EVENT_UNFILTERED` is an `ADDON_ACTION_FORBIDDEN` (reported as `UNKNOWN()`) and shows the "blocked from an action only available to the Blizzard UI" dialog. `C_CombatLog.IsCombatLogRestricted()` is true. | Never registers the event without the API (v0.11.7). Class analytics use chat and loot paths. |
+| Secret values | `C_Secrets.HasSecretRestrictions()` is true. `UnitHealth("player")` is secret even out of combat; `UnitXP` is not. In combat `C_UnitAuras.GetAuraDataByIndex` raises "Auras cannot be accessed when secret while tainted". | Buff scans skip combat and keep the last list (v0.11.3, v0.11.4). Fight-cost tracking in MobDatabase gets nil health and records nothing. |
+| Restrictions | `C_RestrictedActions.IsAddOnRestrictionActive(type)` needs an `Enum.AddOnRestrictionType`: ChallengeMode, Chat, Combat, Encounter, Map, PvPMatch, all false out of combat. | Verify queries every type (v0.11.2). |
+| Map canvas | `MapCanvasMixin:AcquirePin` asserts a pin template has no OnEnter/OnLeave and wires the mixin's OnMouseEnter/OnMouseLeave itself; it also calls `CheckMouseButtonPassthrough`, which calls the protected `SetPassThroughButtons`. `ScrollContainer:GetCurrentLayerIndex()` errors (`ipairs` on nil zoom levels) before the map has been shown once. | Template has no OnEnter/OnLeave; both pin mixins override the passthrough step to a no-op; the reveal code guards every canvas call (v0.11.5, v0.11.6). |
+| Talents | No classic `GetTalentInfo`/`GetNumTalentTabs` and no retail `GetSpecialization` global. `C_SpecializationInfo.GetTalentInfo`, `GetSpecialization` and `GetSpecializationInfo` exist, as do `C_Traits` and `C_ClassTalents`. | Rotation and the profile build summary read `C_SpecializationInfo.GetTalentInfo({ specializationIndex, talentIndex })`; unverified until a character reaches 10. |
+| Merchant | `GetMerchantItemInfo` is gone; `C_MerchantFrame.GetItemInfo(i)` returns a table. | Vendor prices come from the table; the count and item links fall back to probing and the item cache (v0.11.8). |
+| Skills, pets | `C_SkillInfo.GetSkillLineInfo` and `C_PetInfo.GetPetHappiness` / `GetPetFoodTypes` exist; the classic globals do not. | Already used first; verify names them (v0.11.8). |
+| Chat strings | `COMBAT_XP_GAIN1` is nil. | XP tracker uses `COMBAT_XP_GAIN` or the fixed pattern. |
+| Experience preset | `C_GameRules.GetForeverExperiencePreset()` = 1 (Enhanced), hardcore false. | Informational. |
+| Diagnostics | `ADDON_ACTION_BLOCKED` / `ADDON_ACTION_FORBIDDEN` fire synchronously, so `debugstack` inside the handler names the call site. `SET taintLog "1"` produced no `Logs/taint.log`. | The addon records both events and escaped Lua errors with stacks; `/fo errors <n>` prints them (v0.11.1). |
+
+Reference for the map canvas: github.com/Gethe/wow-ui-source, `live` branch, `Interface/AddOns/Blizzard_MapCanvas/`.

@@ -18,7 +18,7 @@ local RING = 30
 
 local function Pattern()
     if not xpPattern then
-        xpPattern = U.GlobalStringToPattern(COMBAT_XP_GAIN1 or "%s dies, you gain %d experience.")
+        xpPattern = U.GlobalStringToPattern(COMBAT_XP_GAIN1 or COMBAT_XP_GAIN or "%s dies, you gain %d experience.")
     end
     return xpPattern
 end

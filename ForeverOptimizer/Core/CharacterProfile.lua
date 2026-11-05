@@ -31,6 +31,21 @@ local function ReadBuild()
             if name then return U.Str(name) end
         end
     end
+    local SI = C_SpecializationInfo
+    if SI and SI.GetTalentInfo and not (GetNumTalentTabs and GetTalentTabInfo) then
+        local parts, found = {}, false
+        for tab = 1, 3 do
+            local spent = 0
+            for i = 1, 60 do
+                local ok, r = pcall(SI.GetTalentInfo, { specializationIndex = tab, talentIndex = i })
+                if not ok or type(r) ~= "table" or not r.name then break end
+                found = true
+                spent = spent + (U.Num(r.rank) or 0)
+            end
+            parts[#parts + 1] = tostring(spent)
+        end
+        if found then return table.concat(parts, "/") end
+    end
     if GetNumTalentTabs and GetTalentTabInfo then
         local parts = {}
         for i = 1, GetNumTalentTabs() do

@@ -33,7 +33,7 @@ function V:Run()
     add("issecretvalue present", nil, issecretvalue and "12.x secret values active" or "no secret values on this client")
     if issecretvalue then
         local okH, secretHealth = pcall(function() return issecretvalue(UnitHealth("player")) end)
-        add("UnitHealth readable out of combat", okH and secretHealth == false, okH and ("secret=" .. tostring(secretHealth)) or "errored")
+        add("UnitHealth out of combat", nil, okH and ("secret=" .. tostring(secretHealth) .. (secretHealth and " (always secret on Forever: fight-cost tracking off)" or "")) or "errored")
         local okX, secretXP = pcall(function() return issecretvalue(UnitXP("player")) end)
         add("UnitXP readable", okX and secretXP == false, okX and ("secret=" .. tostring(secretXP)) or "errored")
     end
@@ -101,19 +101,23 @@ function V:Run()
     local retailAH = has("C_AuctionHouse.ReplicateItems")
     local classicAH = _G.QueryAuctionItems ~= nil or _G.GetNumAuctionItems ~= nil
     add("auction house API", retailAH or classicAH, retailAH and "retail C_AuctionHouse (scanner matches)" or classicAH and "CLASSIC list AH: AuctionHouseScanner needs the classic path" or "neither found")
-    add("merchant API", _G.GetMerchantItemInfo ~= nil, "vendor prices")
+    add("merchant API", has("C_MerchantFrame.GetItemInfo") or _G.GetMerchantItemInfo ~= nil,
+        has("C_MerchantFrame.GetItemInfo") and ("C_MerchantFrame.GetItemInfo; count " .. (_G.GetMerchantNumItems and "GetMerchantNumItems" or "by probing") .. ", links " .. (_G.GetMerchantItemLink and "GetMerchantItemLink" or "by item name"))
+        or _G.GetMerchantItemInfo and "classic GetMerchantItemInfo" or "none: vendor prices not recorded")
     add("C_TradeSkillUI schematics", has("C_TradeSkillUI.GetRecipeSchematic"), has("C_TradeSkillUI.GetRecipeSchematic") and "profession profit ok" or "absent; ProfessionProfit needs the classic GetTradeSkillInfo path")
 
     -- character
     add("trainer API", _G.GetTrainerServiceInfo ~= nil and _G.GetTrainerServiceCost ~= nil, "training planner")
-    add("skill lines", nil, _G.GetNumSkillLines and "weapon skills readable" or "no skill line API")
-    add("talent/spec API", nil, _G.GetSpecialization and "retail spec" or _G.GetNumTalentTabs and "classic talent tabs" or "none; build not recorded")
+    add("skill lines", nil, has("C_SkillInfo.GetSkillLineInfo") and "C_SkillInfo: weapon skills readable" or _G.GetNumSkillLines and "classic GetSkillLineInfo" or "no skill line API")
+    add("talent API", nil, has("C_SpecializationInfo.GetTalentInfo") and "C_SpecializationInfo.GetTalentInfo (rotation + build read it from level 10)"
+        or _G.GetNumTalentTabs and "classic talent tabs" or _G.GetSpecialization and "retail spec only" or "none; build not recorded")
     add("reputation API", has("C_Reputation.GetFactionDataByIndex") or _G.GetFactionInfo ~= nil, "")
-    add("pet happiness", nil, _G.GetPetHappiness and "classic pet happiness present" or "absent (retail-style pets)")
+    add("pet happiness", nil, has("C_PetInfo.GetPetHappiness") and "C_PetInfo.GetPetHappiness" or _G.GetPetHappiness and "classic GetPetHappiness" or "absent (retail-style pets)")
     add("hearthstone cooldown", has("C_Container.GetItemCooldown") or _G.GetItemCooldown ~= nil, "")
 
     -- chat patterns we parse
-    add("COMBAT_XP_GAIN1", type(COMBAT_XP_GAIN1) == "string", tostring(COMBAT_XP_GAIN1))
+    local xpStr = (type(COMBAT_XP_GAIN1) == "string" and "COMBAT_XP_GAIN1") or (type(COMBAT_XP_GAIN) == "string" and "COMBAT_XP_GAIN") or nil
+    add("XP gain chat string", xpStr ~= nil, xpStr and (xpStr .. " = " .. tostring(_G[xpStr])) or "neither COMBAT_XP_GAIN1 nor COMBAT_XP_GAIN; using the fixed pattern")
     add("FACTION_STANDING_INCREASED", type(FACTION_STANDING_INCREASED) == "string", tostring(FACTION_STANDING_INCREASED))
     add("GOLD/SILVER/COPPER_AMOUNT", type(GOLD_AMOUNT) == "string", tostring(GOLD_AMOUNT) .. " / " .. tostring(SILVER_AMOUNT) .. " / " .. tostring(COPPER_AMOUNT))
 

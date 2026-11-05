@@ -133,14 +133,39 @@ function PH:OnEnable()
 end
 
 -- Vendor buy prices seen at merchants
+-- Forever has C_MerchantFrame.GetItemInfo(i) -> table and no GetMerchantItemInfo; the
+-- classic globals stay as the fallback. Without GetMerchantNumItems the list is probed
+-- until an index has no name; without GetMerchantItemLink the item id comes from the
+-- name through the item cache (vendor stock is cached once the window is open).
+local function MerchantItem(i)
+    local MF = C_MerchantFrame
+    if MF and MF.GetItemInfo then
+        local ok, info = pcall(MF.GetItemInfo, i)
+        if not ok or type(info) ~= "table" then return nil end
+        return U.Str(info.name), U.Num(info.price), U.Num(info.stackCount), info.hasExtendedCost or info.extendedCost
+    elseif GetMerchantItemInfo then
+        local name, _, price, stack, _, _, _, extendedCost = GetMerchantItemInfo(i)
+        return U.Str(name), U.Num(price), U.Num(stack), extendedCost
+    end
+end
+
+local function MerchantItemID(i, name)
+    if GetMerchantItemLink then return U.ItemIDFromLink(GetMerchantItemLink(i)) end
+    if not name then return nil end
+    local link
+    if C_Item and C_Item.GetItemInfo then local ok, _, l = pcall(C_Item.GetItemInfo, name) if ok then link = l end
+    elseif GetItemInfo then local _, l = GetItemInfo(name) link = l end
+    return U.ItemIDFromLink(link)
+end
+
 local function ScanMerchant()
-    if not GetMerchantNumItems then return end
-    local n = U.Num(GetMerchantNumItems()) or 0
+    local n = GetMerchantNumItems and (U.Num(GetMerchantNumItems()) or 0) or 100
     local now = time()
     for i = 1, n do
-        local name, _, price, stack, _, _, _, extendedCost = GetMerchantItemInfo(i)
-        local itemID = U.ItemIDFromLink(GetMerchantItemLink and GetMerchantItemLink(i))
-        price, stack = U.Num(price), U.Num(stack) or 1
+        local name, price, stack, extendedCost = MerchantItem(i)
+        if not name then break end
+        local itemID = MerchantItemID(i, name)
+        stack = stack or 1
         if itemID and price and price > 0 and not extendedCost then
             PH.db.vendor[itemID] = { price = price / math.max(stack, 1), t = now, name = U.Str(name) }
             if name then PH.db.names[itemID] = PH.db.names[itemID] or U.Str(name) end
