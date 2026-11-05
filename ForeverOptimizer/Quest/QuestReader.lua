@@ -196,7 +196,7 @@ function R:OnEnable()
 end
 
 R.commands = {
-    tts = { help = "read quest text aloud: (status) | on | off | again | stop | voice [n] | rate <-10..10> | volume <0..100> | gossip on|off | objectives on|off | test | debug | path [n]", fn = function(self, arg)
+    tts = { help = "read quest text aloud: (status) | on | off | again | stop | voice [n] | rate <-10..10> | volume <0..100> | gossip on|off | objectives on|off | test | debug | path [n]; voice <name part> filters, voice more pages", fn = function(self, arg)
         local sub, rest = U.SplitCmd(arg or "")
         if not self.available then print("quest reader unavailable: %s", tostring(self.reason)) return end
         if sub == "" then
@@ -220,8 +220,19 @@ R.commands = {
                 print("no voice %d. /fo tts voice lists them.", n)
             else
                 if #voices == 0 then print("no voices reported by the client.") return end
-                print("%d voices (/fo tts voice <id>):", #voices)
-                for _, v in ipairs(voices) do print("  %3d  %s%s", v.id, v.name, v.id == self:VoiceID() and "  (current)" or "") end
+                -- long lists (a Mac reports every system voice) page 25 at a time; any other word filters by name
+                local PAGE = 25
+                local filter = rest ~= "" and rest ~= "more" and rest:lower() or nil
+                local rows = {}
+                for _, v in ipairs(voices) do if not filter or v.name:lower():find(filter, 1, true) then rows[#rows + 1] = v end end
+                if filter and #rows == 0 then print("no voice matches '%s'. /fo tts voice lists them, /fo tts voice en finds English ones.", rest) return end
+                if rest == "more" then self.voicePage = (self.voicePage or 0) + 1 else self.voicePage = 0 end
+                local first = self.voicePage * PAGE + 1
+                if first > #rows then self.voicePage = 0 first = 1 end
+                local last = math.min(first + PAGE - 1, #rows)
+                print("%d voices%s, %d-%d (/fo tts voice <id> picks one):", #rows, filter and (" matching '" .. rest .. "'") or "", first, last)
+                for i = first, last do local v = rows[i] print("  %3d  %s%s", v.id, v.name, v.id == self:VoiceID() and "  (current)" or "") end
+                if last < #rows then print("  ... %d more: /fo tts voice more, or /fo tts voice <part of a name> to filter.", #rows - last) end
             end
         elseif sub == "rate" then
             local n = tonumber(rest)

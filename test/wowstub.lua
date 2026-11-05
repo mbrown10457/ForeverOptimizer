@@ -392,7 +392,9 @@ C_Spell = { GetSpellName = function(id) return ({ [2575] = "Mining", [2366] = "H
 C_Reputation = { GetNumFactions = function() return 1 end, GetFactionDataByIndex = function() return { name = "Booty Bay", reaction = 5, currentStanding = 3400, currentReactionThreshold = 3000, nextReactionThreshold = 9000, isWatched = true } end }
 S.tts = { spoken = {}, stopped = 0 }
 C_VoiceChat = {
-    GetTtsVoices = function() return { { voiceID = 0, name = "Samantha" }, { voiceID = 1, name = "Daniel" } } end,
+    GetTtsVoices = function()
+        if S.tts.many then local t = {} for i = 0, 59 do t[#t + 1] = { voiceID = i, name = (i < 2 and ({ "Samantha (en-US)", "Daniel (en-GB)" })[i + 1]) or ("Voix " .. i .. " (fr-FR)") } end return t end
+        return { { voiceID = 0, name = "Samantha" }, { voiceID = 1, name = "Daniel" } } end,
     SpeakText = function(voice, text, dest, rate, volume) S.tts.spoken[#S.tts.spoken + 1] = { voice = voice, text = text, dest = dest, rate = rate, volume = volume } end,
     StopSpeakingText = function() S.tts.stopped = S.tts.stopped + 1 end,
 }

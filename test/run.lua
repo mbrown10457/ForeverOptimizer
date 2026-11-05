@@ -809,6 +809,18 @@ SlashCmdList.FOREVEROPTIMIZER("tts rate 0")
 TextToSpeech_Speak, C_TTSSettings = nil, nil
 noErrors("tts diagnostics")
 
+-- Voice list paging and filtering
+S.tts.many = true
+SlashCmdList.FOREVEROPTIMIZER("tts voice")
+check(outHas("60 voices, 1-25") and outHas("... 35 more: /fo tts voice more"), "a long voice list shows the first page")
+SlashCmdList.FOREVEROPTIMIZER("tts voice more")
+check(outHas("60 voices, 26-50"), "voice more pages on")
+SlashCmdList.FOREVEROPTIMIZER("tts voice en")
+check(outHas("2 voices matching 'en', 1-2") and outHas("Samantha (en-US)") and outHas("Daniel (en-GB)"), "voice <text> filters by name")
+SlashCmdList.FOREVEROPTIMIZER("tts voice zz") check(outHas("no voice matches 'zz'"), "empty filter says so")
+S.tts.many = nil
+noErrors("voice list")
+
 -- Module disable is honoured on the next load
 ForeverOptimizerDB.account.modules.disabled["Classes.Warlock"] = true
 S.frames, S.registered, S.tickers, S.timers = nil, {}, {}, {}
