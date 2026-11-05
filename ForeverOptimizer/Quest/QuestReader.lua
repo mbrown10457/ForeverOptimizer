@@ -243,7 +243,7 @@ R.commands = {
                 for i, p in ipairs(paths) do print("  %d  %s%s", i, p.name, p.available() and "" or "  (not on this client)") end
             end
         elseif sub == "test" then
-            if self:Speak("Quest reader test. Kill ten boars and bring me their tusks.", true) then print("speaking a test line.") else print("the client refused to speak; check Options > Accessibility > Text to Speech.") end
+            if self:Speak("Quest reader test. Kill ten boars and bring me their tusks.", true) then print("speaking a test line.") else print("the client refused to speak; /fo tts debug tries every playback path. Leave Options > Accessibility > Text to Speech off, it narrates chat and loot.") end
         else
             print("tts: on | off | again | stop | voice [n] | rate <n> | volume <n> | gossip on|off | objectives on|off | test | debug | path [n]")
         end
