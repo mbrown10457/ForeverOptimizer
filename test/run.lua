@@ -9,7 +9,7 @@ local function outHas(pat) for i = #S.out, 1, -1 do if S.out[i]:find(pat, 1, tru
 local function noErrors(label) check(#S.errors == 0, label .. " (no handler errors)") if #S.errors > 0 then for _, e in ipairs(S.errors) do print("   " .. e) end S.errors = {} end end
 
 local FO, order = S.loadAddon("ForeverOptimizer")
-check(#order == 54, "loaded " .. #order .. " files from TOC")
+check(#order == 55, "loaded " .. #order .. " files from TOC")
 check(#FO.modules >= 26, #FO.modules .. " modules registered")
 check(ForeverOptimizerDB == nil or true, "pre-login")
 
@@ -317,6 +317,36 @@ local mobRec = FO:GetModule("Grinding.MobDatabase").db.mobs[595]
 check(mobRec and mobRec.clN == 2 and mobRec.takenN == 1 and mobRec.taken == 40 and mobRec.clTime > 16, "MobDatabase received FO_FIGHT timing and damage taken (" .. tostring(mobRec and mobRec.clN) .. "/" .. tostring(mobRec and mobRec.takenN) .. "/" .. tostring(mobRec and mobRec.taken) .. "/" .. tostring(mobRec and mobRec.clTime) .. ")")
 local hl = table.concat(FO.Classes.HUNTER:Lines(), "\n")
 check(hl:find("Pet damage 18%%") and hl:find("Auto Shot 4"), "hunter HUD lines show pet share and clipping")
+
+-- Auto Shot timer bar: shots, aim window, secret ids via cast guid, casts pausing and restarting the cycle
+local ASm = FO.AutoShot
+check(ASm.ready and ASm.speed == 2.0, "auto shot bar built for a hunter with the weapon speed (" .. tostring(ASm.speed) .. ")")
+local shots0 = ASm.shots
+S.fire("START_AUTOREPEAT_SPELL")
+check(ASm.active, "auto-repeat on activates the bar")
+S.advance(1)
+S.fire("UNIT_SPELLCAST_SUCCEEDED", "player", "Cast-3-4379-0-13-75-000152C1B2", 75)
+check(ASm.shots == shots0 + 1 and ASm.lastShot == S.clock, "a shot restarts the timer")
+S.advance(1)
+check(ASm:Remaining() and math.abs(ASm:Remaining() - 1.0) < 0.01 and not ASm:InAimWindow(), "one second in: one second left, not yet aiming")
+S.fire("UNIT_SPELLCAST_SUCCEEDED", "player", "Cast-3-4379-0-13-75-000152C1B3", "SECRET")
+check(ASm.shots == shots0 + 2 and ASm.secret == 0, "secret spell id read from the cast guid")
+S.advance(2) P.speed = 7 S.mapUpdate()
+check(ASm:Remaining() == 0 and hl ~= nil, "cycle elapsed: ready")
+S.fire("UNIT_SPELLCAST_START", "player", "Cast-3-4379-0-13-19434-000152C1B4", 19434)
+check(ASm.casting and ASm.casting.id == 19434, "a cast pauses the cycle")
+S.fire("UNIT_SPELLCAST_SUCCEEDED", "player", "Cast-3-4379-0-13-19434-000152C1B4", 19434)
+S.fire("UNIT_SPELLCAST_STOP", "player", "Cast-3-4379-0-13-19434-000152C1B4")
+check(not ASm.casting and ASm.lastShot == S.clock and ASm.resets == 1, "a landed cast restarts the cycle")
+S.fire("UNIT_SPELLCAST_START", "player", "Cast-3-4379-0-13-19434-000152C1B5", 19434)
+S.fire("UNIT_SPELLCAST_INTERRUPTED", "player", "Cast-3-4379-0-13-19434-000152C1B5")
+check(not ASm.casting and ASm.resets == 1, "an interrupted cast leaves the cycle alone")
+S.fire("STOP_AUTOREPEAT_SPELL")
+check(not ASm.active, "auto-repeat off")
+SlashCmdList.FOREVEROPTIMIZER("shotbar") check(outHas("speed 2.00 s") and outHas("2 shots"), "/fo shotbar status")
+SlashCmdList.FOREVEROPTIMIZER("shotbar test") check(outHas("showing the bar"), "/fo shotbar test")
+P.speed = 0
+noErrors("auto shot bar")
 for _, cmd in ipairs({ "combat", "dots", "heals", "autoshot", "combatlog" }) do SlashCmdList.FOREVEROPTIMIZER(cmd) end
 check(outHas("Serpent Sting") and outHas("Lesser Heal") and outHas("clipped") and outHas("combat log: live"), "combat commands print")
 SlashCmdList.FOREVEROPTIMIZER("mob 595") check(outHas("combat log:"), "/fo mob shows combat-log timing")

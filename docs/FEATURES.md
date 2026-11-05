@@ -1,4 +1,4 @@
-# ForeverOptimizer add-ins (v0.13.0)
+# ForeverOptimizer add-ins (v0.14.0)
 
 Generated from `docs/addins.html` by `scripts/build_features.js`. The browsable version with filters and the architecture diagram is at https://mbrown10457.github.io/ForeverOptimizer/addins.html.
 
@@ -68,6 +68,7 @@ Status: **ready** = built and exercised by the offline harness; **live check** =
 | Add-in | Status | What it does | Commands | Where |
 |---|---|---|---|---|
 | Hunter | partial | Pet damage share and uptime, aspect, ammo remaining, happiness and food, Auto Shot clipping. *Gap: Pet training points not read yet.* | `/fo hunter` | `Classes/Hunter.lua`; HUD: Hunter |
+| Auto Shot timer | live check | A bar from one Auto Shot to the next from the weapon speed, the last half second marked as the aim window and red while you move through it; casts pause the cycle and restart it when they land. Secret spell ids are read from the cast GUID. Wand Shoot gets the same bar. *Gap: Needs the live client to confirm START/STOP_AUTOREPEAT_SPELL and UNIT_SPELLCAST_SUCCEEDED carry readable data for Auto Shot.* | `/fo shotbar` | `Classes/AutoShot.lua` |
 | Warlock | partial | Shard count with low and high warnings, demon damage share, DoT efficiency, mana spent versus Life Tapped. *Gap: Life Tap versus Drain Life trade-off math not built.* | `/fo warlock` | `Classes/Warlock.lua`; HUD: Warlock |
 | Priest | partial | Wand versus spell share, drink share, heal per mana with overheal. *Gap: No buff uptime or per-fight regen model.* | `/fo priest` | `Classes/Priest.lua`; HUD: Priest |
 | Shaman | live check | Shield charges, weapon imbue time left, totems down with time left, shocks, bolts and heals per kill, drink share, melee share and heal per mana from the combat log. Warns when a fight starts without a shield or an imbue and when the imbue has two minutes left. *Gap: Totem names, imbue timers and shield charges are read from client APIs the harness only stubs.* | `/fo shaman` | `Classes/Shaman.lua`; HUD: Shaman |
@@ -90,7 +91,7 @@ Status: **ready** = built and exercised by the offline harness; **live check** =
 | Collect and summarize | ready | After a session, zips the saved file and the game log; the Mac side converts to JSON and prints verify results, errors, sessions, notes, checklist and runes. |  | `scripts/collect.*, scripts/summarize.py` |
 | SQLite export | ready | Loads the saved file into SQLite tables for offline analysis in any tool. |  | `scripts/fo_sqlite.py, scripts/savedvars_to_json.py` |
 | Nightly backup | ready | launchd agent copies the saved files nightly and at login, keeps 30 days. |  | `scripts/backup.sh, scripts/backup-install.sh` |
-| Test harness | ready | A fake WoW client in Lua: frames, events, combat log, spellbook, units, chat capture. Every module is loaded, every command smoke-run, 262 checks. |  | `test/run.lua, test/wowstub.lua` |
+| Test harness | ready | A fake WoW client in Lua: frames, events, combat log, spellbook, units, chat capture. Every module is loaded, every command smoke-run, 275 checks. |  | `test/run.lua, test/wowstub.lua` |
 | CI, releases, seed updates | ready | Syntax check and harness on every push, zip release on tag, a daily job that rebuilds the item and spell seeds when the client build changes and opens an issue if validation fails. |  | `.github/workflows/*.yml` |
 | HUD mockup generator | ready | Drives the harness, dumps every tab, button and command output, and renders the mockup page on GitHub Pages from real addon text. |  | `scripts/mock/` |
 
@@ -111,4 +112,4 @@ Status: **ready** = built and exercised by the offline harness; **live check** =
 | Buff and debuff uptime | open slot | Per-fight uptime of your own buffs, Hunter's Mark, curses and Power Word: Fortitude, from aura events in the combat log. |  |  |
 | Your idea | open slot | Anything that turns something you can observe in game into a number that changes how you play. Open a proposal with the button at the top. |  |  |
 
-Totals: 34 ready, 11 live check, 5 partial, 12 open slots.
+Totals: 34 ready, 12 live check, 5 partial, 12 open slots.

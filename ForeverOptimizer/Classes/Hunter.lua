@@ -64,6 +64,11 @@ function H:Lines()
     local aspect
     for _, b in ipairs(U.PlayerBuffNames()) do if b:find("^Aspect of") then aspect = b end end
     lines[#lines + 1] = aspect or "|cffffd100No aspect|r"
+    local AS = FO.AutoShot
+    if AS and AS.ready then
+        lines[#lines + 1] = string.format("Auto Shot timer %s%s", AS.speed and string.format("%.2f s", AS.speed) or "?",
+            AS.shots > 0 and string.format(", %d shots", AS.shots) or "")
+    end
     local st = FO.Session:Stats()
     if st and st.deaths > 0 and st.kills > 0 then lines[#lines + 1] = string.format("Deaths per 100 kills: %.1f", st.deaths / st.kills * 100) end
     -- Combat-log extras (optimistic: only when the client exposes the log)

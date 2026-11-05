@@ -56,12 +56,14 @@ local function Region()
                          "SetTexture", "SetAlpha", "SetOwner", "ClearLines", "SetFontObject", "SetWidth",
                          "SetScrollChild", "SetBackdropBorderColor", "SetFrameStrata", "SetSpacing", "SetVerticalScroll",
                          "SetTexCoord", "SetVertexColor", "ClearAllPoints", "SetAllPoints", "SetFrameLevel", "EnableMouse", "SetMouseClickEnabled", "SetMouseMotionEnabled",
-                         "SetIgnoreGlobalPinScale" }) do
+                         "SetIgnoreGlobalPinScale", "SetMinMaxValues", "SetStatusBarTexture", "SetStatusBarColor", "SetColorTexture" }) do
         r[m] = function() end
     end
     r.GetFrameLevel = function() return 10 end
     r.SetRotation = function(self, a) self.rotation = a end
     r.SetText = function(self, t) self.text = t end
+    r.SetValue = function(self, v) self.value = v end
+    r.GetValue = function(self) return self.value end
     r.GetText = function(self) return self.text end
     r.CreateTexture = function() local t = Region() S.textures = (S.textures or 0) + 1 return t end
     r.Show = function(self) self.shown = true end

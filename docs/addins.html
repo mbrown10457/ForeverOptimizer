@@ -124,11 +124,11 @@ footer { margin-top: 56px; color: var(--fg-3); font-size: 13px; font-family: var
 
 <div class="wrap">
 <header>
-  <div class="eyebrow">World of Warcraft: Forever &middot; addon &middot; <span id="ver">v0.13.0</span></div>
+  <div class="eyebrow">World of Warcraft: Forever &middot; addon &middot; <span id="ver">v0.14.0</span></div>
   <h1>ForeverOptimizer Add-in Catalog</h1>
   <p class="sub">One core, many add-ins. Every module below records something from your own play and turns it into a number on the HUD or a <code>/fo</code> command. This page is the full list of what exists, how the pieces fit, and the open slots where a new add-in is wanted.</p>
   <div class="facts">
-    <span><b>40</b> modules</span><span><b>92</b> commands</span><span><b>11</b> HUD tabs</span><span><b>9,957</b> lines of module Lua</span><span><b>19,307</b> seeded items</span><span><b>9</b> class rotations</span><span><b>262</b> harness checks</span>
+    <span><b>41</b> modules</span><span><b>93</b> commands</span><span><b>11</b> HUD tabs</span><span><b>10,285</b> lines of module Lua</span><span><b>19,307</b> seeded items</span><span><b>9</b> class rotations</span><span><b>275</b> harness checks</span>
   </div>
   <div class="links">
     <a class="primary" href="https://github.com/mbrown10457/ForeverOptimizer/issues/new?template=add-in.yml">Propose an add-in</a>
@@ -282,6 +282,7 @@ const ADDINS = [
  {a:"Character",n:"Rune discovery",s:"live",f:"Character/Runes.lua",c:["runes"],w:"Diffs every Engrave spell and rune ability for your class against the spellbook. A new one is announced, flashed, noted and saved with level, zone and position.",g:"Nobody knows yet how Forever hands runes out."},
  // Classes
  {a:"Classes",n:"Hunter",s:"part",f:"Classes/Hunter.lua",t:"Hunter",c:["hunter"],w:"Pet damage share and uptime, aspect, ammo remaining, happiness and food, Auto Shot clipping.",g:"Pet training points not read yet."},
+ {a:"Classes",n:"Auto Shot timer",s:"live",f:"Classes/AutoShot.lua",c:["shotbar"],w:"A bar from one Auto Shot to the next from the weapon speed, the last half second marked as the aim window and red while you move through it; casts pause the cycle and restart it when they land. Secret spell ids are read from the cast GUID. Wand Shoot gets the same bar.",g:"Needs the live client to confirm START/STOP_AUTOREPEAT_SPELL and UNIT_SPELLCAST_SUCCEEDED carry readable data for Auto Shot."},
  {a:"Classes",n:"Warlock",s:"part",f:"Classes/Warlock.lua",t:"Warlock",c:["warlock"],w:"Shard count with low and high warnings, demon damage share, DoT efficiency, mana spent versus Life Tapped.",g:"Life Tap versus Drain Life trade-off math not built."},
  {a:"Classes",n:"Priest",s:"part",f:"Classes/Priest.lua",t:"Priest",c:["priest"],w:"Wand versus spell share, drink share, heal per mana with overheal.",g:"No buff uptime or per-fight regen model."},
  {a:"Classes",n:"Shaman",s:"live",f:"Classes/Shaman.lua",t:"Shaman",c:["shaman"],w:"Shield charges, weapon imbue time left, totems down with time left, shocks, bolts and heals per kill, drink share, melee share and heal per mana from the combat log. Warns when a fight starts without a shield or an imbue and when the imbue has two minutes left.",g:"Totem names, imbue timers and shield charges are read from client APIs the harness only stubs."},
@@ -296,7 +297,7 @@ const ADDINS = [
  {a:"Tooling",n:"Collect and summarize",s:"ok",f:"scripts/collect.*, scripts/summarize.py",w:"After a session, zips the saved file and the game log; the Mac side converts to JSON and prints verify results, errors, sessions, notes, checklist and runes."},
  {a:"Tooling",n:"SQLite export",s:"ok",f:"scripts/fo_sqlite.py, scripts/savedvars_to_json.py",w:"Loads the saved file into SQLite tables for offline analysis in any tool."},
  {a:"Tooling",n:"Nightly backup",s:"ok",f:"scripts/backup.sh, scripts/backup-install.sh",w:"launchd agent copies the saved files nightly and at login, keeps 30 days."},
- {a:"Tooling",n:"Test harness",s:"ok",f:"test/run.lua, test/wowstub.lua",w:"A fake WoW client in Lua: frames, events, combat log, spellbook, units, chat capture. Every module is loaded, every command smoke-run, 262 checks."},
+ {a:"Tooling",n:"Test harness",s:"ok",f:"test/run.lua, test/wowstub.lua",w:"A fake WoW client in Lua: frames, events, combat log, spellbook, units, chat capture. Every module is loaded, every command smoke-run, 275 checks."},
  {a:"Tooling",n:"CI, releases, seed updates",s:"ok",f:".github/workflows/*.yml",w:"Syntax check and harness on every push, zip release on tag, a daily job that rebuilds the item and spell seeds when the client build changes and opens an issue if validation fails."},
  {a:"Tooling",n:"HUD mockup generator",s:"ok",f:"scripts/mock/",w:"Drives the harness, dumps every tab, button and command output, and renders the mockup page on GitHub Pages from real addon text."},
  // Open slots
