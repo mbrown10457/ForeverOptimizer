@@ -1,4 +1,4 @@
-# ForeverOptimizer add-ins (v0.16.0)
+# ForeverOptimizer add-ins (v0.17.0)
 
 Generated from `docs/addins.html` by `scripts/build_features.js`. The browsable version with filters and the architecture diagram is at https://mbrown10457.github.io/ForeverOptimizer/addins.html.
 
@@ -48,6 +48,7 @@ Status: **ready** = built and exercised by the offline harness; **live check** =
 | Add-in | Status | What it does | Commands | Where |
 |---|---|---|---|---|
 | Auction scanner | live check | Full scan when the auction house is open, on demand or automatically, feeding price history. *Gap: Retail C_AuctionHouse API assumed from client docs.* | `/fo scan`, `/fo autoscan`, `/fo ahstats` | `Economy/AuctionHouseScanner.lua`; HUD: Economy buttons |
+| Item advisor | live check | Vendor, disenchant or auction? /fo advise <item> compares the vendor price, the lowest scanned auction listing net of the cut, and the expected value and range of disenchanting from the classic result table (dust / essence / shard by quality and item level, armour favours dust, weapons essence) priced from your scans. Sure money wins unless an alternative beats it by the margin; soulbound skips the auction; disenchant is only recommended at sufficient Enchanting skill. /fo advise bags sweeps the bags; a tooltip line shows the summary on hover. *Gap: Result table is the classic one; Forever may have retuned drop rates. Mats and items are unpriced until an AH scan.* | `/fo advise` | `Economy/ItemAdvisor.lua` |
 | Price history | ready | Latest, 7-day and 30-day price per item, movers against their average, flips below vendor or far below average, and price watches that alert. | `/fo price`, `/fo movers`, `/fo flips`, `/fo watch`, `/fo unwatch` | `Economy/PriceHistory.lua` |
 | Gold per hour | ready | Net gold per hour from the session ledger, effective rate with unrealized loot, repairs attributed to dungeon runs, dungeon versus open world. | `/fo gold`, `/fo dungeons` | `Economy/GoldPerHour.lua`; HUD: Economy |
 | Inventory optimizer | ready | Classifies every bag slot as trash, auction, material, quest or keep by value per slot, sells trash on demand or automatically, and finds items and materials across all your characters and bank. | `/fo bags`, `/fo find`, `/fo mats`, `/fo bank` | `Economy/InventoryOptimizer.lua`; HUD: Economy buttons |
@@ -92,7 +93,7 @@ Status: **ready** = built and exercised by the offline harness; **live check** =
 | Collect and summarize | ready | After a session, zips the saved file and the game log; the Mac side converts to JSON and prints verify results, errors, sessions, notes, checklist and runes. |  | `scripts/collect.*, scripts/summarize.py` |
 | SQLite export | ready | Loads the saved file into SQLite tables for offline analysis in any tool. |  | `scripts/fo_sqlite.py, scripts/savedvars_to_json.py` |
 | Nightly backup | ready | launchd agent copies the saved files nightly and at login, keeps 30 days. |  | `scripts/backup.sh, scripts/backup-install.sh` |
-| Test harness | ready | A fake WoW client in Lua: frames, events, combat log, spellbook, units, chat capture. Every module is loaded, every command smoke-run, 292 checks. |  | `test/run.lua, test/wowstub.lua` |
+| Test harness | ready | A fake WoW client in Lua: frames, events, combat log, spellbook, units, chat capture. Every module is loaded, every command smoke-run, 313 checks. |  | `test/run.lua, test/wowstub.lua` |
 | CI, releases, seed updates | ready | Syntax check and harness on every push, zip release on tag, a daily job that rebuilds the item and spell seeds when the client build changes and opens an issue if validation fails. |  | `.github/workflows/*.yml` |
 | HUD mockup generator | ready | Drives the harness, dumps every tab, button and command output, and renders the mockup page on GitHub Pages from real addon text. |  | `scripts/mock/` |
 
@@ -113,4 +114,4 @@ Status: **ready** = built and exercised by the offline harness; **live check** =
 | Buff and debuff uptime | open slot | Per-fight uptime of your own buffs, Hunter's Mark, curses and Power Word: Fortitude, from aura events in the combat log. |  |  |
 | Your idea | open slot | Anything that turns something you can observe in game into a number that changes how you play. Open a proposal with the button at the top. |  |  |
 
-Totals: 34 ready, 13 live check, 5 partial, 12 open slots.
+Totals: 34 ready, 14 live check, 5 partial, 12 open slots.

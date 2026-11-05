@@ -9,7 +9,7 @@ local function outHas(pat) for i = #S.out, 1, -1 do if S.out[i]:find(pat, 1, tru
 local function noErrors(label) check(#S.errors == 0, label .. " (no handler errors)") if #S.errors > 0 then for _, e in ipairs(S.errors) do print("   " .. e) end S.errors = {} end end
 
 local FO, order = S.loadAddon("ForeverOptimizer")
-check(#order == 56, "loaded " .. #order .. " files from TOC")
+check(#order == 57, "loaded " .. #order .. " files from TOC")
 check(#FO.modules >= 26, #FO.modules .. " modules registered")
 check(ForeverOptimizerDB == nil or true, "pre-login")
 
@@ -732,6 +732,60 @@ SlashCmdList.FOREVEROPTIMIZER("hud click Arrow")
 check(AR.target ~= nil, "HUD Guide tab buttons work")
 SlashCmdList.FOREVEROPTIMIZER("tab Overview")
 noErrors("leveling guide")
+
+-- Item advisor: vendor, disenchant or auction
+local IA = FO:GetModule("Economy.ItemAdvisor")
+S.items[2244] = { name = "Krol Blade", quality = 3, sell = 2000, class = 2, sub = 7, stack = 1, equip = "INVTYPE_WEAPON", ilvl = 37 }
+PH:Observe(10940, "Strange Dust", 1200, 300, 9)            -- 1140 net
+PH:Observe(10998, "Lesser Astral Essence", 5000, 40, 3)    -- 4750 net
+PH:Observe(10978, "Small Glimmering Shard", 20000, 5, 2)   -- 19000 net
+local a = IA:Assess(9797)
+check(a and a.de and #a.de.outcomes == 3 and a.de.outcomes[1].itemID == 10940 and a.de.outcomes[1].p == 0.75 and a.de.outcomes[1].lo == 4 and a.de.outcomes[1].hi == 6,
+      "green armour ilvl 22 disenchants to Strange Dust x4-6 at 75%")
+check(a.de.expected == 6650 and a.de.lo == 4560 and a.de.hi == 19000, "expected " .. tostring(a.de.expected) .. ", range " .. tostring(a.de.lo) .. "-" .. tostring(a.de.hi))
+check(a.de.need == 25 and a.de.skill == nil and not a.de.can, "needs Enchanting 25; this hunter has none")
+check(a.best == "vendor" and a.why:find("enchanter", 1, true) and a.why:find("no auction data", 1, true), "without scans or a skill the call is vendor, with the enchanter note (" .. a.why .. ")")
+PH:Observe(9797, "Elegant Robes", 9000, 2, 2)
+a = IA:Assess(9797)
+check(a.best == "auction" and a.ah and a.ah.net == 8550 and a.bestValue == 8550, "a scanned listing above vendor and mats makes it auction")
+a = IA:Assess(9797, { bound = true })
+check(a.best == "vendor" and a.bound and a.why:find("soulbound", 1, true), "soulbound removes the auction option")
+local oldProf = GetProfessionInfo
+GetProfessionInfo = function(i) if i == 1 then return "Enchanting", nil, 60, 150, nil, nil, 333 end return "Engineering", nil, 60, 150, nil, nil, 202 end
+S.fire("SKILL_LINES_CHANGED")
+check(IA:EnchantSkill() == 60, "Enchanting rank read from the profession list")
+a = IA:Assess(9797, { bound = true })
+check(a.de.can and a.best == "disenchant" and a.bestValue == 6650, "soulbound green goes to the disenchanter at skill 60")
+a = IA:Assess(2244)
+check(a.de and #a.de.outcomes == 1 and a.de.outcomes[1].itemID == 11139 and a.de.outcomes[1].p == 1 and a.de.need == 100 and not a.de.can, "blue ilvl 37 weapon: one Large Glowing Shard, needs Enchanting 100")
+check(not a.de.priced and a.de.expected == 0 and a.why:find("unpriced until an AH scan", 1, true), "an unscanned shard is reported as unpriced, not as vendor copper")
+local o = IA:Outcomes(2, 15, 2, 22)
+check(o[1].itemID == 10998 and o[1].p == 0.75, "green weapons favour the essence")
+o = IA:Outcomes(4, 1, 4, 58)
+check(o[1].itemID == 20725 and o[1].lo == 1 and o[1].hi == 1, "epic ilvl 58 armour: a Nexus Crystal")
+check(IA:Outcomes(2, 20, 2, 30) == nil and IA:Outcomes(7, 5, 2, 30) == nil and IA:Outcomes(4, 1, 1, 30) == nil, "fishing poles, trade goods and whites do not disenchant")
+a = IA:Assess(2589)
+check(a and not a.de and a.deReason, "Linen Cloth: vendor or auction only (" .. tostring(a.deReason) .. ")")
+SlashCmdList.FOREVEROPTIMIZER("advise |cffffffff|Hitem:9797::::::::23:::::|h[Elegant Robes]|h|r")
+check(outHas("Strange Dust") and outHas("Lesser Astral Essence") and outHas("needs Enchanting 25 (you: 60)"), "/fo advise <link> prints the three options and the result table")
+SlashCmdList.FOREVEROPTIMIZER("advise bronze mace")
+check(outHas("Bronze Mace (green, ilvl 22") and outHas("Lesser Astral Essence") and outHas("vendor      8s 98c"), "/fo advise by name resolves an unscanned item through the seed (weapon, ilvl and sell price)")
+table.insert(S.bags, { itemID = 9797, count = 1, quality = 2 })
+table.insert(S.bags, { itemID = 2244, count = 1, quality = 3 })
+SlashCmdList.FOREVEROPTIMIZER("advise bags")
+check(outHas("Bags, green and better (3)") and outHas("Elegant Robes") and outHas("Krol Blade") and outHas("DE ?*") and outHas("this character cannot disenchant it"), "/fo advise bags sweeps greens and blues with the enchanter and unpriced footnotes")
+GameTooltip.GetItem = function() return "Elegant Robes", "|cffffffff|Hitem:9797::::::::23:::::|h[Elegant Robes]|h|r" end
+GameTooltip.AddLine = function(self, line) self.lines = self.lines or {} self.lines[#self.lines + 1] = line end
+for _, fn in ipairs(S.tooltipFns) do fn(GameTooltip) end
+local ttLine
+for _, l in ipairs(GameTooltip.lines or {}) do if l:find("FO: vendor", 1, true) then ttLine = l end end
+check(ttLine and ttLine:find("DE ~66s 50c", 1, true) and ttLine:find("auction", 1, true), "tooltip line carries vendor, AH and DE figures with the call (" .. tostring(ttLine) .. ")")
+SlashCmdList.FOREVEROPTIMIZER("advise tooltip") check(IA.db.settings.tooltip == false, "advise tooltip toggles off")
+SlashCmdList.FOREVEROPTIMIZER("advise tooltip") SlashCmdList.FOREVEROPTIMIZER("advise margin 25") check(IA.db.settings.margin == 25, "advise margin set")
+SlashCmdList.FOREVEROPTIMIZER("advise margin 10")
+GetProfessionInfo = oldProf S.fire("SKILL_LINES_CHANGED")
+table.remove(S.bags) table.remove(S.bags)
+noErrors("item advisor")
 
 -- Module disable is honoured on the next load
 ForeverOptimizerDB.account.modules.disabled["Classes.Warlock"] = true

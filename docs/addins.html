@@ -124,11 +124,11 @@ footer { margin-top: 56px; color: var(--fg-3); font-size: 13px; font-family: var
 
 <div class="wrap">
 <header>
-  <div class="eyebrow">World of Warcraft: Forever &middot; addon &middot; <span id="ver">v0.16.0</span></div>
+  <div class="eyebrow">World of Warcraft: Forever &middot; addon &middot; <span id="ver">v0.17.0</span></div>
   <h1>ForeverOptimizer Add-in Catalog</h1>
   <p class="sub">One core, many add-ins. Every module below records something from your own play and turns it into a number on the HUD or a <code>/fo</code> command. This page is the full list of what exists, how the pieces fit, and the open slots where a new add-in is wanted.</p>
   <div class="facts">
-    <span><b>42</b> modules</span><span><b>94</b> commands</span><span><b>11</b> HUD tabs</span><span><b>10,509</b> lines of module Lua</span><span><b>19,307</b> seeded items</span><span><b>9</b> class rotations</span><span><b>292</b> harness checks</span>
+    <span><b>43</b> modules</span><span><b>95</b> commands</span><span><b>11</b> HUD tabs</span><span><b>10,823</b> lines of module Lua</span><span><b>19,307</b> seeded items</span><span><b>9</b> class rotations</span><span><b>313</b> harness checks</span>
   </div>
   <div class="links">
     <a class="primary" href="https://github.com/mbrown10457/ForeverOptimizer/issues/new?template=add-in.yml">Propose an add-in</a>
@@ -270,6 +270,7 @@ const ADDINS = [
  {a:"Quest",n:"Leveling guide",s:"ok",f:"Quest/Guide.lua",t:"Guide",c:["guide"],w:"Step-by-step route window: accept, do and turn in this quest, go here, set hearth, train, reach a level. Advances from the quest log and the arrow's arrival, hides other classes' and races' steps, saves progress per character. Routes are text specs baked with QuestieDB names and coordinates (scripts/build_routes.py), with a shared Barrens section spliced in. Ships Orc & Troll 1-20 and Tauren 1-20 with the class quests for all six Horde classes: hunter pet, warlock Voidwalker, shaman totems, warrior Defensive Stance, priest Hex of Weakness, druid Bear Form and Cure Poison.",g:"Step order is a first draft from the database, not a measured run."},
  // Economy
  {a:"Economy",n:"Auction scanner",s:"live",f:"Economy/AuctionHouseScanner.lua",t:"Economy buttons",c:["scan","autoscan","ahstats"],w:"Full scan when the auction house is open, on demand or automatically, feeding price history.",g:"Retail C_AuctionHouse API assumed from client docs."},
+ {a:"Economy",n:"Item advisor",s:"live",f:"Economy/ItemAdvisor.lua",c:["advise"],w:"Vendor, disenchant or auction? /fo advise <item> compares the vendor price, the lowest scanned auction listing net of the cut, and the expected value and range of disenchanting from the classic result table (dust / essence / shard by quality and item level, armour favours dust, weapons essence) priced from your scans. Sure money wins unless an alternative beats it by the margin; soulbound skips the auction; disenchant is only recommended at sufficient Enchanting skill. /fo advise bags sweeps the bags; a tooltip line shows the summary on hover.",g:"Result table is the classic one; Forever may have retuned drop rates. Mats and items are unpriced until an AH scan."},
  {a:"Economy",n:"Price history",s:"ok",f:"Economy/PriceHistory.lua",c:["price","movers","flips","watch","unwatch"],w:"Latest, 7-day and 30-day price per item, movers against their average, flips below vendor or far below average, and price watches that alert."},
  {a:"Economy",n:"Gold per hour",s:"ok",f:"Economy/GoldPerHour.lua",t:"Economy",c:["gold","dungeons"],w:"Net gold per hour from the session ledger, effective rate with unrealized loot, repairs attributed to dungeon runs, dungeon versus open world."},
  {a:"Economy",n:"Inventory optimizer",s:"ok",f:"Economy/InventoryOptimizer.lua",t:"Economy buttons",c:["bags","find","mats","bank"],w:"Classifies every bag slot as trash, auction, material, quest or keep by value per slot, sells trash on demand or automatically, and finds items and materials across all your characters and bank."},
@@ -298,7 +299,7 @@ const ADDINS = [
  {a:"Tooling",n:"Collect and summarize",s:"ok",f:"scripts/collect.*, scripts/summarize.py",w:"After a session, zips the saved file and the game log; the Mac side converts to JSON and prints verify results, errors, sessions, notes, checklist and runes."},
  {a:"Tooling",n:"SQLite export",s:"ok",f:"scripts/fo_sqlite.py, scripts/savedvars_to_json.py",w:"Loads the saved file into SQLite tables for offline analysis in any tool."},
  {a:"Tooling",n:"Nightly backup",s:"ok",f:"scripts/backup.sh, scripts/backup-install.sh",w:"launchd agent copies the saved files nightly and at login, keeps 30 days."},
- {a:"Tooling",n:"Test harness",s:"ok",f:"test/run.lua, test/wowstub.lua",w:"A fake WoW client in Lua: frames, events, combat log, spellbook, units, chat capture. Every module is loaded, every command smoke-run, 292 checks."},
+ {a:"Tooling",n:"Test harness",s:"ok",f:"test/run.lua, test/wowstub.lua",w:"A fake WoW client in Lua: frames, events, combat log, spellbook, units, chat capture. Every module is loaded, every command smoke-run, 313 checks."},
  {a:"Tooling",n:"CI, releases, seed updates",s:"ok",f:".github/workflows/*.yml",w:"Syntax check and harness on every push, zip release on tag, a daily job that rebuilds the item and spell seeds when the client build changes and opens an issue if validation fails."},
  {a:"Tooling",n:"HUD mockup generator",s:"ok",f:"scripts/mock/",w:"Drives the harness, dumps every tab, button and command output, and renders the mockup page on GitHub Pages from real addon text."},
  // Open slots

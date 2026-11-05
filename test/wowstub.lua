@@ -272,12 +272,12 @@ S.items = {
     [2840] = { name = "Copper Bar", quality = 1, sell = 20, class = 7, sub = 7, stack = 20 },
     [1515] = { name = "Rough Boomstick", quality = 1, sell = 500, class = 2, sub = 3, stack = 1, equip = "INVTYPE_RANGED", stats = { ITEM_MOD_DAMAGE_PER_SECOND_SHORT = 8.2 } },
     [2092] = { name = "Worn Dagger", quality = 1, sell = 10, class = 2, sub = 15, stack = 1, equip = "INVTYPE_WEAPON", stats = { ITEM_MOD_DAMAGE_PER_SECOND_SHORT = 3.1 } },
-    [9797] = { name = "Elegant Robes", quality = 2, sell = 500, class = 4, sub = 1, stack = 1, equip = "INVTYPE_ROBE", stats = { ITEM_MOD_AGILITY_SHORT = 5, ITEM_MOD_STAMINA_SHORT = 4 } },
+    [9797] = { name = "Elegant Robes", quality = 2, sell = 500, class = 4, sub = 1, stack = 1, equip = "INVTYPE_ROBE", ilvl = 22, stats = { ITEM_MOD_AGILITY_SHORT = 5, ITEM_MOD_STAMINA_SHORT = 4 } },
 }
 local function link(id) local it = S.items[id] return "|cffffffff|Hitem:" .. id .. "::::::::23:::::|h[" .. it.name .. "]|h|r" end
 C_Item = {
     GetItemInfo = function(id) id = tonumber(id) or tonumber(tostring(id):match("item:(%d+)")) local it = S.items[id] if not it then return nil end
-        return it.name, link(id), it.quality, 10, 1, "t", "st", it.stack, it.equip or "", "icon", it.sell, it.class, it.sub, 0 end,
+        return it.name, link(id), it.quality, it.ilvl or 10, 1, "t", "st", it.stack, it.equip or "", "icon", it.sell, it.class, it.sub, it.bind or 0 end,
     GetItemInfoInstant = function(id) id = tonumber(id) or tonumber(tostring(id):match("item:(%d+)")) local it = S.items[id] if not it then return nil end
         return id, "t", "st", it.equip or "", "icon", it.class, it.sub end,
     GetItemNameByID = function(id) local it = S.items[id] return it and it.name end,
@@ -406,7 +406,8 @@ function GetGreetingText() return "Greetings, traveler." end
 C_GossipInfo = { GetText = function() return "What can I do for you?" end }
 Enum = { LootSlotType = { Item = 1, Money = 2 }, VoiceTtsDestination = { LocalPlayback = 1, QueuedLocalPlayback = 2 }, ItemClass = { Consumable = 0, Weapon = 2, Armor = 4, Reagent = 5, Projectile = 6, Tradegoods = 7, Questitem = 12, Miscellaneous = 15 },
          BagIndex = { Backpack = 0, Bank = -1, BankBag_1 = 5 }, TooltipDataType = { Item = 0 }, CraftingReagentType = { Basic = 1 } }
-TooltipDataProcessor = { AddTooltipPostCall = function(t, fn) S.tooltipFn = fn end }
+S.tooltipFns = {}
+TooltipDataProcessor = { AddTooltipPostCall = function(t, fn) S.tooltipFn = fn S.tooltipFns[#S.tooltipFns + 1] = fn end }
 GetNumTrainerServices = function() return 3 end
 GetTrainerServiceInfo = function(i) return ({ { "Arcane Shot", "Rank 3", "available" }, { "Multi-Shot", "Rank 2", "unavailable" }, { "Aspect of the Hawk", "Rank 1", "used" } })[i][1],
     ({ { "Arcane Shot", "Rank 3", "available" }, { "Multi-Shot", "Rank 2", "unavailable" }, { "Aspect of the Hawk", "Rank 1", "used" } })[i][2],
