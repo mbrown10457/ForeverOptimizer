@@ -787,6 +787,18 @@ GetProfessionInfo = oldProf S.fire("SKILL_LINES_CHANGED")
 table.remove(S.bags) table.remove(S.bags)
 noErrors("item advisor")
 
+-- Quest reader diagnostics and playback paths
+local RD = FO:GetModule("Quest.Reader")
+local n0 = #S.tts.spoken
+SlashCmdList.FOREVEROPTIMIZER("tts debug") S.advance(30)
+check(outHas("tts debug: 2 voices (Samantha, Daniel)") and outHas("path 1: SpeakText, local playback: called") and outHas("path 5: Blizzard TextToSpeech_Speak: not on this client"), "/fo tts debug reports the client state and tries each path")
+check(#S.tts.spoken == n0 + 4 and S.tts.spoken[n0 + 2].dest == 4 and S.tts.spoken[n0 + 4].voice == 0, "four SpeakText paths spoke with their own destinations")
+SlashCmdList.FOREVEROPTIMIZER("tts path 2")
+check(RD.db.path == 2 and S.tts.spoken[#S.tts.spoken].dest == 4, "/fo tts path 2 switches the reader to queued playback")
+SlashCmdList.FOREVEROPTIMIZER("tts path") check(outHas("playback path 2 of 6"), "/fo tts path lists the paths")
+SlashCmdList.FOREVEROPTIMIZER("tts path 1")
+noErrors("tts diagnostics")
+
 -- Module disable is honoured on the next load
 ForeverOptimizerDB.account.modules.disabled["Classes.Warlock"] = true
 S.frames, S.registered, S.tickers, S.timers = nil, {}, {}, {}

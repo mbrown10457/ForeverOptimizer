@@ -96,7 +96,16 @@ function V:Run()
     add("C_QuestLog.GetQuestObjectives", has("C_QuestLog.GetQuestObjectives"), "objective ticks")
     add("C_QuestLog.GetNextWaypoint", has("C_QuestLog.GetNextWaypoint"), has("C_QuestLog.GetNextWaypoint") and "present; check it returns data for vanilla quests" or "absent; recorded points only")
     add("C_QuestLog.GetInfo", has("C_QuestLog.GetInfo"), "")
-    add("text to speech", nil, has("C_VoiceChat.SpeakText") and "C_VoiceChat.SpeakText present: quest reader can speak" or "C_VoiceChat.SpeakText absent: quest reader off")
+    if has("C_VoiceChat.SpeakText") then
+        local okV, voices = pcall(C_VoiceChat.GetTtsVoices)
+        local nV = okV and type(voices) == "table" and #voices or 0
+        local okE, en = pcall(function() return C_VoiceChat.IsEnabled and C_VoiceChat.IsEnabled() end)
+        local okL, li = pcall(function() return C_VoiceChat.IsLoggedIn and C_VoiceChat.IsLoggedIn() end)
+        add("text to speech", nil, string.format("SpeakText present, %d voices, voice chat enabled=%s loggedIn=%s, EnableVoiceChat=%s, TextToSpeech_Speak %s (silent? /fo tts debug)",
+            nV, okE and tostring(en) or "err", okL and tostring(li) or "err", GetCVar and tostring(GetCVar("EnableVoiceChat")) or "n/a", type(TextToSpeech_Speak) == "function" and "present" or "absent"))
+    else
+        add("text to speech", nil, "C_VoiceChat.SpeakText absent: quest reader off")
+    end
 
     -- economy
     local retailAH = has("C_AuctionHouse.ReplicateItems")

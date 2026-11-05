@@ -404,7 +404,7 @@ function GetProgressText() return S.questFrame.progress end
 function GetRewardText() return S.questFrame.reward end
 function GetGreetingText() return "Greetings, traveler." end
 C_GossipInfo = { GetText = function() return "What can I do for you?" end }
-Enum = { LootSlotType = { Item = 1, Money = 2 }, VoiceTtsDestination = { LocalPlayback = 1, QueuedLocalPlayback = 2 }, ItemClass = { Consumable = 0, Weapon = 2, Armor = 4, Reagent = 5, Projectile = 6, Tradegoods = 7, Questitem = 12, Miscellaneous = 15 },
+Enum = { LootSlotType = { Item = 1, Money = 2 }, VoiceTtsDestination = { RemoteTransmission = 0, LocalPlayback = 1, QueuedLocalPlayback = 4, ScreenReader = 6 }, ItemClass = { Consumable = 0, Weapon = 2, Armor = 4, Reagent = 5, Projectile = 6, Tradegoods = 7, Questitem = 12, Miscellaneous = 15 },
          BagIndex = { Backpack = 0, Bank = -1, BankBag_1 = 5 }, TooltipDataType = { Item = 0 }, CraftingReagentType = { Basic = 1 } }
 S.tooltipFns = {}
 TooltipDataProcessor = { AddTooltipPostCall = function(t, fn) S.tooltipFn = fn S.tooltipFns[#S.tooltipFns + 1] = fn end }

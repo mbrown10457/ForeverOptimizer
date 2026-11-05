@@ -12,7 +12,7 @@ local print = FO:Printer("Quest")
 -- ===========================================================================
 local R = FO:NewModule("Quest.Reader", {
     account = "tts",
-    defaults = { enabled = true, gossip = true, objectives = true, voice = nil, rate = 0, volume = 100 },
+    defaults = { enabled = true, gossip = true, objectives = true, voice = nil, rate = 0, volume = 100, path = 1 },
 })
 FO.Reader = R
 R.available, R.reason = false, "not initialised"
@@ -56,7 +56,9 @@ function R:Speak(text, force)
     text = Clean(text)
     if not text then return false end
     self:Stop()
-    local ok, err = pcall(C_VoiceChat.SpeakText, self:VoiceID(), text, Dest(), U.Num(self.db.rate) or 0, U.Num(self.db.volume) or 100)
+    local p = self:Paths()[self.db.path or 1] or self:Paths()[1]
+    if not p.available() then p = self:Paths()[1] end
+    local ok, err = pcall(p.speak, text, U.Num(self.db.rate) or 0, U.Num(self.db.volume) or 100)
     if not ok then print("tts: %s", tostring(err)) return false end
     self.last = text
     self.spoken = self.spoken + 1
@@ -68,6 +70,69 @@ function R:Stop()
 end
 
 local function Call(fn) if type(fn) == "function" then local ok, v = pcall(fn) if ok then return U.Str(v) end end end
+
+-- Diagnostics: what the client reports about its speech and voice chat state, then every
+-- playback path tried a few seconds apart so the one that makes a sound can be named.
+local function CVar(name)
+    if not GetCVar then return "n/a" end
+    local ok, v = pcall(GetCVar, name)
+    return ok and v ~= nil and tostring(v) or "n/a"
+end
+
+local function VC(fnName, ...)
+    local fn = C_VoiceChat and C_VoiceChat[fnName]
+    if type(fn) ~= "function" then return "absent" end
+    local ok, v = pcall(fn, ...)
+    if not ok then return "err" end
+    if type(v) == "table" then return U.Str(v.deviceName) or U.Str(v.name) or "table" end
+    return tostring(v)
+end
+
+-- Every way this client might play speech. Each entry: name, available(), speak(text, rate, volume).
+-- Path 1 is the normal one; /fo tts debug tries them all and /fo tts path <n> picks another.
+function R:Paths()
+    local dest = Enum and Enum.VoiceTtsDestination or {}
+    local voice = self:VoiceID()
+    local function hasVC() return C_VoiceChat and type(C_VoiceChat.SpeakText) == "function" end
+    local function hasBlizz() return type(TextToSpeech_Speak) == "function" end
+    return {
+        { name = "SpeakText, local playback", available = hasVC, speak = function(t, r, v) C_VoiceChat.SpeakText(voice, t, dest.LocalPlayback or 1, r, v) end },
+        { name = "SpeakText, queued local playback", available = hasVC, speak = function(t, r, v) C_VoiceChat.SpeakText(voice, t, dest.QueuedLocalPlayback or 4, r, v) end },
+        { name = "SpeakText, screen reader destination", available = hasVC, speak = function(t, r, v) C_VoiceChat.SpeakText(voice, t, dest.ScreenReader or 6, r, v) end },
+        { name = "SpeakText, voice 0, destination 1", available = hasVC, speak = function(t, r, v) C_VoiceChat.SpeakText(0, t, 1, r, v) end },
+        { name = "Blizzard TextToSpeech_Speak", available = hasBlizz, speak = function(t) TextToSpeech_Speak(t, { voiceID = voice }) end },
+        { name = "Blizzard TextToSpeech_Speak with its own voice choice", available = hasBlizz, speak = function(t)
+            local v = (TextToSpeech_GetSelectedVoice and TextToSpeech_GetSelectedVoice()) or (TEXTTOSPEECH_CONFIG and TEXTTOSPEECH_CONFIG.ttsVoiceOptionStandard)
+            TextToSpeech_Speak(t, v) end },
+    }
+end
+
+function R:Debug()
+    local voices = self:Voices()
+    local names = {}
+    for i = 1, math.min(#voices, 4) do names[#names + 1] = voices[i].name end
+    print("tts debug: %d voices%s; using voice %d", #voices, #names > 0 and (" (" .. table.concat(names, ", ") .. (#voices > 4 and ", ..." or "") .. ")") or "", self:VoiceID())
+    local dest = Enum and Enum.VoiceTtsDestination
+    local keys = {}
+    if type(dest) == "table" then for k, v in pairs(dest) do keys[#keys + 1] = k .. "=" .. tostring(v) end table.sort(keys) end
+    print("  Enum.VoiceTtsDestination: %s", #keys > 0 and table.concat(keys, " ") or "absent (using 1)")
+    print("  voice chat: enabled %s, logged in %s, output device %s, output volume %s, muted %s, deafened %s",
+        VC("IsEnabled"), VC("IsLoggedIn"), VC("GetActiveOutputDevice"), VC("GetOutputVolume"), VC("IsMuted"), VC("IsDeafened"))
+    print("  cvars: EnableVoiceChat %s, VoiceChatMasterVolumeScale %s, Sound_EnableAllSound %s, Sound_MasterVolume %s, Sound_EnableSoundWhenGameIsInBackground %s, textToSpeech %s",
+        CVar("EnableVoiceChat"), CVar("VoiceChatMasterVolumeScale"), CVar("Sound_EnableAllSound"), CVar("Sound_MasterVolume"), CVar("Sound_EnableSoundWhenGameIsInBackground"), CVar("textToSpeech"))
+    print("  Blizzard TTS: TextToSpeech_Speak %s, C_TTSSettings %s, TextToSpeechFrame %s",
+        type(TextToSpeech_Speak) == "function" and "present" or "absent", C_TTSSettings and "present" or "absent", TextToSpeechFrame and "present" or "absent")
+    local paths = self:Paths()
+    print("  trying %d playback paths, four seconds apart. Note which number you hear:", #paths)
+    for i, p in ipairs(paths) do
+        C_Timer.After((i - 1) * 4, function()
+            if not p.available() then print("  path %d: %s: not on this client", i, p.name) return end
+            local ok, err = pcall(p.speak, string.format("Quest reader path %d.", i), 0, 100)
+            print("  path %d: %s: %s", i, p.name, ok and "called" or ("error " .. tostring(err)))
+        end)
+    end
+    print("  then: /fo tts path <n> makes the reader use the one that worked.")
+end
 
 function R:ReadDetail()
     local title, body, objectives = Call(GetTitleText), Call(GetQuestText), Call(GetObjectiveText)
@@ -115,7 +180,7 @@ function R:OnEnable()
 end
 
 R.commands = {
-    tts = { help = "read quest text aloud: (status) | on | off | again | stop | voice [n] | rate <-10..10> | volume <0..100> | gossip on|off | objectives on|off | test", fn = function(self, arg)
+    tts = { help = "read quest text aloud: (status) | on | off | again | stop | voice [n] | rate <-10..10> | volume <0..100> | gossip on|off | objectives on|off | test | debug | path [n]", fn = function(self, arg)
         local sub, rest = U.SplitCmd(arg or "")
         if not self.available then print("quest reader unavailable: %s", tostring(self.reason)) return end
         if sub == "" then
@@ -150,10 +215,18 @@ R.commands = {
             if n and n >= 0 and n <= 100 then self.db.volume = math.floor(n) print("volume %d", self.db.volume) self:Speak("Reading at this volume.", true) else print("volume <0..100>") end
         elseif sub == "gossip" then self.db.gossip = rest ~= "off" print("gossip reading %s.", self.db.gossip and "on" or "off")
         elseif sub == "objectives" then self.db.objectives = rest ~= "off" print("objectives %s.", self.db.objectives and "read after the description" or "skipped")
+        elseif sub == "debug" then self:Debug()
+        elseif sub == "path" then
+            local n, paths = tonumber(rest), self:Paths()
+            if n and paths[n] then self.db.path = n print("reader uses path %d: %s", n, paths[n].name) self:Speak("Reading through path " .. n .. ".", true)
+            else
+                print("playback path %d of %d (/fo tts debug tries each one):", self.db.path or 1, #paths)
+                for i, p in ipairs(paths) do print("  %d  %s%s", i, p.name, p.available() and "" or "  (not on this client)") end
+            end
         elseif sub == "test" then
             if self:Speak("Quest reader test. Kill ten boars and bring me their tusks.", true) then print("speaking a test line.") else print("the client refused to speak; check Options > Accessibility > Text to Speech.") end
         else
-            print("tts: on | off | again | stop | voice [n] | rate <n> | volume <n> | gossip on|off | objectives on|off | test")
+            print("tts: on | off | again | stop | voice [n] | rate <n> | volume <n> | gossip on|off | objectives on|off | test | debug | path [n]")
         end
     end },
 }
