@@ -281,7 +281,7 @@ M.commands = {
             local pets = 0
             for _ in pairs(owners) do pets = pets + 1 end
             print("meter: %s | %s | %d fights this session, %s active | %d pets mapped to owners | %d hidden amounts | HUD mode %s, %d rows",
-                  self:Available() and "combat log live" or "combat log unavailable", self.cur.start and "in a fight" or "idle",
+                  self:Available() and (FO.CombatLog.estimated and "estimated (no combat log)" or "combat log live") or "combat log unavailable", self.cur.start and "in a fight" or "idle",
                   self.fights, U.FormatDuration(self:Duration(self.total)), pets, self.hidden, (self.db.mode or "dps"):upper(), self.db.rows or 8)
         end,
     },

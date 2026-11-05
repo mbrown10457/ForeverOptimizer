@@ -1,4 +1,4 @@
-# ForeverOptimizer add-ins (v0.11.0)
+# ForeverOptimizer add-ins (v0.12.0)
 
 Generated from `docs/addins.html` by `scripts/build_features.js`. The browsable version with filters and the architecture diagram is at https://mbrown10457.github.io/ForeverOptimizer/addins.html.
 
@@ -14,6 +14,7 @@ Status: **ready** = built and exercised by the offline harness; **live check** =
 | Client verify | ready | Probes every client API the addon depends on and saves the result, so the first login tells us exactly which modules are degraded. | `/fo verify` | `Core/Verify.lua` |
 | Error log | ready | Every handler runs inside FO.Try. Lua errors are deduplicated, kept with stacks, printed a few times, and saved so they can be read from the file after a crash. | `/fo errors` | `Core/Init.lua, Core/DataStorage.lua` |
 | Combat log adapter | live check | Normalizes COMBAT_LOG_EVENT_UNFILTERED into FO_CL_DAMAGE, HEAL, CAST and the rest, with mine/pet/party flags, so add-ins never parse the raw payload. *Gap: Built for the 1.60 client; refuses cleanly if the log is restricted.* | `/fo combatlog` | `Core/CombatLog.lua` |
+| Combat feed (no combat log) | live check | Forever has no combat log, so UNIT_COMBAT (every hit, heal and miss on you, your pet, your target and nameplates, with amount and school) is turned into the same FO_CL_* events: attributed to your last cast of that school, a running DoT, Melee, or your pet; duplicates through a second unit token dropped; deaths from the XP chat line. Meter, combat stats, rotation and class tabs run on it as estimates. | `/fo combatfeed` | `Core/CombatFeed.lua` |
 | Data storage | ready | Versioned saved-variables root with migrations, per-module namespaces, size caps and a per-namespace size report. | `/fo dbstats`, `/fo wipe` | `Core/DataStorage.lua` |
 | Character profile | ready | Realm, class, level, professions, equipment snapshot and build, stamped onto sessions and encounters so numbers can be compared like with like. | `/fo me`, `/fo skills` | `Core/CharacterProfile.lua` |
 | Analytics engine | ready | Zone and activity rankings near your level, normalized to levels per hour, scored by your objective weights (XP, gold, safety) with confidence labels. The adaptive leveling recommendation lives here. | `/fo objective`, `/fo estimate`, `/fo recommend`, `/fo zones` | `Core/AnalyticsEngine.lua`; HUD: Leveling |
@@ -89,7 +90,7 @@ Status: **ready** = built and exercised by the offline harness; **live check** =
 | Collect and summarize | ready | After a session, zips the saved file and the game log; the Mac side converts to JSON and prints verify results, errors, sessions, notes, checklist and runes. |  | `scripts/collect.*, scripts/summarize.py` |
 | SQLite export | ready | Loads the saved file into SQLite tables for offline analysis in any tool. |  | `scripts/fo_sqlite.py, scripts/savedvars_to_json.py` |
 | Nightly backup | ready | launchd agent copies the saved files nightly and at login, keeps 30 days. |  | `scripts/backup.sh, scripts/backup-install.sh` |
-| Test harness | ready | A fake WoW client in Lua: frames, events, combat log, spellbook, units, chat capture. Every module is loaded, every command smoke-run, 176 checks. |  | `test/run.lua, test/wowstub.lua` |
+| Test harness | ready | A fake WoW client in Lua: frames, events, combat log, spellbook, units, chat capture. Every module is loaded, every command smoke-run, 244 checks. |  | `test/run.lua, test/wowstub.lua` |
 | CI, releases, seed updates | ready | Syntax check and harness on every push, zip release on tag, a daily job that rebuilds the item and spell seeds when the client build changes and opens an issue if validation fails. |  | `.github/workflows/*.yml` |
 | HUD mockup generator | ready | Drives the harness, dumps every tab, button and command output, and renders the mockup page on GitHub Pages from real addon text. |  | `scripts/mock/` |
 
@@ -110,4 +111,4 @@ Status: **ready** = built and exercised by the offline harness; **live check** =
 | Buff and debuff uptime | open slot | Per-fight uptime of your own buffs, Hunter's Mark, curses and Power Word: Fortitude, from aura events in the combat log. |  |  |
 | Your idea | open slot | Anything that turns something you can observe in game into a number that changes how you play. Open a proposal with the button at the top. |  |  |
 
-Totals: 34 ready, 10 live check, 5 partial, 12 open slots.
+Totals: 34 ready, 11 live check, 5 partial, 12 open slots.

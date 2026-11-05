@@ -9,7 +9,7 @@ local function outHas(pat) for i = #S.out, 1, -1 do if S.out[i]:find(pat, 1, tru
 local function noErrors(label) check(#S.errors == 0, label .. " (no handler errors)") if #S.errors > 0 then for _, e in ipairs(S.errors) do print("   " .. e) end S.errors = {} end end
 
 local FO, order = S.loadAddon("ForeverOptimizer")
-check(#order == 53, "loaded " .. #order .. " files from TOC")
+check(#order == 54, "loaded " .. #order .. " files from TOC")
 check(#FO.modules >= 26, #FO.modules .. " modules registered")
 check(ForeverOptimizerDB == nil or true, "pre-login")
 
@@ -647,9 +647,36 @@ S.combatLogAllowed = false
 S.frames, S.registered, S.tickers, S.timers = nil, {}, {}, {}
 local FO3 = S.loadAddon("ForeverOptimizer")
 S.fire("ADDON_LOADED", "ForeverOptimizer") S.fire("PLAYER_LOGIN")
-check(FO3.CombatLog.registered == false and FO3.CombatLog.available == false, "combat log refusal detected")
-SlashCmdList.FOREVEROPTIMIZER("combat") check(outHas("combat log not available"), "combat commands degrade")
+check(FO3.CombatLog.registered == false and FO3.CombatLog.estimated == true and FO3.CombatFeed.active, "combat log refused, UNIT_COMBAT feed stands in")
 check(#FO3.Classes.HUNTER:Lines() >= 3, "hunter lines still render without the log")
+
+-- The feed: hits on the target become damage events with the last cast's name; duplicates
+-- through a second unit token are dropped; hits on the player are damage taken; heals are
+-- mine when solo; the XP chat line closes the fight.
+S.units.target = { name = "Mottled Boar", guid = "Creature-0-1-2-3-3098-0000BOAR", hostile = true, level = 2 }
+S.units.nameplate1 = S.units.target
+S.fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast-1", 3044)            -- Arcane Shot, arcane school 64
+S.fire("UNIT_COMBAT", "target", "WOUND", "", 42, 64)
+S.fire("UNIT_COMBAT", "nameplate1", "WOUND", "", 42, 64)                 -- same hit, other token
+S.fire("UNIT_SPELLCAST_SUCCEEDED", "player", "cast-2", 75)              -- Auto Shot, physical
+S.fire("UNIT_COMBAT", "target", "WOUND", "CRITICAL", 10, 1)
+S.advance(3)
+S.fire("UNIT_COMBAT", "target", "WOUND", "", 9, 1)                       -- no recent physical cast: Melee
+S.fire("UNIT_COMBAT", "target", "DODGE", "", 0, 1)
+S.fire("UNIT_COMBAT", "player", "WOUND", "", 7, 1)
+S.fire("UNIT_COMBAT", "player", "HEAL", "", 20, 2)
+local MT3, CS3 = FO3.Meter, FO3.CombatStats
+check(FO3.CombatFeed.dropped == 1 and MT3.cur.dmg == 61 and MT3.cur.heal == 20, "feed: 61 damage and 20 healing on the meter, duplicate token dropped (" .. tostring(MT3.cur.dmg) .. "/" .. tostring(MT3.cur.heal) .. ")")
+local bs = CS3.s.bySpell
+check(bs["Arcane Shot"] and bs["Arcane Shot"].total == 42 and bs["Auto Shot"] and bs["Auto Shot"].crit == 1 and bs["Melee"] and bs["Melee"].total == 9, "feed: damage attributed to Arcane Shot, Auto Shot (crit) and Melee")
+check(CS3.s.taken.total == 7 and CS3.s.misses["Melee"] and CS3.s.misses["Melee"].n == 1 and CS3.s.heal["Heal"] and CS3.s.heal["Heal"].total == 20, "feed: damage taken, dodge and heal recorded")
+check(CS3.s.mana["Arcane Shot"] and CS3.s.mana["Arcane Shot"].casts == 1, "feed: casts counted for mana per spell")
+local fightsBefore = CS3.s.fights
+S.fire("CHAT_MSG_COMBAT_XP_GAIN", "Mottled Boar dies, you gain 45 experience.")
+check(CS3.s.fights == fightsBefore + 1, "feed: XP line closes the fight (" .. tostring(CS3.s.fights) .. ")")
+SlashCmdList.FOREVEROPTIMIZER("combatlog") check(outHas("estimated from UNIT_COMBAT"), "combatlog reports the estimate")
+SlashCmdList.FOREVEROPTIMIZER("combatfeed") check(outHas("school 64: Arcane Shot"), "combatfeed shows the attribution state")
+S.units.nameplate1 = nil
 noErrors("third load (no combat log)")
 
 -- Fourth load as a shaman: shield, imbue, totems and per-kill counts come from the client

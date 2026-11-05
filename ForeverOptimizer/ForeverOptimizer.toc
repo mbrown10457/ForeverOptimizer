@@ -2,7 +2,7 @@
 ## Title: ForeverOptimizer
 ## Notes: One core, many modules: leveling, gold, mobs, quests, auction house, inventory, gear, training and downtime analytics built from your own gameplay.
 ## Author: Mike
-## Version: 0.11.9
+## Version: 0.12.0
 ## SavedVariables: ForeverOptimizerDB
 ## OptionalDeps: QuestieDB
 ## IconTexture: Interface\Icons\INV_Misc_Map_01
@@ -23,6 +23,7 @@ Core\DataStorage.lua
 Core\CharacterProfile.lua
 Core\SessionManager.lua
 Core\CombatLog.lua
+Core\CombatFeed.lua
 Core\AnalyticsEngine.lua
 Core\Verify.lua
 Core\Checklist.lua

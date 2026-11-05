@@ -58,7 +58,7 @@ function V:Run()
     -- forbidden action. Report what the combat log module found at enable time.
     local CLm = FO:GetModule("Core.CombatLog")
     local clOk = CLm and CLm.available
-    add("combat log", nil, clOk and "registered: CombatStats, class analytics and FO_FIGHT timing can run"
+    add("combat log", nil, clOk and (CLm.estimated and "UNIT_COMBAT feed: meter, combat stats and rotation are estimates" or "registered: CombatStats, class analytics and FO_FIGHT timing can run")
         or ("unavailable (" .. tostring(CLm and CLm.reason or "module missing") .. "): chat/loot paths in use"))
     if C_CombatLog and C_CombatLog.IsCombatLogRestricted then
         local okR, restricted = pcall(C_CombatLog.IsCombatLogRestricted)

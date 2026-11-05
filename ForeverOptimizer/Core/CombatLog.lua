@@ -3,11 +3,11 @@ local U = FO.Util
 local print = FO:Printer("Core")
 
 -- ===========================================================================
--- Combat log adapter. Built on the optimistic assumption that the Forever
--- client lets addons register COMBAT_LOG_EVENT_UNFILTERED and read amounts.
--- Registration is attempted in a pcall; if the client refuses it, or hides
--- amounts as secret values, FO.CombatLog.available / amountsHidden say so and
--- every consumer falls back to the chat-line and loot-window paths.
+-- Combat log adapter. Registers COMBAT_LOG_EVENT_UNFILTERED when the client
+-- has CombatLogGetCurrentEventInfo (Forever does not: the event is forbidden
+-- there). Without it, Core.CombatFeed synthesises the same events from
+-- UNIT_COMBAT and sets available + estimated; amountsHidden reports secret
+-- amounts either way, and consumers fall back to chat and loot paths.
 --
 -- Each event is normalised into one reused table and fired as:
 --   FO_CL_DAMAGE, FO_CL_MISS, FO_CL_HEAL, FO_CL_ENERGIZE, FO_CL_AURA,
@@ -112,6 +112,11 @@ function CL:Handle(...)
     ev.pet = not ev.mine and IsMyPet(ev.srcGUID, ev.srcFlags)
     ev.toMe = ev.dstGUID ~= nil and ev.dstGUID == playerGUID
 
+    self:Dispatch(kind)
+end
+
+-- Counting, secret-amount tracking and the FO_CL_* message for the event in `ev`
+function CL:Dispatch(kind)
     self.count = self.count + 1
     self.lastAt = GetTime()
     if not self.firstAt then self.firstAt = self.lastAt end
@@ -128,6 +133,20 @@ function CL:Handle(...)
     end
     self.kinds[kind] = (self.kinds[kind] or 0) + 1
     FO:Fire("FO_CL_" .. kind, ev)
+end
+
+-- Synthetic event from Core.CombatFeed (UNIT_COMBAT stand-in when the client has no combat log)
+function CL:Feed(fields, kind)
+    for k in pairs(ev) do ev[k] = nil end
+    for k, v in pairs(fields) do ev[k] = v end
+    ev.t = ev.t or GetTime()
+    for _, f in ipairs({ "amount", "over", "absorbed" }) do
+        local v = ev[f]
+        if v ~= nil then
+            if U.IsSecret(v) then ev.secret = true ev[f] = nil else ev[f] = U.Num(v) end
+        end
+    end
+    self:Dispatch(kind)
 end
 
 function CL:OnEnable()
@@ -155,7 +174,10 @@ function CL:OnEnable()
         end
     end
     self.frame = f
-    if not self.available then print("combat log not available (%s); class analytics use chat/loot paths.", tostring(self.reason)) end
+    -- Core.CombatFeed enables right after this and may stand in; report once both have run
+    C_Timer.After(0, function()
+        if not self.available then print("combat log not available (%s); class analytics use chat/loot paths.", tostring(self.reason)) end
+    end)
 end
 
 function CL:ClientRestricted()
@@ -168,6 +190,7 @@ end
 
 function CL:Status()
     if not self.available then return "unavailable" end
+    if self.estimated then return "estimated from UNIT_COMBAT (no combat log): hits on your target are yours" end
     local r = self:ClientRestricted()
     if r == true and self.count == 0 then return "registered but the client reports the log restricted here" end
     if self.count == 0 then return "registered, no events yet" end

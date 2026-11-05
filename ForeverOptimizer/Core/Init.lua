@@ -4,7 +4,7 @@ local ADDON, FO = ...
 _G.ForeverOptimizer = FO
 
 FO.NAME = ADDON
-FO.VERSION = "0.11.9"
+FO.VERSION = "0.12.0"
 FO.modules = {}        -- ordered list of module defs
 FO.moduleIndex = {}    -- name -> def
 FO.commands = {}       -- subcommand -> { fn=, help=, module= }

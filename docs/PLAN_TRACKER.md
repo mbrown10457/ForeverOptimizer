@@ -52,6 +52,7 @@ Status key: **done** = implemented and exercised by `test/run.lua`; **partial** 
 
 | Item | Status | Notes |
 |---|---|---|
+| Combat events without a combat log | done (UNIT_COMBAT feed, v0.12.0) | `Core/CombatFeed.lua`: hits, heals, misses, casts and deaths attributed by last cast per school, DoT duration, pet target; estimates, group damage on your target counts as yours |
 | Hunter: pet damage contribution, uptime | done (combat log) | Pet share of damage on HUD from CombatStats; falls back to pet presence if the log is refused |
 | Hunter: happiness, loyalty, food compatibility | partial | Happiness and food types shown when the client has the classic pet API (verify) |
 | Hunter: ammo remaining, pet training planning | partial | Ammo count + low warning. Pet training points not read yet |

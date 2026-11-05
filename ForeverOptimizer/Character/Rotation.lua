@@ -301,7 +301,7 @@ function R:Print(class)
     if not data then print("no rotation data for %s", tostring(class)) return end
     local level = FO.Player.level or 1
     local CL = FO.CombatLog
-    print("%s rotation at level %d  (%s; seed build %s)", class, level, (CL and CL.available) and "measured where 5+ casts" or "estimates only, no combat log", FO.Seed and FO.Seed.spellBuild or "?")
+    print("%s rotation at level %d  (%s; seed build %s)", class, level, (CL and CL.available) and (CL.estimated and "measured from hits on your target where 5+ casts" or "measured where 5+ casts") or "estimates only, no combat log", FO.Seed and FO.Seed.spellBuild or "?")
     local n, unlearned, train = 0, {}, {}
     for _, e in ipairs(data.rotation) do
         local known, ranks = self:Known(class, e[1])
