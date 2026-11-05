@@ -26,6 +26,7 @@ local print = FO:Printer("Core")
 local CF = FO:NewModule("Core.CombatFeed", {})
 FO.CombatFeed = CF
 CF.active, CF.count, CF.dropped, CF.reason = false, 0, 0, nil
+CF.readable, CF.secret = { hostile = 0, me = 0, pet = 0, other = 0 }, { hostile = 0, me = 0, pet = 0, other = 0 }   -- amounts by unit kind
 
 local CAST_WINDOW, PHYS_WINDOW, HEAL_WINDOW = 2.5, 1.0, 2.5
 local PHYSICAL = 1
@@ -103,6 +104,8 @@ local function HostileTarget()
     return "Unknown-0", "?"
 end
 
+-- descriptor and amount arrive as secret values in combat on Forever; a key built from a
+-- secret is itself secret and cannot be compared, so only plain values go into it
 local function Dup(guid, action, descriptor, amount, now)
     local key = guid .. "|" .. action .. "|" .. tostring(descriptor) .. "|" .. tostring(amount)
     if key == lastKey and lastKeyAt == now then return true end
@@ -124,7 +127,10 @@ local function OnUnitCombat(unit, action, descriptor, amount, school)
     local guid = U.Str(UnitGUID(unit))
     if not guid then return end
     local now = GetTime()
-    if Dup(guid, action, descriptor, amount, now) then CF.dropped = CF.dropped + 1 return end
+    local secretAmt = U.IsSecret(amount)
+    if secretAmt then amount = nil end
+    descriptor = U.IsSecret(descriptor) and nil or U.Str(descriptor)
+    if Dup(guid, action, descriptor, secretAmt and "?" or amount, now) then CF.dropped = CF.dropped + 1 return end
     if not playerGUID then RefreshGUIDs() end
     school = U.Num(school)
     local crit = descriptor == "CRITICAL"
@@ -132,6 +138,11 @@ local function OnUnitCombat(unit, action, descriptor, amount, school)
     local isMe = unit == "player" or guid == playerGUID
     local isPet = petGUID ~= nil and guid == petGUID
     local hostile = not isMe and not isPet and UnitCanAttack("player", unit) == true
+    local kindKey = hostile and "hostile" or isMe and "me" or isPet and "pet" or "other"
+    if action == "WOUND" or action == "HEAL" then
+        local t = secretAmt and CF.secret or CF.readable
+        t[kindKey] = t[kindKey] + 1
+    end
 
     if hostile then
         if name then seenNames[name] = guid end
@@ -214,6 +225,8 @@ CF.commands = {
         fn = function(self)
             if not self.active then print("combat feed inactive (%s).", self.reason or "?") return end
             print("combat feed: %d events (%d duplicate unit tokens dropped). Attribution: last cast per school within %.1fs, DoTs for their duration, else Melee.", self.count, self.dropped, CAST_WINDOW)
+            local r, s = self.readable, self.secret
+            print("  amounts readable / secret: on hostiles %d / %d, on you %d / %d, on your pet %d / %d, on others %d / %d", r.hostile, s.hostile, r.me, s.me, r.pet, s.pet, r.other, s.other)
             local now = GetTime()
             local parts = {}
             for school, c in pairs(lastBySchool) do parts[#parts + 1] = string.format("school %d: %s (%.0fs ago%s)", school, c.name, now - c.t, (c.dotUntil and now <= c.dotUntil) and ", DoT running" or "") end

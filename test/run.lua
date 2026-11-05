@@ -676,6 +676,10 @@ S.fire("CHAT_MSG_COMBAT_XP_GAIN", "Mottled Boar dies, you gain 45 experience.")
 check(CS3.s.fights == fightsBefore + 1, "feed: XP line closes the fight (" .. tostring(CS3.s.fights) .. ")")
 SlashCmdList.FOREVEROPTIMIZER("combatlog") check(outHas("estimated from UNIT_COMBAT"), "combatlog reports the estimate")
 SlashCmdList.FOREVEROPTIMIZER("combatfeed") check(outHas("school 64: Arcane Shot"), "combatfeed shows the attribution state")
+S.fire("UNIT_COMBAT", "target", "WOUND", "SECRET", "SECRET", 1)            -- 12.x: amount and descriptor secret in combat
+S.fire("UNIT_COMBAT", "target", "WOUND", "SECRET", "SECRET", 1)            -- cannot be told apart: dropped as a duplicate, no error
+check(FO3.CombatFeed.secret.hostile == 1 and FO3.CombatFeed.readable.hostile == 3 and MT3.hidden == 1, "feed: secret amounts counted, never compared (" .. FO3.CombatFeed.secret.hostile .. "/" .. FO3.CombatFeed.readable.hostile .. "/" .. MT3.hidden .. ")")
+SlashCmdList.FOREVEROPTIMIZER("combatfeed") check(outHas("on hostiles 3 / 1"), "combatfeed reports readable vs secret amounts")
 S.units.nameplate1 = nil
 noErrors("third load (no combat log)")
 
