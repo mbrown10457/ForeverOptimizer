@@ -128,7 +128,7 @@ footer { margin-top: 56px; color: var(--fg-3); font-size: 13px; font-family: var
   <h1>ForeverOptimizer Add-in Catalog</h1>
   <p class="sub">One core, many add-ins. Every module below records something from your own play and turns it into a number on the HUD or a <code>/fo</code> command. This page is the full list of what exists, how the pieces fit, and the open slots where a new add-in is wanted.</p>
   <div class="facts">
-    <span><b>44</b> modules</span><span><b>96</b> commands</span><span><b>11</b> HUD tabs</span><span><b>11,229</b> lines of module Lua</span><span><b>19,307</b> seeded items</span><span><b>19,453</b> seeded nodes</span><span><b>9</b> class rotations</span><span><b>347</b> harness checks</span>
+    <span><b>44</b> modules</span><span><b>96</b> commands</span><span><b>11</b> HUD tabs</span><span><b>11,229</b> lines of module Lua</span><span><b>19,307</b> seeded items</span><span><b>19,453</b> seeded nodes</span><span><b>9</b> class rotations</span><span><b>348</b> harness checks</span>
   </div>
   <div class="links">
     <a class="primary" href="https://github.com/mbrown10457/ForeverOptimizer/issues/new?template=add-in.yml">Propose an add-in</a>
@@ -301,7 +301,7 @@ const ADDINS = [
  {a:"Tooling",n:"Collect and summarize",s:"ok",f:"scripts/collect.*, scripts/summarize.py",w:"After a session, zips the saved file and the game log; the Mac side converts to JSON and prints verify results, errors, sessions, notes, checklist and runes."},
  {a:"Tooling",n:"SQLite export",s:"ok",f:"scripts/fo_sqlite.py, scripts/savedvars_to_json.py",w:"Loads the saved file into SQLite tables for offline analysis in any tool."},
  {a:"Tooling",n:"Nightly backup",s:"ok",f:"scripts/backup.sh, scripts/backup-install.sh",w:"launchd agent copies the saved files nightly and at login, keeps 30 days."},
- {a:"Tooling",n:"Test harness",s:"ok",f:"test/run.lua, test/wowstub.lua",w:"A fake WoW client in Lua: frames, events, combat log, spellbook, units, chat capture. Every module is loaded, every command smoke-run, 347 checks."},
+ {a:"Tooling",n:"Test harness",s:"ok",f:"test/run.lua, test/wowstub.lua",w:"A fake WoW client in Lua: frames, events, combat log, spellbook, units, chat capture. Every module is loaded, every command smoke-run, 348 checks."},
  {a:"Tooling",n:"CI, releases, seed updates",s:"ok",f:".github/workflows/*.yml",w:"Syntax check and harness on every push, zip release on tag, a daily job that rebuilds the item and spell seeds when the client build changes and opens an issue if validation fails."},
  {a:"Tooling",n:"HUD mockup generator",s:"ok",f:"scripts/mock/",w:"Drives the harness, dumps every tab, button and command output, and renders the mockup page on GitHub Pages from real addon text."},
  // Open slots
