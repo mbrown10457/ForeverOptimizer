@@ -699,6 +699,38 @@ do
     check(outHas("scan done: 2 auctions"), "replicate scan completes on the stubbed auction house")
     FO.state.frames.auction = false
     S.ahItems = {}
+    -- the window shown but the event never seen: the scan still runs
+    AuctionHouseFrame = { IsShown = function() return true end }
+    S.ahItems = { { name = "Linen Cloth", count = 20, buyout = 6000, itemID = 2589 } }
+    local before = #S.out
+    AS:StartFullScan() S.fire("REPLICATE_ITEM_LIST_UPDATE")
+    local warned = false
+    for i = before + 1, #S.out do if S.out[i]:find("auction window not detected", 1, true) then warned = true end end
+    check(outHas("scan done: 1 auctions") and not warned, "a shown AuctionHouseFrame counts as open without AUCTION_HOUSE_SHOW")
+    AuctionHouseFrame = nil
+    -- classic list auction house: getAll query, one list update with every auction
+    local savedReplicate = C_AuctionHouse.ReplicateItems
+    C_AuctionHouse.ReplicateItems = nil
+    S.classicList = { { name = "Linen Cloth", count = 20, buyout = 7000, itemID = 2589 }, { name = "Spider's Silk", count = 1, buyout = 9500, itemID = 3182 }, { name = "Spider's Silk", count = 2, buyout = 30000, itemID = 3182 } }
+    S.queried = nil
+    QueryAuctionItems = function(text, minL, maxL, page, usable, rarity, getAll) S.queried = getAll end
+    CanSendAuctionQuery = function() return true, true end
+    GetNumAuctionItems = function(kind) return #S.classicList, #S.classicList end
+    GetAuctionItemInfo = function(kind, i) local r = S.classicList[i] return r.name, nil, r.count, 1, true, 1, "", 0, 0, r.buyout, 0, false, nil, nil, nil, 0, r.itemID, true end
+    FO.state.frames.auction = true
+    AS:StartFullScan()
+    check(S.queried == true and outHas("classic getAll"), "without ReplicateItems the scanner sends a classic getAll query")
+    S.fire("AUCTION_ITEM_LIST_UPDATE")
+    local silk = PH:Latest(3182)
+    check(outHas("scan done: 3 auctions, 2 items") and silk and silk.min == 9500 and silk.qty == 3, "classic list scan prices every item by lowest unit buyout")
+    CanSendAuctionQuery = function() return true, false end
+    AS:StartFullScan()
+    check(outHas("full-scan cooldown is running"), "classic getAll respects the server cooldown")
+    SlashCmdList.FOREVEROPTIMIZER("ahstats") check(outHas("classic QueryAuctionItems present"), "/fo ahstats prints the API diagnostics")
+    C_AuctionHouse.ReplicateItems = savedReplicate
+    QueryAuctionItems, CanSendAuctionQuery, GetNumAuctionItems, GetAuctionItemInfo = nil, nil, nil, nil
+    FO.state.frames.auction = false
+    S.ahItems = {}
 
     local keepDB, keepMig = ForeverOptimizerDB, FO.migrations[2]
     FO.migrations[2] = function(root) root.account.modules = { disabled = {} } error("boom") end

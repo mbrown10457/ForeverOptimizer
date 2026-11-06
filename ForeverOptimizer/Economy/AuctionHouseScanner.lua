@@ -12,45 +12,117 @@ local AS = FO:NewModule("Economy.AuctionHouseScanner", {
     defaults = { settings = { autoScan = false }, scans = {} },
 })
 
-local AH = C_AuctionHouse
-local scanStarted
+local scanStarted, classicPending
+AS.seenShow = false
 
-function AS:StartFullScan()
-    if not FO.state.frames.auction then print("open the auction house first.") return end
-    if not AH or not AH.ReplicateItems then print("C_AuctionHouse.ReplicateItems not available on this client.") return end
-    scanStarted = debugprofilestop()
-    print("full scan requested...")
-    AH.ReplicateItems()
+local function AH() return C_AuctionHouse end
+local function HasRetail() local a = AH() return a and type(a.ReplicateItems) == "function" end
+local function HasClassic() return type(QueryAuctionItems) == "function" and type(GetNumAuctionItems) == "function" end
+
+-- The auction window counts as open when AUCTION_HOUSE_SHOW fired, or when either
+-- auction frame the client might use is on screen (the event has not been seen on Forever yet).
+local function AHOpen()
+    if FO.state.frames.auction then return true, "AUCTION_HOUSE_SHOW" end
+    for _, name in ipairs({ "AuctionHouseFrame", "AuctionFrame" }) do
+        local f = _G[name]
+        if type(f) == "table" and f.IsShown and f:IsShown() then return true, name end
+    end
+    return false
 end
 
-local function OnReplicateDone()
-    local PH = FO:GetModule("Economy.PriceHistory")
-    if not AH or not AH.GetNumReplicateItems or not AH.GetReplicateItemInfo then return end
-    local n = U.Num(AH.GetNumReplicateItems()) or 0
-    local acc, missing = {}, 0
-    for i = 0, n - 1 do
-        local name, _, count, _, _, _, _, _, _, buyout, _, _, _, _, _, _, itemID = AH.GetReplicateItemInfo(i)
-        itemID = U.Num(itemID) or U.ItemIDFromLink(AH.GetReplicateItemLink and AH.GetReplicateItemLink(i))
-        count, buyout = U.Num(count) or 1, U.Num(buyout) or 0
-        if count < 1 then count = 1 end   -- a zero stack would make the unit price infinite
-        if itemID and buyout > 0 then
-            local unit = buyout / count
-            local a = acc[itemID]
-            if not a then a = { name = U.Str(name), min = unit, qty = 0, n = 0 } acc[itemID] = a end
-            if unit < a.min then a.min = unit end
-            a.qty, a.n = a.qty + count, a.n + 1
-        elseif not itemID then missing = missing + 1 end
+function AS:Diag()
+    local frames = {}
+    for _, name in ipairs({ "AuctionHouseFrame", "AuctionFrame" }) do
+        local f = _G[name]
+        frames[#frames + 1] = name .. (type(f) ~= "table" and " absent" or (f.IsShown and f:IsShown()) and " shown" or " hidden")
     end
+    print("  auction API: retail ReplicateItems %s, classic QueryAuctionItems %s; AUCTION_HOUSE_SHOW %s this session; %s",
+        HasRetail() and "present" or "absent", HasClassic() and "present" or "absent", self.seenShow and "fired" or "never fired", table.concat(frames, ", "))
+end
+
+-- One accumulator for both scan paths: acc[itemID] = { name, min unit price, qty, n }
+local function Finish(acc, n, missing, how)
+    local PH = FO:GetModule("Economy.PriceHistory")
     local now, items = time(), 0
     for itemID, a in pairs(acc) do PH:Observe(itemID, a.name, math.floor(a.min + 0.5), a.qty, a.n, now) items = items + 1 end
     local ms = scanStarted and (debugprofilestop() - scanStarted) or 0
-    U.Push(AS.db.scans, { t = now, items = items, auctions = n, ms = math.floor(ms) }, 100)
-    print("scan done: %d auctions, %d items, %d unreadable, %.1fs", n, items, missing, ms / 1000)
+    scanStarted = nil
+    U.Push(AS.db.scans, { t = now, items = items, auctions = n, ms = math.floor(ms), how = how }, 100)
+    print("scan done: %d auctions, %d items, %d unreadable, %.1fs (%s)", n, items, missing, ms / 1000, how)
     FO:Fire("FO_AH_SCAN", items, n)
+end
+
+local function Add(acc, name, count, buyout, itemID)
+    count, buyout = U.Num(count) or 1, U.Num(buyout) or 0
+    if count < 1 then count = 1 end   -- a zero stack would make the unit price infinite
+    if not itemID then return false end
+    if buyout > 0 then
+        local unit = buyout / count
+        local a = acc[itemID]
+        if not a then a = { name = U.Str(name), min = unit, qty = 0, n = 0 } acc[itemID] = a end
+        if unit < a.min then a.min = unit end
+        a.qty, a.n = a.qty + count, a.n + 1
+    end
+    return true
+end
+
+function AS:StartFullScan()
+    local open, how = AHOpen()
+    if not open then
+        print("auction window not detected; trying anyway.")
+        self:Diag()
+    end
+    if HasRetail() then
+        scanStarted = debugprofilestop()
+        print("full scan requested (retail replicate)...")
+        local ok, err = pcall(AH().ReplicateItems)
+        if not ok then print("ReplicateItems failed: %s", tostring(err)) scanStarted = nil end
+    elseif HasClassic() then
+        local canQuery, canGetAll = true, true
+        if CanSendAuctionQuery then canQuery, canGetAll = CanSendAuctionQuery() end
+        if not canGetAll then print("the server's full-scan cooldown is running; try again in a few minutes (classic getAll, ~15 min).") return end
+        scanStarted = debugprofilestop()
+        classicPending = true
+        print("full scan requested (classic getAll)...")
+        local ok, err = pcall(QueryAuctionItems, "", nil, nil, 0, nil, nil, true)
+        if not ok then print("QueryAuctionItems failed: %s", tostring(err)) classicPending = nil scanStarted = nil end
+    else
+        print("no auction house scan API on this client.")
+        self:Diag()
+    end
+end
+
+local function OnReplicateDone()
+    local a = AH()
+    if not (a and a.GetNumReplicateItems and a.GetReplicateItemInfo) then return end
+    local n = U.Num(a.GetNumReplicateItems()) or 0
+    local acc, missing = {}, 0
+    for i = 0, n - 1 do
+        local name, _, count, _, _, _, _, _, _, buyout, _, _, _, _, _, _, itemID = a.GetReplicateItemInfo(i)
+        itemID = U.Num(itemID) or U.ItemIDFromLink(a.GetReplicateItemLink and a.GetReplicateItemLink(i))
+        if not Add(acc, name, count, buyout, itemID) then missing = missing + 1 end
+    end
+    Finish(acc, n, missing, "replicate")
+end
+
+-- Classic list AH: a getAll query answers with one AUCTION_ITEM_LIST_UPDATE carrying every auction
+local function OnClassicList()
+    if not classicPending then return end
+    local n = U.Num(GetNumAuctionItems("list")) or 0
+    if n == 0 then return end
+    classicPending = nil
+    local acc, missing = {}, 0
+    for i = 1, n do
+        local name, _, count, _, _, _, _, _, _, buyout, _, _, _, _, _, _, itemID = GetAuctionItemInfo("list", i)
+        itemID = U.Num(itemID) or U.ItemIDFromLink(GetAuctionItemLink and GetAuctionItemLink("list", i))
+        if not Add(acc, name, count, buyout, itemID) then missing = missing + 1 end
+    end
+    Finish(acc, n, missing, "classic getAll")
 end
 
 local function OnCommodityResults(itemID)
     local PH = FO:GetModule("Economy.PriceHistory")
+    local AH = C_AuctionHouse
     itemID = U.Num(itemID)
     if not AH or not itemID or not AH.GetNumCommoditySearchResults then return end
     local n = U.Num(AH.GetNumCommoditySearchResults(itemID)) or 0
@@ -69,7 +141,8 @@ end
 
 local function OnItemResults(itemKey)
     local PH = FO:GetModule("Economy.PriceHistory")
-    if not itemKey or not AH.GetNumItemSearchResults then return end
+    local AH = C_AuctionHouse
+    if not itemKey or not AH or not AH.GetNumItemSearchResults then return end
     local itemID = U.Num(itemKey.itemID)
     if not itemID then return end
     local n = U.Num(AH.GetNumItemSearchResults(itemKey)) or 0
@@ -87,8 +160,9 @@ local function OnItemResults(itemKey)
 end
 
 AS.events = {
-    AUCTION_HOUSE_SHOW = function(self) if self.db.settings.autoScan then C_Timer.After(1, function() self:StartFullScan() end) end end,
+    AUCTION_HOUSE_SHOW = function(self) self.seenShow = true if self.db.settings.autoScan then C_Timer.After(1, function() self:StartFullScan() end) end end,
     REPLICATE_ITEM_LIST_UPDATE = function() OnReplicateDone() end,
+    AUCTION_ITEM_LIST_UPDATE = function() OnClassicList() end,
     COMMODITY_SEARCH_RESULTS_UPDATED = function(self, itemID) OnCommodityResults(itemID) end,
     ITEM_SEARCH_RESULTS_UPDATED = function(self, itemKey) OnItemResults(itemKey) end,
 }
@@ -105,6 +179,7 @@ AS.commands = {
         for _, s in pairs(PH.db.prices) do items = items + 1 points = points + #s end
         local last = self.db.scans[#self.db.scans]
         print("%d items, %d price points, %d scans, %d vendor prices.", items, points, #self.db.scans, U.Count(PH.db.vendor))
-        if last then print("last scan %s ago: %d auctions / %d items", U.FormatDuration(time() - last.t), last.auctions, last.items) end
+        if last then print("last scan %s ago: %d auctions / %d items (%s)", U.FormatDuration(time() - last.t), last.auctions, last.items, last.how or "replicate") end
+        self:Diag()
     end },
 }
