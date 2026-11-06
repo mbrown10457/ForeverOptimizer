@@ -237,25 +237,37 @@ firstNodePin:OnMouseEnter() firstNodePin:OnMouseLeave()
 
 -- Node seed: Wowhead spawn points (via GatherLite) under your own sightings
 check(FO.Seed.nodeCount and FO.Seed.nodeCount > 15000 and FO.Seed.nodes["Copper Vein"] and FO.Seed.nodes["Copper Vein"].kind == "ore" and FO.Seed.nodes["Copper Vein"].skill == 1, "node seed loaded: " .. tostring(FO.Seed.nodeCount) .. " points")
-local seedRows = MapM:SeedRows(1434, 5000)
-local seedKinds = {}
-for _, r in ipairs(seedRows) do seedKinds[r.kind] = (seedKinds[r.kind] or 0) + 1 end
+check(MapM:NodeMode("herb") == "mine" and MapM:NodeMode("ore") == "mine" and #MapM:SeedRows(1434, 5000) == 0, "seed layers start off: only your own sightings draw")
+check(MapM.nodeButtons.herb and MapM.nodeButtons.herb:GetText() == "Herbs: mine" and MapM.nodeButtons.ore:GetText() == "Ore: mine", "map carries a Herbs and an Ore button")
+local seedRows = MapM:SeedRows(1434, 5000, { all = true })
+local seedKinds, ironSeen = {}, false
+for _, r in ipairs(seedRows) do seedKinds[r.kind] = (seedKinds[r.kind] or 0) + 1 if r.name == "Iron Deposit" then ironSeen = true end end
 check(#seedRows > 200 and seedKinds.ore and seedKinds.herb and seedRows[1].seed and seedRows[1].icon, "Stranglethorn seed rows: " .. #seedRows .. " (" .. tostring(seedKinds.herb) .. " herb, " .. tostring(seedKinds.ore) .. " ore) with icons")
+check(not ironSeen and MapM:GatherRank("ore") == 75 and MapM:GatherRank("herb") == nil, "Mining 75 hides Iron Deposits (skill 125); no Herbalism shows every herb")
+SlashCmdList.FOREVEROPTIMIZER("map seed skill off")
+local allRows = MapM:SeedRows(1434, 5000, { all = true })
+check(#allRows > #seedRows, "seed skill off shows every node (" .. #allRows .. " vs " .. #seedRows .. ")")
+SlashCmdList.FOREVEROPTIMIZER("map seed skill on")
+MapM.nodeButtons.ore.scripts.OnClick(MapM.nodeButtons.ore)
+check(MapM:NodeMode("ore") == "all" and MapM.nodeButtons.ore:GetText() == "Ore: all" and MapM:NodeMode("herb") == "mine", "clicking the Ore button cycles it to all, herbs untouched")
 S.worldMap.mapID = 1434
 WorldMapFrame:Hide() WorldMapFrame:Show()
-local seedPin, seedPins = nil, 0
-for _, p in ipairs(WorldMapFrame.pins) do if p.data and p.data.seed then seedPins = seedPins + 1 seedPin = seedPin or p end end
-check(seedPins > 200 and seedPin.data.seed and seedPin.data.skill and seedPin.data.icon, "seeded pins drawn on the world map with skill and icon (" .. seedPins .. ")")
+local seedPin, seedPins, herbSeed = nil, 0, 0
+for _, p in ipairs(WorldMapFrame.pins) do if p.data and p.data.seed then seedPins = seedPins + 1 seedPin = seedPin or p if p.data.kind == "herb" then herbSeed = herbSeed + 1 end end end
+check(seedPins > 50 and seedPins <= 300 and herbSeed == 0 and seedPin.data.skill and seedPin.data.icon, "ore seed pins drawn, capped at the nearest 300, no herb seeds (" .. seedPins .. ")")
+check(seedPin.data.d2 ~= nil and WorldMapFrame.pins[#WorldMapFrame.pins].data.d2 >= seedPin.data.d2, "seed pins are the nearest to the player first")
 seedPin:OnMouseEnter() seedPin:OnMouseLeave()
+SlashCmdList.FOREVEROPTIMIZER("map herb all")
+check(MapM:NodeMode("herb") == "all" and #MapM:SeedRows(1434, 5000) > #MapM:SeedRows(1434, 5000, { all = false }) - 1, "map herb all turns the herb seed on")
 SlashCmdList.FOREVEROPTIMIZER("map seed off")
 WorldMapFrame:Hide() WorldMapFrame:Show()
 seedPins = 0
 for _, p in ipairs(WorldMapFrame.pins) do if p.data and p.data.seed then seedPins = seedPins + 1 end end
-check(seedPins == 0 and MapM.db.settings.seed == false, "map seed off removes them")
-SlashCmdList.FOREVEROPTIMIZER("map seed on") SlashCmdList.FOREVEROPTIMIZER("map seed herb off")
-check(MapM.db.settings.seed == true and MapM.db.settings.seedHerb == false and #MapM:SeedRows(1434, 5000) < #seedRows, "map seed herb off keeps the ores")
-SlashCmdList.FOREVEROPTIMIZER("map seed herb on")
-SlashCmdList.FOREVEROPTIMIZER("map") check(outHas("node seed: ") and outHas("on this map"), "/fo map status reports the seed")
+check(seedPins == 0 and MapM:NodeMode("herb") == "mine" and MapM:NodeMode("ore") == "mine", "map seed off returns both layers to your sightings")
+SlashCmdList.FOREVEROPTIMIZER("map ore off")
+check(MapM:NodeMode("ore") == "off" and MapM.nodeButtons.ore:GetText() == "Ore: off", "map ore off hides the ore layer")
+SlashCmdList.FOREVEROPTIMIZER("map ore mine")
+SlashCmdList.FOREVEROPTIMIZER("map") check(outHas("node layers: herbs mine") and outHas("Mining 75"), "/fo map status reports the layers and your rank")
 S.worldMap.mapID = nodeMap
 local savedPos2 = { S.pos.map, S.pos.x, S.pos.y }
 S.pos.map, S.pos.x, S.pos.y = 1434, 0.45, 0.35
@@ -276,11 +288,15 @@ S.mapUpdate()
 check(MN.mapID == nodeMap and #MN.rows > 0 and MN.shown > 0, "minimap pins placed on the current map (" .. tostring(MN.shown) .. " of " .. #MN.rows .. ")")
 local mnSeeded = 0
 for _, r in ipairs(MN.rows) do if r.seed then mnSeeded = mnSeeded + 1 end end
-check(mnSeeded > 0, "minimap rows include seeded spawn points (" .. mnSeeded .. ")")
-SlashCmdList.FOREVEROPTIMIZER("minimap seed off") S.mapUpdate()
+check(mnSeeded == 0 and MN:Mode("herb") == "mine", "minimap starts with your sightings only")
+SlashCmdList.FOREVEROPTIMIZER("minimap seed on") S.mapUpdate()
+mnSeeded = 0 for _, r in ipairs(MN.rows) do if r.seed then mnSeeded = mnSeeded + 1 end end
+check(mnSeeded > 0 and MN:Mode("ore") == "all", "minimap seed on adds the spawn points (" .. mnSeeded .. ")")
+SlashCmdList.FOREVEROPTIMIZER("minimap herb off") S.mapUpdate()
+check(MN:Mode("herb") == "off" and outHas("herb nodes on the minimap: off"), "minimap herb off")
+SlashCmdList.FOREVEROPTIMIZER("minimap herb mine") SlashCmdList.FOREVEROPTIMIZER("minimap seed off") S.mapUpdate()
 mnSeeded = 0 for _, r in ipairs(MN.rows) do if r.seed then mnSeeded = mnSeeded + 1 end end
 check(mnSeeded == 0, "minimap seed off drops them")
-SlashCmdList.FOREVEROPTIMIZER("minimap seed on") S.mapUpdate()
 local west
 for _, r in ipairs(MN.rows) do if r.x == nodeX and r.y == nodeY then west = r end end
 check(west and west.sx and west.sx < -17 and west.sx > -19 and math.abs(west.sy) < 0.01, "a node 60 yd west sits 18 px left of centre (" .. tostring(west and west.sx) .. ")")

@@ -16,7 +16,7 @@ local U = FO.Util
 -- ===========================================================================
 local M = FO:NewModule("Dashboard.Map", {
     account = "map",
-    defaults = { settings = { nodes = true, rares = true, spawns = false, coords = true, quests = true, objectives = true, turnins = true, route = true, seed = true, seedMax = 1200, minSeen = 1, maxPins = 400,
+    defaults = { settings = { nodes = true, rares = true, spawns = false, coords = true, quests = true, objectives = true, turnins = true, route = true, herb = "mine", ore = "mine", seedMax = 300, seedSkill = true, minSeen = 1, maxPins = 400,
                              reveal = true, revealTint = true } },
 })
 local print = FO:Printer("Dashboard")
@@ -156,8 +156,9 @@ function M:Layers(mapID)
     if not FE or FE.disabled or not FE.db then return rows end
     if s.nodes then
         for name, node in pairs(FE.db.nodes or {}) do
+            local mode = self:NodeMode(node.kind)
             for _, p in ipairs(node.points or {}) do
-                if p[1] == mapID and (p.n or 1) >= (s.minSeen or 1) then
+                if mode ~= "off" and p[1] == mapID and (p.n or 1) >= (s.minSeen or 1) then
                     rows[#rows + 1] = { kind = node.kind or "node", name = name, x = p[2], y = p[3], n = p.n or 1, last = p.last,
                                         icon = (node.kind == "herb" or node.kind == "ore") and self:NodeIcon(name, node.kind) or nil }
                 end
@@ -223,15 +224,52 @@ function M:Layers(mapID)
     end
     table.sort(rows, function(a, b) return (a.n or 1) > (b.n or 1) end)
     for i = #rows, (s.maxPins or 400) + 1, -1 do rows[i] = nil end
-    if s.nodes and s.seed ~= false then
-        for _, r in ipairs(M:SeedRows(mapID, s.seedMax or 1200)) do rows[#rows + 1] = r end
+    if s.nodes then
+        for _, r in ipairs(M:SeedRows(mapID, s.seedMax or 300)) do rows[#rows + 1] = r end
     end
     return rows
 end
 
+-- Node layer mode per gathering profession: "off", "mine" (your own sightings) or "all" (plus the seed)
+local MODES = { off = true, mine = true, all = true }
+local CYCLE = { off = "mine", mine = "all", all = "off" }
+function M:NodeMode(kind)
+    local s = self.db.settings
+    if s.nodes == false then return "off" end
+    local m = s[kind == "herb" and "herb" or "ore"]
+    if m == true then m = "mine" elseif m == false then m = "off" end
+    return MODES[m] and m or "mine"
+end
+
+function M:SetNodeMode(kind, mode)
+    kind = kind == "herb" and "herb" or "ore"
+    if not MODES[mode] then mode = CYCLE[self:NodeMode(kind)] end
+    self.db.settings[kind] = mode
+    self.dirty = true
+    self:RefreshNodeButtons()
+    FO:Fire("FO_NODE_MODE", kind, mode)
+    return mode
+end
+
+-- Your rank in the gathering profession a node kind needs, or nil without it
+local PROF_OF = { herb = { "Herbalism", "Herb Gathering" }, ore = { "Mining" } }
+function M:GatherRank(kind)
+    local profs = FO.Player and FO.Player.professions
+    if type(profs) ~= "table" then return nil end
+    for _, name in ipairs(PROF_OF[kind] or {}) do
+        local p = profs[name]
+        if type(p) == "table" then return p.rank or 0 end
+    end
+    return nil
+end
+
 -- Seeded spawn points (Data/Nodes.lua, Wowhead via GatherLite) on a map, minus any within
 -- ~15 yards of a node you have gathered yourself, which the recorded pin already shows.
-function M:SeedRows(mapID, limit)
+-- opts.all ignores the layer mode (the gathering route wants seeds whatever the map shows).
+-- With the matching profession, nodes above your skill + 25 are left out (seedSkill off shows every one).
+-- When you are on the map, the nearest points come first so a cap keeps what is around you.
+function M:SeedRows(mapID, limit, opts)
+    opts = opts or {}
     local out = {}
     local N = FO.Seed and FO.Seed.nodes
     if not (N and mapID) then return out end
@@ -247,19 +285,29 @@ function M:SeedRows(mapID, limit)
         for _, o in ipairs(own) do if o[1] == name and math.abs(o[2] - x) < 0.004 and math.abs(o[3] - y) < 0.004 then return true end end
         return false
     end
+    local pmap, px, py = U.PlayerPosition()
+    local near = pmap == mapID and px ~= nil
     for name, node in pairs(N) do
         local pts = node.maps and node.maps[mapID]
-        if pts and ((node.kind == "herb" and s.seedHerb ~= false) or (node.kind == "ore" and s.seedOre ~= false)) then
+        local wanted = pts and (opts.all or self:NodeMode(node.kind) == "all")
+        if wanted and s.seedSkill ~= false and node.skill then
+            local rank = self:GatherRank(node.kind)
+            if rank and node.skill > rank + 25 then wanted = false end
+        end
+        if wanted then
             local icon = self:NodeIcon(name, node.kind)
             for i = 1, #pts - 1, 2 do
                 local x, y = pts[i], pts[i + 1]
                 if not recorded(name, x, y) then
-                    out[#out + 1] = { kind = node.kind, name = name, x = x, y = y, n = 1, seed = true, skill = node.skill, icon = icon }
-                    if limit and #out >= limit then return out end
+                    local r = { kind = node.kind, name = name, x = x, y = y, n = 1, seed = true, skill = node.skill, icon = icon }
+                    if near then r.d2 = (x - px) * (x - px) + (y - py) * (y - py) end
+                    out[#out + 1] = r
                 end
             end
         end
     end
+    if near then table.sort(out, function(a, b) return a.d2 < b.d2 end) end
+    if limit and #out > limit then for i = #out, limit + 1, -1 do out[i] = nil end end
     return out
 end
 
@@ -410,6 +458,13 @@ if FOMapRevealProviderMixin then
     function FOMapRevealProviderMixin:OnEvent(event) if event == "MAP_EXPLORATION_UPDATED" then self:RefreshAllData() end end
 end
 
+local MODE_WORD = { off = "off", mine = "mine", all = "all" }
+function M:RefreshNodeButtons()
+    for kind, b in pairs(self.nodeButtons or {}) do
+        b:SetText((kind == "herb" and "Herbs: " or "Ore: ") .. (MODE_WORD[self:NodeMode(kind)] or "?"))
+    end
+end
+
 function M:RefreshReveal()
     if self.revealProvider then self.revealProvider:RefreshAllData() end
     if self.revealButton then self.revealButton:SetText(self.db.settings.reveal and "Explored only" or "Full map") end
@@ -510,6 +565,29 @@ function M:OnEnable()
         return b
     end)
     if okBtn and btn and btn.SetText then self.revealButton = btn self:RefreshReveal() end
+    -- one button per gathering profession, cycling off / mine / all, left of the map-art button
+    self.nodeButtons = {}
+    local anchor = self.revealButton
+    for _, kind in ipairs({ "ore", "herb" }) do
+        local okB, nb = pcall(function()
+            local b = CreateFrame("Button", nil, top, "UIPanelButtonTemplate")
+            b:SetSize(kind == "herb" and 92 or 84, 20)
+            if anchor then b:SetPoint("RIGHT", anchor, "LEFT", -4, 0) else b:SetPoint("BOTTOMRIGHT", top, "BOTTOMRIGHT", -8, 6) end
+            b:SetScript("OnClick", function() M:SetNodeMode(kind) end)
+            b:SetScript("OnEnter", function(bf)
+                if not GameTooltip then return end
+                GameTooltip:SetOwner(bf, "ANCHOR_TOP")
+                GameTooltip:ClearLines()
+                GameTooltip:AddLine(kind == "herb" and "Herb nodes" or "Ore nodes")
+                GameTooltip:AddLine("Click to cycle: off, your own sightings, or those plus Wowhead's spawn points (nearest " .. (M.db.settings.seedMax or 300) .. ", within your skill). Also /fo map " .. kind .. " off|mine|all.", 0.8, 0.8, 0.8, true)
+                GameTooltip:Show()
+            end)
+            b:SetScript("OnLeave", function() if GameTooltip then GameTooltip:Hide() end end)
+            return b
+        end)
+        if okB and nb and nb.SetText then self.nodeButtons[kind] = nb anchor = nb end
+    end
+    self:RefreshNodeButtons()
     if ok and fs then
         self.coordText = fs
         local upd = CreateFrame("Frame")
@@ -563,7 +641,7 @@ M.commands = {
         end,
     },
     map = {
-        help = "World map overlay: status | reveal|tint on|off (unexplored art) | nodes|rares|spawns|quests|objectives|turnins|coords on|off | seed [herb|ore] on|off (Wowhead spawn points) | minseen <n> | refresh",
+        help = "World map overlay: status | reveal|tint on|off (unexplored art) | nodes|rares|spawns|quests|objectives|turnins|coords on|off | herb|ore off|mine|all | seed on|off|skill on|off | minseen <n> | refresh",
         fn = function(self, arg)
             local s = self.db.settings
             local sub, rest = U.SplitCmd(arg or "")
@@ -574,14 +652,23 @@ M.commands = {
                 if sub == "reveal" then print("unexplored map art %s", s.reveal and "|cff80ff80shown|r" or "|cffff6060hidden|r")
                 else print("unexplored tint %s", s.revealTint and "|cff80ff80on|r (darker)" or "|cffff6060off|r (same as explored)") end
                 return
+            elseif sub == "herb" or sub == "herbs" or sub == "ore" or sub == "ores" then
+                local kind = sub:sub(1, 3) == "her" and "herb" or "ore"
+                local mode = self:SetNodeMode(kind, rest:match("^(%a+)"))
+                print("%s layer: %s", kind == "herb" and "herbs" or "ores", mode == "off" and "|cffff6060off|r" or mode == "mine" and "|cff80ff80your sightings|r" or "|cffffd100your sightings + Wowhead spawn points|r")
+                return
             elseif sub == "seed" then
-                local which = rest:match("^(%a+)") or ""
-                local key = which == "herb" and "seedHerb" or which == "ore" and "seedOre" or "seed"
-                local val = rest:match("(%a+)$")
-                if val == "on" or val == "off" then s[key] = (val == "on") elseif key ~= "seed" then s[key] = not (s[key] ~= false) else s.seed = not (s.seed ~= false) end
-                self.dirty = true
-                print("seeded %s spawn points %s on the world map (%d points in the seed from %s)", key == "seed" and "node" or which, s[key] ~= false and "|cff80ff80shown|r" or "|cffff6060hidden|r",
-                    FO.Seed and FO.Seed.nodeCount or 0, tostring(FO.Seed and FO.Seed.nodeSource or "?"))
+                local a, b = rest:match("^(%a+)%s*(%a*)$")
+                if a == "skill" then
+                    s.seedSkill = b ~= "off"
+                    self.dirty = true
+                    print("seed limited to your skill range: %s", s.seedSkill and "on" or "off")
+                else
+                    local on = a ~= "off"
+                    for _, kind in ipairs({ "herb", "ore" }) do if self:NodeMode(kind) ~= "off" then self:SetNodeMode(kind, on and "all" or "mine") end end
+                    print("Wowhead spawn points %s on the world map (%d points in the seed from %s); /fo map herb|ore off|mine|all sets each layer.", on and "|cff80ff80shown|r" or "|cffff6060hidden|r",
+                        FO.Seed and FO.Seed.nodeCount or 0, tostring(FO.Seed and FO.Seed.nodeSource or "?"))
+                end
                 return
             elseif sub == "nodes" or sub == "rares" or sub == "spawns" or sub == "coords" or sub == "quests" or sub == "objectives" or sub == "turnins" then
                 if rest == "on" or rest == "off" then s[sub] = (rest == "on") else s[sub] = not s[sub] end
@@ -604,8 +691,10 @@ M.commands = {
             local kinds, seeded = {}, 0
             for _, r in ipairs(rows) do if r.seed then seeded = seeded + 1 else kinds[r.kind] = (kinds[r.kind] or 0) + 1 end end
             print("world map overlay: pins %s, coords %s", self.available and "|cff80ff80available|r" or ("|cffff6060unavailable|r (" .. tostring(self.reason) .. ")"), s.coords and "on" or "off")
-            print("node seed: %s, %d spawn points (%s); %d on this map%s%s", s.seed ~= false and "|cff80ff80shown|r" or "|cffff6060hidden|r", FO.Seed and FO.Seed.nodeCount or 0,
-                tostring(FO.Seed and FO.Seed.nodeSource or "none"), seeded, s.seedHerb == false and ", herbs off" or "", s.seedOre == false and ", ores off" or "")
+            local hr, orr = self:GatherRank("herb"), self:GatherRank("ore")
+            print("node layers: herbs %s%s, ores %s%s; seed %d spawn points (%s), %d shown on this map, nearest %d, skill range %s",
+                self:NodeMode("herb"), hr and (" (Herbalism " .. hr .. ")") or "", self:NodeMode("ore"), orr and (" (Mining " .. orr .. ")") or "",
+                FO.Seed and FO.Seed.nodeCount or 0, tostring(FO.Seed and FO.Seed.nodeSource or "none"), seeded, s.seedMax or 300, s.seedSkill ~= false and "on" or "off")
             print("layers: nodes %s, rares %s, spawns %s, quests %s, objectives %s, turnins %s, min seen %d", s.nodes and "on" or "off", s.rares and "on" or "off", s.spawns and "on" or "off", s.quests and "on" or "off", s.objectives and "on" or "off", s.turnins and "on" or "off", s.minSeen or 1)
             if not (FO.QuestDB and FO.QuestDB.available) then print("quest layers need QuestieDB: %s", tostring(FO.QuestDB and FO.QuestDB.reason)) end
             local nMaps = 0

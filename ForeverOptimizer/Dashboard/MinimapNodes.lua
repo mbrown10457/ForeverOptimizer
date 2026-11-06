@@ -11,7 +11,7 @@ local print = FO:Printer("Dashboard")
 -- ===========================================================================
 local MN = FO:NewModule("Dashboard.Minimap", {
     account = "minimap",
-    defaults = { settings = { enabled = true, herb = true, ore = true, seed = true, size = 14, minSeen = 1, maxPins = 80 } },
+    defaults = { settings = { enabled = true, herb = "mine", ore = "mine", size = 14, minSeen = 1, maxPins = 80 } },
 })
 FO.MinimapNodes = MN
 
@@ -25,6 +25,14 @@ local frame, pool, rows = nil, {}, {}
 local radius, halfW, halfH = 233.33, 70, 70
 local elapsed = 0
 MN.mapID, MN.shown, MN.dirty = nil, 0, true
+
+-- "off", "mine" (your sightings) or "all" (plus the seed) per gathering profession; old booleans map across
+local MODES = { off = true, mine = true, all = true }
+function MN:Mode(kind)
+    local m = self.db.settings[kind == "herb" and "herb" or "ore"]
+    if m == true then m = "mine" elseif m == false then m = "off" end
+    return MODES[m] and m or "mine"
+end
 
 local function WorldPos(mapID, x, y)
     if not (C_Map.GetWorldPosFromMapPos and CreateVector2D) then return nil end
@@ -120,7 +128,7 @@ function MN:Rebuild()
     local w, h = U.MapSize(mapID)
     for name, node in pairs(FE.db.nodes or {}) do
         local kind = node.kind
-        if (kind == "herb" and s.herb ~= false) or (kind == "ore" and s.ore ~= false) then
+        if (kind == "herb" or kind == "ore") and self:Mode(kind) ~= "off" then
             for _, p in ipairs(node.points or {}) do
                 if p[1] == mapID and (p.n or 1) >= (s.minSeen or 1) then
                     local wx, wy = WorldPos(mapID, p[2], p[3])
@@ -131,9 +139,9 @@ function MN:Rebuild()
         end
     end
     -- seeded spawn points (Wowhead via GatherLite), dimmer, with the same icons
-    if s.seed ~= false and M and M.SeedRows then
-        for _, r in ipairs(M:SeedRows(mapID, 3000)) do
-            if (r.kind == "herb" and s.herb ~= false) or (r.kind == "ore" and s.ore ~= false) then
+    if M and M.SeedRows and (self:Mode("herb") == "all" or self:Mode("ore") == "all") then
+        for _, r in ipairs(M:SeedRows(mapID, 3000, { all = true })) do
+            if self:Mode(r.kind) == "all" then
                 local wx, wy = WorldPos(mapID, r.x, r.y)
                 rows[#rows + 1] = { name = r.name, kind = r.kind, x = r.x, y = r.y, seed = true, skill = r.skill, wx = wx, wy = wy, icon = r.icon }
             end
@@ -207,28 +215,38 @@ end
 
 MN.messages = {
     FO_NODE = function(self) self.dirty = true end,
+    FO_NODE_MODE = function(self) self.dirty = true end,
 }
 
 MN.commands = {
-    minimap = { help = "node icons on the minimap: status | on | off | herb on|off | ore on|off | seed on|off | size <8-32> | minseen <n>", fn = function(self, arg)
+    minimap = { help = "node icons on the minimap: status | on | off | herb|ore off|mine|all | seed on|off | size <8-32> | minseen <n>", fn = function(self, arg)
         local s = self.db.settings
         local sub, rest = U.SplitCmd(arg or "")
         if sub == "" or sub == "status" then
             local seeded = 0
             for _, r in ipairs(self.rows or {}) do if r.seed then seeded = seeded + 1 end end
-            print("minimap nodes: %s, herbs %s, ores %s, seed %s, size %d, min seen %d; %d of %d on this map in view (%d seeded), zoom radius %.0f yd%s",
-                s.enabled == false and "off" or "on", s.herb == false and "off" or "on", s.ore == false and "off" or "on", s.seed == false and "off" or "on", s.size or 14, s.minSeen or 1,
+            print("minimap nodes: %s, herbs %s, ores %s, size %d, min seen %d; %d of %d on this map in view (%d seeded), zoom radius %.0f yd%s",
+                s.enabled == false and "off" or "on", self:Mode("herb"), self:Mode("ore"), s.size or 14, s.minSeen or 1,
                 self.shown or 0, #(self.rows or {}), seeded, self.radius or radius, self.inside and " (indoors)" or "")
         elseif sub == "on" then s.enabled = true self.dirty = true print("minimap nodes on.")
         elseif sub == "off" then s.enabled = false self:HideAll() print("minimap nodes off.")
-        elseif sub == "herb" or sub == "ore" then s[sub] = rest ~= "off" self.dirty = true print("%s nodes %s on the minimap.", sub, s[sub] and "shown" or "hidden")
-        elseif sub == "seed" then s.seed = rest ~= "off" self.dirty = true print("seeded spawn points %s on the minimap.", s.seed and "shown" or "hidden")
+        elseif sub == "herb" or sub == "ore" then
+            local mode = rest:match("^(%a+)")
+            if mode == "on" then mode = "mine" end
+            if not MODES[mode or ""] then mode = ({ off = "mine", mine = "all", all = "off" })[self:Mode(sub)] end
+            s[sub] = mode self.dirty = true
+            print("%s nodes on the minimap: %s", sub, mode == "off" and "off" or mode == "mine" and "your sightings" or "your sightings + Wowhead spawn points")
+        elseif sub == "seed" then
+            local on = rest ~= "off"
+            for _, kind in ipairs({ "herb", "ore" }) do if self:Mode(kind) ~= "off" then s[kind] = on and "all" or "mine" end end
+            self.dirty = true
+            print("seeded spawn points %s on the minimap.", on and "shown" or "hidden")
         elseif sub == "size" then
             local n = tonumber(rest)
             if n and n >= 8 and n <= 32 then s.size = math.floor(n) print("minimap node icons %d px.", s.size) else print("size <8-32>") end
         elseif sub == "minseen" then
             local n = tonumber(rest)
             if n and n >= 1 then s.minSeen = math.floor(n) self.dirty = true print("showing nodes seen at least %d time%s.", s.minSeen, s.minSeen == 1 and "" or "s") else print("minseen <n>") end
-        else print("minimap: status | on | off | herb on|off | ore on|off | seed on|off | size <n> | minseen <n>") end
+        else print("minimap: status | on | off | herb|ore off|mine|all | seed on|off | size <n> | minseen <n>") end
     end },
 }

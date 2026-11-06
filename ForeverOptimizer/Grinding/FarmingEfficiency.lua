@@ -261,7 +261,7 @@ function FE:Route(kind, maxStops)
     -- seeded spawn points (Data/Nodes.lua) fill in where you have not gathered yet
     local M = FO:GetModule("Dashboard.Map")
     if M and M.SeedRows and self.db.settings.seedRoute ~= false then
-        for _, r in ipairs(M:SeedRows(mapID, 3000)) do
+        for _, r in ipairs(M:SeedRows(mapID, 3000, { all = true })) do
             if not kind or r.kind == kind then pts[#pts + 1] = { name = r.name, x = r.x, y = r.y, n = 0, seed = true } end
         end
     end
