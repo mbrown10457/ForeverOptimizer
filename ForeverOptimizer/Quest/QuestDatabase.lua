@@ -96,6 +96,8 @@ function Q:Quest(id)
     return q
 end
 
+function Q:Forget(id) qcache[id] = nil end
+
 -- spawns as { {mapID, x(0-1), y(0-1)}, ... }, instance sentinels dropped
 local function ConvertSpawns(raw)
     local out = {}

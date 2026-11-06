@@ -12,11 +12,12 @@ local print = FO:Printer("Quest")
 -- ===========================================================================
 local G = FO:NewModule("Quest.Guide", {
     account = "guide",
-    defaults = { chars = {}, shown = true, point = nil, locked = false, arrow = true, width = 330 },
+    defaults = { chars = {}, shown = true, point = nil, locked = false, arrow = true, width = 330, autoskip = true, absentSeconds = 10 },
 })
 FO.Guide = G
 
 G.route, G.index, G.current = nil, 1, nil
+G.absentSince = {}   -- step index -> GetTime() when its quest was first missing from the log
 local frame, widgets
 local lastArrowKey
 
@@ -110,26 +111,73 @@ function G:IsDone(i, step, log)
     return false
 end
 
--- Why a step cannot be done yet (shown, never auto-skipped)
+-- Why a step cannot be done yet (shown while it waits)
 function G:Blocker(step, log)
     local k, q = step[1], step[2]
     if k == "A" and step.req and Level() < step.req then return string.format("needs level %d", step.req) end
-    if (k == "C" or k == "T") and not log[q] and not Flagged(q) then return "not in your log" end
+    if (k == "C" or k == "T") and not log[q] and not Flagged(q) then
+        local since = self.absentSince[self.index or 0]
+        local left = since and math.max(0, (self.db.absentSeconds or 10) - (GetTime() - since)) or nil
+        if self.db.autoskip ~= false and left then return string.format("not in your log, moving on in %ds", math.ceil(left)) end
+        return "not in your log"
+    end
     if k == "TRAIN" and Level() < q then return string.format("at level %d", q) end
     return nil
 end
 
--- Walk forward from the saved position to the first step that is neither done nor filtered.
-function G:Refresh(reason)
+-- A quest step the character can no longer do, with the reason, or nil. Quests done out of
+-- order close doors: a turn-in that excludes this quest, a chain already past it, a
+-- prerequisite that was skipped. Needs QuestieDB; without it only the log and flags count.
+local GONE = { exclusive = "excluded by a quest you already did", ["chain done"] = "its chain is already past this point",
+               race = "not for your race", class = "not for your class" }
+function G:Gone(step, log)
+    local k, q = step[1], step[2]
+    if k ~= "A" and k ~= "C" and k ~= "T" then return nil end
+    if log[q] or Flagged(q) then return nil end
+    local QDB = FO.QuestDB
+    if not (QDB and QDB.available and QDB.Quest and QDB.Available) then return nil end
+    local info = QDB:Quest(q)
+    if not info then return nil end
+    local ok, why = QDB:Available(info, Level(), log)
+    if ok then return nil end
+    if GONE[why] then return GONE[why] end
+    if why == "prerequisite" then
+        for _, list in ipairs({ info.preSingle or {}, info.preGroup or {} }) do
+            for _, pid in ipairs(list) do if log[math.abs(pid)] then return nil end end   -- the prerequisite is in hand: wait for it
+        end
+        return "needs a quest you skipped"
+    end
+    return nil
+end
+
+-- Walk forward from the saved position to the first step that is neither done, filtered nor gone.
+-- Steps skipped on the way are marked done and reported once (collected into `report` when given).
+function G:Refresh(reason, report)
     local r = self.route
     if not r then self.current = nil self:Render() return end
     local st = self:State()
     local log = LogSet()
     local i = st.pos or 1
     local n = #r.steps
+    local auto = self.db.autoskip ~= false
+    local now = GetTime()
     while i <= n do
         local step = r.steps[i]
-        if ClassOK(step) and not self:IsDone(i, step, log) then break end
+        if ClassOK(step) and not self:IsDone(i, step, log) then
+            local gone = auto and self:Gone(step, log) or nil
+            if not gone and auto and (step[1] == "C" or step[1] == "T") and not log[step[2]] and not Flagged(step[2]) then
+                -- not in the log and not done: a fresh turn-in takes a moment to flag, so wait a little, then move on
+                local since = self.absentSince[i]
+                if not since then self.absentSince[i] = now
+                elseif now - since >= (self.db.absentSeconds or 10) then gone = "not in your log" end
+            end
+            if not gone then break end
+            st.done[i] = true
+            st.why = st.why or {}
+            st.why[i] = gone
+            if report then report[#report + 1] = { i = i, why = gone }
+            else print("skipped step %d, %s: %s. /fo guide back revisits it.", i, self:StepText(step, true), gone) end
+        end
         i = i + 1
     end
     local changed = (i ~= self.index)
@@ -139,9 +187,61 @@ function G:Refresh(reason)
     self.log = log
     if changed or reason == "arrow" then self:PointArrow(reason == "arrow") end
     self:Render()
-    if changed and self.current and reason ~= "init" then
+    if changed and self.current and reason ~= "init" and reason ~= "sync" then
         print("step %d/%d: %s", i, n, self:StepText(self.current, true))
     end
+end
+
+-- Start over from step 1 and let the log, the completed flags and the database sort every
+-- step: done ones pass, impossible ones are skipped, and one summary says what happened.
+function G:Sync()
+    local r = self.route
+    if not r then print("no route active.") return end
+    local st = self:State()
+    st.pos, st.done, st.why = 1, {}, {}
+    self.absentSince = {}
+    -- a sync is explicit: steps whose quest is simply missing from the log count as gone at once
+    local saved = self.db.absentSeconds
+    self.db.absentSeconds = 0
+    local report = {}
+    self.index = nil
+    self:Refresh("sync", report)
+    self.db.absentSeconds = saved
+    local log = self.log or LogSet()
+    local done, counts = 0, {}
+    for i = 1, (self.index or 1) - 1 do
+        local step = r.steps[i]
+        if ClassOK(step) and not st.done[i] then done = done + 1 end
+    end
+    for _, e in ipairs(report) do counts[e.why] = (counts[e.why] or 0) + 1 end
+    local parts = {}
+    for why, n in pairs(counts) do parts[#parts + 1] = string.format("%d %s", n, why) end
+    table.sort(parts)
+    print("guide sync: %d steps already done, %d skipped%s.", done, #report, #parts > 0 and (" (" .. table.concat(parts, ", ") .. ")") or "")
+    for _, e in ipairs(report) do print("  step %d: %s, %s", e.i, self:StepText(r.steps[e.i], true), e.why) end
+    if self.current then print("now step %d/%d: %s", self.index, #r.steps, self:StepText(self.current, true))
+    else print("route finished.") end
+end
+
+-- What the addon knows about the current step's quest: for when the guide seems stuck
+function G:Why()
+    local step = self.current
+    if not step then print("no current step.") return end
+    print("step %d: %s", self.index, self:StepText(step, true))
+    local q = step[2]
+    if step[1] ~= "A" and step[1] ~= "C" and step[1] ~= "T" then print("  not a quest step.") return end
+    local log = self.log or LogSet()
+    print("  quest %d: %s, %s", q, log[q] and "in your log" or "not in your log", Flagged(q) and "flagged complete" or "not flagged complete")
+    local QDB = FO.QuestDB
+    if QDB and QDB.available and QDB.Quest then
+        local info = QDB:Quest(q)
+        if info then
+            local ok, why = QDB:Available(info, Level(), log)
+            print("  database: %s%s", ok and "available to pick up" or ("not available: " .. tostring(why)), (info.exclusiveTo and #info.exclusiveTo > 0) and (", exclusive with " .. table.concat(info.exclusiveTo, "/")) or "")
+        else print("  database: quest unknown") end
+    else print("  database: QuestieDB not installed, only the log and the completed flags count.") end
+    local gone = self:Gone(step, log)
+    print("  verdict: %s", gone and ("gone (" .. gone .. ")") or self:Blocker(step, log) or "doable")
 end
 
 -- ---------------------------------------------------------------------------
@@ -259,8 +359,9 @@ end
 function G:Use(route, keepProgress)
     self.route = route
     local st = self:State()
-    if st.route ~= route.key or not keepProgress then st.route, st.pos, st.done = route.key, 1, {} end
+    if st.route ~= route.key or not keepProgress then st.route, st.pos, st.done, st.why = route.key, 1, {}, {} end
     self.index = nil
+    self.absentSince = {}
     lastArrowKey = nil
     self:Refresh("init")
 end
@@ -271,6 +372,8 @@ function G:Skip()
     self:Refresh("skip")
 end
 
+local function ClearAbsent(from) for i in pairs(G.absentSince) do if i >= from then G.absentSince[i] = nil end end end
+
 function G:Back()
     if not self.route then return end
     local st = self:State()
@@ -278,6 +381,8 @@ function G:Back()
     while i >= 1 and not ClassOK(self.route.steps[i]) do i = i - 1 end
     if i < 1 then return end
     st.done[i] = nil
+    if st.why then st.why[i] = nil end
+    ClearAbsent(i)
     st.pos = i
     self.index = i
     self.current = self.route.steps[i]
@@ -291,7 +396,8 @@ function G:Goto(i)
     if not self.route then return end
     i = math.max(1, math.min(#self.route.steps, i))
     local st = self:State()
-    for j = i, #self.route.steps do st.done[j] = nil end
+    for j = i, #self.route.steps do st.done[j] = nil if st.why then st.why[j] = nil end end
+    ClearAbsent(i)
     st.pos = i
     self.index = nil
     lastArrowKey = nil
@@ -400,7 +506,7 @@ function G:OnEnable()
     if FO.Dashboard and FO.Dashboard.RegisterTab then
         FO.Dashboard:RegisterTab("Guide", 1.7, function() return self:Lines() end, function()
             return { { label = "Back", fn = function() self:Back() end }, { label = "Skip", fn = function() self:Skip() end },
-                     { label = "Arrow", fn = function() self:PointArrow(true) end },
+                     { label = "Sync", fn = function() self:Sync() end }, { label = "Arrow", fn = function() self:PointArrow(true) end },
                      { label = function() return (frame and frame:IsShown()) and "Hide window" or "Show window" end, fn = function() self:Toggle() end } }
         end)
     end
@@ -415,7 +521,7 @@ function ForeverOptimizer_GuideSkip() if FO.Guide then FO.Guide:Skip() end end
 function ForeverOptimizer_GuideToggle() if FO.Guide then FO.Guide:Toggle() end end
 
 G.commands = {
-    guide = { help = "leveling guide: (status) | list | use <n|name> | skip | back | goto <step> | reset | show | hide | arrow on|off", fn = function(self, arg)
+    guide = { help = "leveling guide: (status) | list | use <n|name> | skip | back | goto <step> | sync | why | autoskip on|off | reset | show | hide | arrow on|off", fn = function(self, arg)
         local sub, rest = U.SplitCmd(arg or "")
         if sub == "" or sub == "status" then
             for _, l in ipairs(self:Lines()) do print("%s", l) end
@@ -445,6 +551,11 @@ G.commands = {
             if not self.route then print("no route active.") return end
             self:Use(self.route, false)
             print("guide reset to step 1.")
+        elseif sub == "sync" or sub == "prune" then self:Sync()
+        elseif sub == "why" then self:Why()
+        elseif sub == "autoskip" then
+            self.db.autoskip = rest ~= "off"
+            print("auto-skip of quests you can no longer do: %s.", self.db.autoskip and "on" or "off")
         elseif sub == "show" then self:Show()
         elseif sub == "hide" then self:Hide()
         elseif sub == "arrow" then
@@ -452,7 +563,7 @@ G.commands = {
             if self.db.arrow then lastArrowKey = nil self:PointArrow(true) elseif FO.Arrow then FO.Arrow:Clear() end
             print("guide arrow %s.", self.db.arrow and "on" or "off")
         else
-            print("guide: status | list | use <n> | skip | back | goto <n> | reset | show | hide | arrow on|off")
+            print("guide: status | list | use <n> | skip | back | goto <n> | sync | why | autoskip on|off | reset | show | hide | arrow on|off")
         end
     end },
 }

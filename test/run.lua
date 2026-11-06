@@ -805,7 +805,7 @@ check(GD.index == 5 and GD.current.class == "HUNTER", "hunter-only step shown to
 SlashCmdList.FOREVEROPTIMIZER("guide skip")
 check(GD.index == 14 and GD.current[1] == "T", "Troll, warlock, shaman, warrior and priest steps skipped for an Orc hunter (" .. GD.index .. ")")
 SlashCmdList.FOREVEROPTIMIZER("guide")
-check(outHas("not in your log"), "a turn-in you never accepted is flagged, not auto-skipped")
+check(outHas("not in your log, moving on in 10s"), "a turn-in you never accepted waits with a countdown")
 SlashCmdList.FOREVEROPTIMIZER("guide back")
 check(GD.index == 5, "back returns to the previous applicable step (" .. GD.index .. ")")
 FO.Player.race = "Troll"
@@ -817,6 +817,26 @@ FO.Player.race = "Orc" P.level = 23
 local shared = 0
 for _, r in ipairs(FO.Routes) do for _, st in ipairs(r.steps) do if st[1] == "A" and st[2] == 844 then shared = shared + 1 end end end
 check(#FO.Routes == 2 and shared == 2, "both routes include the shared Barrens section (" .. shared .. ")")
+-- quests done out of order: a turn-in missing from the log moves on after the grace period
+SlashCmdList.FOREVEROPTIMIZER("guide goto 14")
+check(GD.index == 14 and GD.current[1] == "T", "back at the turn-in step (" .. GD.index .. ")")
+S.advance(11) S.fire("QUEST_LOG_UPDATE") S.advance(1)
+check(GD.index > 14 and outHas("skipped step 14") and outHas("not in your log") and GD:State().why[14] == "not in your log", "after 10 s a turn-in not in the log is skipped with a note (" .. GD.index .. ")")
+-- a quest excluded by one already completed is skipped at once through the database
+local step3 = GD.route.steps[3]
+S.qdb.quests[step3[2]] = { name = step3[3], questLevel = 2, requiredLevel = 1, startedBy = { { 2497 } }, finishedBy = { { 2497 } }, objectives = {}, exclusiveTo = { 204 } }
+FO.QuestDB:Forget(step3[2])
+SlashCmdList.FOREVEROPTIMIZER("guide goto 3")
+check(GD.index > 3 and GD:State().why[3] == "excluded by a quest you already did" and outHas("excluded by a quest you already did"), "an accept step excluded by a completed quest is skipped (" .. GD.index .. ")")
+SlashCmdList.FOREVEROPTIMIZER("guide why")
+check(outHas("verdict:"), "/fo guide why explains the current step")
+SlashCmdList.FOREVEROPTIMIZER("guide sync")
+check(outHas("guide sync: ") and outHas("step 3: Accept " .. step3[3]) and GD.index > 3, "/fo guide sync starts over and reports every skipped step (" .. GD.index .. ")")
+SlashCmdList.FOREVEROPTIMIZER("guide autoskip off")
+SlashCmdList.FOREVEROPTIMIZER("guide goto 3")
+check(GD.index == 3 and outHas("auto-skip of quests you can no longer do: off"), "autoskip off keeps the step and shows it")
+SlashCmdList.FOREVEROPTIMIZER("guide autoskip on")
+S.qdb.quests[step3[2]] = nil FO.QuestDB:Forget(step3[2])
 SlashCmdList.FOREVEROPTIMIZER("guide goto 34")
 check(GD.index == 35 and GD.current[1] == "A", "a level step already met is passed automatically (" .. GD.index .. ")")
 SlashCmdList.FOREVEROPTIMIZER("guide goto 71")

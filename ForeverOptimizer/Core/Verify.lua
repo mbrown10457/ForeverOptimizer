@@ -96,6 +96,18 @@ function V:Run()
     add("C_QuestLog.GetQuestObjectives", has("C_QuestLog.GetQuestObjectives"), "objective ticks")
     add("C_QuestLog.GetNextWaypoint", has("C_QuestLog.GetNextWaypoint"), has("C_QuestLog.GetNextWaypoint") and "present; check it returns data for vanilla quests" or "absent; recorded points only")
     add("C_QuestLog.GetInfo", has("C_QuestLog.GetInfo"), "")
+    do
+        local nDone, how = nil, "no API"
+        if has("C_QuestLog.GetAllCompletedQuestIDs") then
+            local ok, ids = pcall(C_QuestLog.GetAllCompletedQuestIDs)
+            if ok and type(ids) == "table" then nDone, how = #ids, "C_QuestLog.GetAllCompletedQuestIDs" end
+        elseif _G.GetQuestsCompleted then
+            local ok, t = pcall(GetQuestsCompleted)
+            if ok and type(t) == "table" then nDone = 0 for _ in pairs(t) do nDone = nDone + 1 end how = "GetQuestsCompleted" end
+        end
+        add("completed quest flags", nDone ~= nil, nDone and string.format("%d quests flagged complete (%s); the guide and /fo nearby rely on these", nDone, how)
+            or "no completed-quest list; IsQuestFlaggedCompleted is used per quest, unverified")
+    end
     if has("C_VoiceChat.SpeakText") then
         local okV, voices = pcall(C_VoiceChat.GetTtsVoices)
         local nV = okV and type(voices) == "table" and #voices or 0
